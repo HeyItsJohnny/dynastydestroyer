@@ -4,13 +4,13 @@ import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCxMaCYs1tKtCSNJ1WP-fccCQYrptZWgO4",
-  authDomain: "planapp-20506.firebaseapp.com",
-  projectId: "planapp-20506",
-  storageBucket: "planapp-20506.appspot.com",
-  messagingSenderId: "255819345433",
-  appId: "1:255819345433:web:b26f4aea25bcf6eb044488",
-  measurementId: "G-KGXLWQ5FDD"
+  apiKey: "AIzaSyCzmbqfVNR5OtYc0MwbKR8gHexbF4Ti5rI",
+  authDomain: "dynastydestroyerapp.firebaseapp.com",
+  projectId: "dynastydestroyerapp",
+  storageBucket: "dynastydestroyerapp.appspot.com",
+  messagingSenderId: "989034933670",
+  appId: "1:989034933670:web:91fcbbf35eb082e1df3367",
+  measurementId: "G-R81CCPKM57"
 };
 
 // Initialize Firebase
