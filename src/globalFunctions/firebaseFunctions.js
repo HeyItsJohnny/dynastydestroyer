@@ -18,6 +18,8 @@ export async function createUserProfile(email, fullname, uid) {
     await setDoc(doc(db, "userprofile", uid), {
       Email: email,
       FullName: fullname,
+      SleeperUserName: "",
+      SleeperUserID: ""
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);

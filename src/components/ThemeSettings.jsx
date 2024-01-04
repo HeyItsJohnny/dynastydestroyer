@@ -9,11 +9,18 @@ import { TextField, Button } from "@mui/material";
 
 //Functions
 import { getSleeperUserID, getSleeperUserLeagues } from "../globalFunctions/SleeperAPIFunctions";
+import { updateSleeperUsername } from "../globalFunctions/firebaseFunctions";
+
+//Firebase
+import { useAuth } from "../contexts/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
 const ThemeSettings = () => {
   const { setColor, setMode, currentMode, currentColor, setThemeSettings } =
     useStateContext();
   const [sleeperUsername, setSleeperUsername] = useState("");
+  const { currentUser } = useAuth();
 
   const onSave = () => {
     //Save UserName to Firebase
@@ -48,52 +55,33 @@ const ThemeSettings = () => {
   const getSleeperLeagues = (userId) => {
     getSleeperUserLeagues(userId)
     .then((data) => {
-      console.log(data);
+      saveSleeperUsername(userId);
+      console.log(data);            //Leagues Data
     })
     .catch((error) => {
       alert("Error. Please check your username");
     });
   }
-  /*
-  const handleAirfareCheckboxChange = (event) => {
-    updatePlanEnableAirfare(currentSelectedPlan, event.target.checked);
-    setEnableAirfare(event.target.checked);
-  };
 
-  const handleLodgingCheckboxChange = (event) => {
-    updatePlanEnableLodging(currentSelectedPlan, event.target.checked);
-    setEnableLodging(event.target.checked);
-  };
+  const saveSleeperUsername = (userId) => {
+    updateSleeperUsername(currentUser.uid,sleeperUsername,userId);
+  }
 
-  const handleToDosCheckboxChange = (event) => {
-    updatePlanEnableToDos(currentSelectedPlan, event.target.checked);
-    setEnableToDos(event.target.checked);
-  };
-
-  const setPlanFromContext = async () => {
+  const setSleeperUserName = async () => {
     try {
-      const docRef = doc(db, "plans", currentSelectedPlan);
+      const docRef = doc(db, "userprofile", currentUser.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setEnableAirfare(docSnap.data().EnableAirfare);
-        setEnableLodging(docSnap.data().EnableLodging);
-        setEnableToDos(docSnap.data().EnableToDos);
+        setSleeperUsername(docSnap.data().SleeperUserName);
       }
     } catch (err) {
       alert(err);
     }
   };
-  */
 
   useEffect(() => {
-    /*
-    if (currentPlanIsSet) {
-      setPlanFromContext();
-    }
-    return () => {
-      //setPlan([]);
-    };
-    */
+    setSleeperUserName();
+    return () => {};
   }, []);
 
   return (

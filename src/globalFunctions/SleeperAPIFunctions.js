@@ -11,7 +11,7 @@ export function getSleeperUserID(sleeperUsername) {
 }
 
 export function getSleeperUserLeagues(sleeperID) {
-  const apiUrl = `https://api.sleeper.app/v1/user/${sleeperID}/leagues/nfl/2023`;
+  const apiUrl = `https://api.sleeper.app/v1/user/${sleeperID}/leagues/nfl/2024`;
   return fetchData(apiUrl)
     .then((data) => {
       return data; // Returning the user_id value
