@@ -5,26 +5,55 @@ import { TooltipComponent } from "@syncfusion/ej2-react-popups";
 
 import { themeColors } from "../components/Settings";
 import { useStateContext } from "../contexts/ContextProvider";
-import Checkbox from "@mui/material/Checkbox";
+import { TextField, Button } from "@mui/material";
 
-//Data
-import { db } from "../firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import {
-  updatePlanEnableAirfare,
-  updatePlanEnableLodging,
-  updatePlanEnableToDos,
-} from "../globalFunctions/firebaseGlobals";
+//Functions
+import { getSleeperUserID, getSleeperUserLeagues } from "../globalFunctions/SleeperAPIFunctions";
 
 const ThemeSettings = () => {
-  const {
-    setColor,
-    setMode,
-    currentMode,
-    currentColor,
-    setThemeSettings,
-  } = useStateContext();
+  const { setColor, setMode, currentMode, currentColor, setThemeSettings } =
+    useStateContext();
+  const [sleeperUsername, setSleeperUsername] = useState("");
 
+  const onSave = () => {
+    //Save UserName to Firebase
+
+
+    //Get User ID & leagues
+    startGetInfoFromSleeper();
+
+    //Save Leagues to Database
+  };
+
+  const onRefresh = () => {
+    //Save UserName to Firebase
+
+    //Get User ID & leagues
+    startGetInfoFromSleeper();
+
+    //Save Leagues to Database
+  };
+
+  const startGetInfoFromSleeper = () => {
+    getSleeperUserID(sleeperUsername)
+    .then((userId) => {
+      getSleeperLeagues(userId);
+    })
+    .catch((error) => {
+      alert("Error. Please check your username");
+    });
+  }
+
+
+  const getSleeperLeagues = (userId) => {
+    getSleeperUserLeagues(userId)
+    .then((data) => {
+      console.log(data);
+    })
+    .catch((error) => {
+      alert("Error. Please check your username");
+    });
+  }
   /*
   const handleAirfareCheckboxChange = (event) => {
     updatePlanEnableAirfare(currentSelectedPlan, event.target.checked);
@@ -82,6 +111,29 @@ const ThemeSettings = () => {
               <MdOutlineCancel />
             </button>
           </div>
+
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <p className="font-semibold text-lg mb-5">Sleeper Settings</p>
+            <div className="flex gap-3">
+              <TextField
+                label="Sleeper Username"
+                variant="outlined"
+                value={sleeperUsername}
+                onChange={(e) => setSleeperUsername(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+          </div>
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <Button variant="contained" color="primary" onClick={onSave} style={{ width: '100%' }}>
+              Save
+            </Button>
+            <div className="mt-2"></div>
+            <Button variant="contained" color="primary" onClick={onRefresh} style={{ width: '100%' }}>
+              Refresh
+            </Button>
+          </div>
+          {/*
           <div className="flex-col border-t-1 border-color p-4 ml-4">
             <p className="font-semibold text-lg">Theme Options</p>
             <div className="mt-4">
@@ -113,7 +165,8 @@ const ThemeSettings = () => {
               </label>
             </div>
           </div>
-
+          */}
+          {/*
           <div className="flex-col border-t-1 border-color p-4 ml-4">
             <p className="font-semibold text-lg">Theme Colors</p>
             <div className="flex gap-3">
@@ -141,6 +194,7 @@ const ThemeSettings = () => {
               ))}
             </div>
           </div>
+                      */}
         </div>
       </div>
     </>

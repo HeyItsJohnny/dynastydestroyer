@@ -22,7 +22,7 @@ const UserProfile = () => {
         console.error("Error:", error);
       });
 
-    getSleeperUserLeagues();
+    //getSleeperUserLeagues();
   };
 
   const getSleeperUserID = () => {
