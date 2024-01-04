@@ -28,11 +28,8 @@ export const ContextProvider = ({ children }) => {
   const [screenSize, setScreenSize] = useState(undefined);
   const [currentColor, setCurrentColor] = useState('#03C9D7');
   const [currentMode, setCurrentMode] = useState('Dark');
-  const [currentSelectedPlan, setCurrentSelectedPlan] = useState('');
-  const [currentPlanIsSet, setCurrentPlanIsSet] = useState(false);
-  const [enableAirfare, setEnableAirfare] = useState(false);
-  const [enableLodging, setEnableLodging] = useState(false);
-  const [enableToDos, setEnableToDos] = useState(false);
+  const [userLeagues, setUserLeagues] = useState([]);
+
   const [themeSettings, setThemeSettings] = useState(false);
   const [userSettings, setUserSettings] = useState(false);
 
@@ -48,8 +45,8 @@ export const ContextProvider = ({ children }) => {
     setThemeSettings(false);
   }
 
-  const setPlan = (plan) => {
-    setCurrentSelectedPlan(plan);
+  const setLeagues = (leagues) => {
+    setUserLeagues(leagues);
     //localStorage.setItem('plan', plan);
   }
 
@@ -61,6 +58,7 @@ export const ContextProvider = ({ children }) => {
     setIsClicked({ ...initialState, [clicked]: false});
   } 
 
+  /*
   const fetchPlansData = async () => {
     if (currentSelectedPlan !== '') {
       const docCollection = query(
@@ -74,11 +72,10 @@ export const ContextProvider = ({ children }) => {
         });
       });
     }
-    
-  };
+  };*/
 
   useEffect(() => {
-    fetchPlansData();
+    //fetchPlansData();
   }, []);
 
   return (
@@ -99,17 +96,9 @@ export const ContextProvider = ({ children }) => {
         userSettings,
         setUserSettings,
         handleExitClick,
-        setCurrentSelectedPlan,
-        currentSelectedPlan,
-        setPlan,
-        currentPlanIsSet,
-        setCurrentPlanIsSet,
-        enableAirfare,
-        setEnableAirfare,
-        enableLodging,
-        setEnableLodging,
-        enableToDos,
-        setEnableToDos
+        userLeagues,
+        setUserLeagues,
+        setLeagues
     }}>
       {children}
     </StateContext.Provider>

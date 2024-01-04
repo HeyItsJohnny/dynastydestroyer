@@ -6,14 +6,14 @@ import { MdDirectionsRun, MdFastfood } from "react-icons/md";
 import { GoDashboard } from "react-icons/go";
 import { TbReportMoney } from "react-icons/tb";
 
-export const constantLinks = [
+export const links = [
   {
-    title: "Home",
+    title: "Leagues",
     links: [
       {
-        name: "my plans",
+        name: "command center",
         icon: <GoDashboard />,
-        linktoname: "plans"
+        linktoname: "home"
       },
 
     ],

@@ -1,43 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link, NavLink } from "react-router-dom";
 import { SiShopware } from "react-icons/si";
 import { MdOutlineCancel } from "react-icons/md";
-import { AiOutlineHome } from "react-icons/ai";
 import { TooltipComponent } from "@syncfusion/ej2-react-popups";
-import { FaCalendarDay } from "react-icons/fa";
 
-import { constantLinks, planLinks } from "../components/Settings";
+import { links } from "../components/Settings";
 import { useStateContext } from "../contexts/ContextProvider";
 
-//Data
-import { db } from "../firebase/firebase";
-import { query, collection, onSnapshot, orderBy } from "firebase/firestore";
-
-//EXTRA
-import { convertDateFormat } from "../globalFunctions/globalFunctions";
-
 const Sidebar = () => {
-  const {
-    activeMenu,
-    setActiveMenu,
-    screenSize,
-    currentColor,
-    currentPlanIsSet,
-    setCurrentPlanIsSet,
-    setCurrentSelectedPlan,
-  } = useStateContext();
-
-  const [planDays, setPlanDays] = useState([]);
+  const { activeMenu, setActiveMenu, screenSize, currentColor } =
+    useStateContext();
 
   const handleCloseSizeBar = () => {
     if (activeMenu && screenSize <= 900) {
       setActiveMenu(false);
     }
-  };
-
-  const handleGoToHome = () => {
-    setCurrentPlanIsSet(false);
-    setCurrentSelectedPlan("");
   };
 
   const activeLink =
@@ -55,7 +32,7 @@ const Sidebar = () => {
               onClick={handleCloseSizeBar}
               className="items-center gap-3 ml-3 mt-4 flex text-xl font-extrabold tracking-tight dark:text-white text-slate-900"
             >
-              <SiShopware /> <span>Day Trip</span>
+              <SiShopware /> <span>Dynasty Destroyer</span>
             </Link>
             <TooltipComponent content="Menu" position="BottomCenter">
               <button
@@ -70,27 +47,26 @@ const Sidebar = () => {
             </TooltipComponent>
           </div>
           <div className="mt-10">
-            {
-            constantLinks.map((item) => (
-            <div key={item.title}>
-              <p className="text-gray-400 m-3 mt-4 uppercase">{item.title}</p>
-              {item.links.map((link) => (
-                <NavLink
-                  to={`${link.linktoname}`}
-                  key={link.name}
-                  onClick={handleCloseSizeBar}
-                  style={({ isActive }) => ({
-                    backgroundColor: isActive ? currentColor : "",
-                  })}
-                  className={({ isActive }) =>
-                    isActive ? activeLink : normalLink
-                  }
-                >
-                  {link.icon}
-                  <span className="capitalize">{link.name}</span>
-                </NavLink>
-              ))}
-            </div>
+            {links.map((item) => (
+              <div key={item.title}>
+                <p className="text-gray-400 m-3 mt-4 uppercase">{item.title}</p>
+                {item.links.map((link) => (
+                  <NavLink
+                    to={`/${link.linktoname}`}
+                    key={link.name}
+                    onClick={handleCloseSizeBar}
+                    style={({ isActive }) => ({
+                      backgroundColor: isActive ? currentColor : "",
+                    })}
+                    className={({ isActive }) =>
+                      isActive ? activeLink : normalLink
+                    }
+                  >
+                    {link.icon}
+                    <span className="capitalize">{link.name}</span>
+                  </NavLink>
+                ))}
+              </div>
             ))}
           </div>
         </>

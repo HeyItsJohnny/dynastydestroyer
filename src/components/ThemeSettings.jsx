@@ -23,16 +23,9 @@ const ThemeSettings = () => {
     currentMode,
     currentColor,
     setThemeSettings,
-    currentPlanIsSet,
-    currentSelectedPlan,
-    setEnableAirfare,
-    setEnableLodging,
-    setEnableToDos,
-    enableAirfare,
-    enableLodging,
-    enableToDos,
   } = useStateContext();
 
+  /*
   const handleAirfareCheckboxChange = (event) => {
     updatePlanEnableAirfare(currentSelectedPlan, event.target.checked);
     setEnableAirfare(event.target.checked);
@@ -61,14 +54,17 @@ const ThemeSettings = () => {
       alert(err);
     }
   };
+  */
 
   useEffect(() => {
+    /*
     if (currentPlanIsSet) {
       setPlanFromContext();
     }
     return () => {
       //setPlan([]);
     };
+    */
   }, []);
 
   return (
@@ -145,25 +141,6 @@ const ThemeSettings = () => {
               ))}
             </div>
           </div>
-          {currentPlanIsSet && (
-            <div className="flex-col border-t-1 border-color p-4 ml-4">
-              <p className="font-semibold text-lg">Enable To Dos</p>
-              <Checkbox
-                checked={enableToDos}
-                onChange={handleToDosCheckboxChange}
-              />
-              <p className="font-semibold text-lg">Enable Lodging</p>
-              <Checkbox
-                checked={enableLodging}
-                onChange={handleLodgingCheckboxChange}
-              />
-              <p className="font-semibold text-lg">Enable Airfare</p>
-              <Checkbox
-                checked={enableAirfare}
-                onChange={handleAirfareCheckboxChange}
-              />
-            </div>
-          )}
         </div>
       </div>
     </>

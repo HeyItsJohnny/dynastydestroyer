@@ -75,7 +75,7 @@ const Navbar = () => {
         title="Menu"
         customFunc={() => setActiveMenu((prevActiveMenu) => !prevActiveMenu)}
         color={currentColor}
-        icon={<RiNotification3Line />}
+        icon={<AiOutlineMenu />}
       />
       <div className="flex">
         <TooltipComponent content="Profile" position="BottomCenter">

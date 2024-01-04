@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { MdOutlineCancel } from "react-icons/md";
 import { BsCheck } from "react-icons/bs";
 import { TooltipComponent } from "@syncfusion/ej2-react-popups";
@@ -9,16 +9,44 @@ import { useStateContext } from "../contexts/ContextProvider";
 import avatar from "../data/avatar.jpg";
 
 const UserProfile = () => {
-  const { setColor, setMode, currentMode, handleExitClick, setUserSettings } =
-    useStateContext();
+  const { setColor, setMode, currentMode, handleExitClick, setUserSettings } = useStateContext();
+  const [sleeperUsername, setSleeperUsername] = useState("");
 
-  const onRefresh = () => {
-    //alert("Refresh.");
-    const apiUrl = "https://api.sleeper.app/v1/user/" + "728783232002306048" + "/leagues/nfl/"+ "2023";
-    //const apiUrl = "https://api.sleeper.app/v1/user/" + "JohnnyGoesHard";
-    fetchData(apiUrl).then((data) => {
-      console.log(data);
-    });
+  const onSave = () => {
+    //const apiUrl = "https://api.sleeper.app/v1/user/" + "728783232002306048" + "/leagues/nfl/"+ "2023";
+    getSleeperUserID()
+      .then((userId) => {
+        getSleeperUserLeagues(userId);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+
+    getSleeperUserLeagues();
+  };
+
+  const getSleeperUserID = () => {
+    const apiUrl = `https://api.sleeper.app/v1/user/${sleeperUsername}`;
+    return fetchData(apiUrl)
+      .then((data) => {
+        return data.user_id; // Returning the user_id value
+      })
+      .catch((error) => {
+        // Handle errors here
+        console.error("Error in onRefresh:", error);
+        throw error; // Re-throw the error to propagate it further
+      });
+  };
+
+  const getSleeperUserLeagues = (userID) => {
+    const apiUrl =
+      "https://api.sleeper.app/v1/user/" + userID + "/leagues/nfl/" + "2023";
+    if (userID !== null) {
+      fetchData(apiUrl).then((data) => {
+        //League Data Here
+        console.log(data);
+      });
+    }
   };
 
   function fetchData(url, options = {}) {
@@ -48,18 +76,24 @@ const UserProfile = () => {
             <MdOutlineCancel />
           </button>
         </div>
-
+        {/*
         <div className="flex-col border-t-1 border-color p-4 ml-4">
           <p className="font-semibold text-lg">Avatar</p>
           <img className="rounded-full w-14 h-14" src={avatar} />
         </div>
+        */}
         <div className="flex-col border-t-1 border-color p-4 ml-4">
           <p className="font-semibold text-lg mb-5">Sleeper Settings</p>
-          <TextField label="Sleeper Username" variant="outlined" />
+          <TextField
+            label="Sleeper Username"
+            variant="outlined"
+            value={sleeperUsername}
+            onChange={(e) => setSleeperUsername(e.target.value)}
+          />
         </div>
         <div className="flex-col border-t-1 border-color p-4 ml-4">
-          <Button variant="contained" color="primary" onClick={onRefresh}>
-            Refresh
+          <Button variant="contained" color="primary" onClick={onSave}>
+            Save
           </Button>
         </div>
       </div>
