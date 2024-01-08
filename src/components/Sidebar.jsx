@@ -23,6 +23,8 @@ const Sidebar = () => {
     }
   };
 
+  
+
   const getSleeperLeaguesFromFirebase = async () => {
     const docCollection = query(
       collection(db, "userprofile", currentUser.uid, "leagues")
