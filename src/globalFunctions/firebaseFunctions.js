@@ -36,3 +36,13 @@ export async function updateSleeperUsername(uid, sleeperusername, sleeperuserid)
     alert("Error editing data to Database: " + error);
   }
 }
+
+export async function saveUserSleeperLeague(uid,leagueid,leaguename) {
+  try {
+    await setDoc(doc(db, "userprofile", uid,"leagues",leagueid), {
+      LeagueName: leaguename
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}

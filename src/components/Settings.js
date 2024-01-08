@@ -15,7 +15,6 @@ export const links = [
         icon: <GoDashboard />,
         linktoname: "home"
       },
-
     ],
   }
 ];

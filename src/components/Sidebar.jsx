@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import { Link, NavLink } from "react-router-dom";
 import { SiShopware } from "react-icons/si";
 import { MdOutlineCancel } from "react-icons/md";
@@ -7,14 +7,37 @@ import { TooltipComponent } from "@syncfusion/ej2-react-popups";
 import { links } from "../components/Settings";
 import { useStateContext } from "../contexts/ContextProvider";
 
+//Firebase
+import { useAuth } from "../contexts/AuthContext";
+import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase/firebase";
+
 const Sidebar = () => {
-  const { activeMenu, setActiveMenu, screenSize, currentColor } =
-    useStateContext();
+  const { activeMenu, setActiveMenu, screenSize, currentColor } = useStateContext();
+  catchonst [sleeperLeagues, setSleeperLeagues] = useState([]);
+  const { currentUser } = useAuth();
 
   const handleCloseSizeBar = () => {
     if (activeMenu && screenSize <= 900) {
       setActiveMenu(false);
     }
+  };
+
+  const getSleeperLeaguesFromFirebase = async () => {
+    const docCollection = query(
+      collection(db, "userprofile", currentUser.uid, "leagues")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          LeagueID: doc.id,
+          LeagueName: doc.data().LeagueName,
+        };
+        list.push(data);
+      });
+      setSleeperLeagues(list);
+    });
   };
 
   const activeLink =
@@ -45,6 +68,11 @@ const Sidebar = () => {
                 <MdOutlineCancel />
               </button>
             </TooltipComponent>
+          </div>
+          <div className="mt-10">
+            <div>
+              <p className="text-gray-400 m-3 mt-4 uppercase">Leagues</p>
+            </div>
           </div>
           <div className="mt-10">
             {links.map((item) => (

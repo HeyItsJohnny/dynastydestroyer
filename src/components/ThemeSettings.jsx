@@ -8,64 +8,66 @@ import { useStateContext } from "../contexts/ContextProvider";
 import { TextField, Button } from "@mui/material";
 
 //Functions
-import { getSleeperUserID, getSleeperUserLeagues } from "../globalFunctions/SleeperAPIFunctions";
-import { updateSleeperUsername } from "../globalFunctions/firebaseFunctions";
+import {
+  getSleeperUserID,
+  getSleeperUserLeagues,
+} from "../globalFunctions/SleeperAPIFunctions";
+import {
+  updateSleeperUsername,
+  saveUserSleeperLeague,
+} from "../globalFunctions/firebaseFunctions";
 
 //Firebase
 import { useAuth } from "../contexts/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
 const ThemeSettings = () => {
   const { setColor, setMode, currentMode, currentColor, setThemeSettings } =
     useStateContext();
   const [sleeperUsername, setSleeperUsername] = useState("");
+  const [sleeperLeagues, setSleeperLeagues] = useState([]);
   const { currentUser } = useAuth();
 
   const onSave = () => {
-    //Save UserName to Firebase
-
-
-    //Get User ID & leagues
     startGetInfoFromSleeper();
-
-    //Save Leagues to Database
   };
 
   const onRefresh = () => {
-    //Save UserName to Firebase
-
-    //Get User ID & leagues
     startGetInfoFromSleeper();
-
-    //Save Leagues to Database
   };
 
   const startGetInfoFromSleeper = () => {
     getSleeperUserID(sleeperUsername)
-    .then((userId) => {
-      getSleeperLeagues(userId);
-    })
-    .catch((error) => {
-      alert("Error. Please check your username");
-    });
-  }
-
+      .then((userId) => {
+        getSleeperLeagues(userId);
+      })
+      .catch((error) => {
+        alert("Error. Please check your username");
+      });
+  };
 
   const getSleeperLeagues = (userId) => {
     getSleeperUserLeagues(userId)
-    .then((data) => {
-      saveSleeperUsername(userId);
-      console.log(data);            //Leagues Data
-    })
-    .catch((error) => {
-      alert("Error. Please check your username");
+      .then((data) => {
+        saveSleeperUsername(userId);
+        saveSleeperLeagues(data); //Leagues Data
+      })
+      .catch((error) => {
+        alert("Error. Please check your username");
+      });
+  };
+
+  const saveSleeperLeagues = (sleeperLeagues) => {
+    sleeperLeagues.forEach((data) => {
+      //Save leagues to Firebase
+      saveUserSleeperLeague(currentUser.uid, data.league_id, data.name);
     });
-  }
+  };
 
   const saveSleeperUsername = (userId) => {
-    updateSleeperUsername(currentUser.uid,sleeperUsername,userId);
-  }
+    updateSleeperUsername(currentUser.uid, sleeperUsername, userId);
+  };
 
   const setSleeperUserName = async () => {
     try {
@@ -79,9 +81,29 @@ const ThemeSettings = () => {
     }
   };
 
+  const getSleeperLeaguesFromFirebase = async () => {
+    const docCollection = query(
+      collection(db, "userprofile", currentUser.uid, "leagues")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          LeagueID: doc.id,
+          LeagueName: doc.data().LeagueName,
+        };
+        list.push(data);
+      });
+      setSleeperLeagues(list);
+    });
+  };
+
   useEffect(() => {
     setSleeperUserName();
-    return () => {};
+    getSleeperLeaguesFromFirebase();
+    return () => {
+      setSleeperLeagues([]);
+    };
   }, []);
 
   return (
@@ -108,18 +130,34 @@ const ThemeSettings = () => {
                 variant="outlined"
                 value={sleeperUsername}
                 onChange={(e) => setSleeperUsername(e.target.value)}
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               />
             </div>
           </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
-            <Button variant="contained" color="primary" onClick={onSave} style={{ width: '100%' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={onSave}
+              style={{ width: "100%" }}
+            >
               Save
             </Button>
             <div className="mt-2"></div>
-            <Button variant="contained" color="primary" onClick={onRefresh} style={{ width: '100%' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={onRefresh}
+              style={{ width: "100%" }}
+            >
               Refresh
             </Button>
+          </div>
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <p className="font-semibold text-lg mb-5">Leagues: </p>
+            {sleeperLeagues.map((league) => (
+              <p className="font-semibold text-md mb-5">{league.LeagueName}</p>
+            ))}
           </div>
           {/*
           <div className="flex-col border-t-1 border-color p-4 ml-4">
