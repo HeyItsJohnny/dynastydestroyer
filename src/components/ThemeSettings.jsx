@@ -98,6 +98,10 @@ const ThemeSettings = () => {
     });
   };
 
+  const RefreshSleeperPlayerData = () => {
+    alert("Refresh Player Data");
+  };
+
   const importQBData = () => {
     alert("Import QB Data");
   };
@@ -165,6 +169,19 @@ const ThemeSettings = () => {
             {sleeperLeagues.map((league) => (
               <p className="font-semibold text-md mb-5">{league.LeagueName}</p>
             ))}
+          </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-bold text-xl">Sleeper Player Data</p>
+          </div>
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={RefreshSleeperPlayerData}
+              style={{ width: "100%" }}
+            >
+              Refresh Player Data
+            </Button>
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Get Keep Trade Cut Data</p>
