@@ -46,3 +46,11 @@ export async function saveUserSleeperLeague(uid,leagueid,leaguename) {
     console.error("There was an error adding to the database: " + error);
   }
 }
+
+export async function deleteLeagueDocument(uid, leagueid) {
+  try {
+    await deleteDoc(doc(db, "userprofile", uid,"leagues",leagueid));
+  } catch (error) {
+    alert("Error deleting data from Firestore:", error);
+  }
+}

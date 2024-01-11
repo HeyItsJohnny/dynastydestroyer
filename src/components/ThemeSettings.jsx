@@ -15,6 +15,7 @@ import {
 import {
   updateSleeperUsername,
   saveUserSleeperLeague,
+  deleteLeagueDocument,
 } from "../globalFunctions/firebaseFunctions";
 
 //Firebase
@@ -40,6 +41,7 @@ const ThemeSettings = () => {
   const startGetInfoFromSleeper = () => {
     getSleeperUserID(sleeperUsername)
       .then((userId) => {
+        DeleteSleeperLeagues();
         getSleeperLeagues(userId);
       })
       .catch((error) => {
@@ -47,11 +49,17 @@ const ThemeSettings = () => {
       });
   };
 
+  const DeleteSleeperLeagues = () => {
+    sleeperLeagues.forEach((league) => {
+      deleteLeagueDocument(currentUser.uid,league.LeagueID);
+    });
+  };
+
   const getSleeperLeagues = (userId) => {
     getSleeperUserLeagues(userId)
       .then((data) => {
         saveSleeperUsername(userId);
-        saveSleeperLeagues(data); //Leagues Data
+        saveSleeperLeagues(data);
       })
       .catch((error) => {
         alert("Error. Please check your username");
@@ -60,7 +68,6 @@ const ThemeSettings = () => {
 
   const saveSleeperLeagues = (sleeperLeagues) => {
     sleeperLeagues.forEach((data) => {
-      //Save leagues to Firebase
       saveUserSleeperLeague(currentUser.uid, data.league_id, data.name);
     });
   };
