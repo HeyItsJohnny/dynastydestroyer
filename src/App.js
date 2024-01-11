@@ -29,19 +29,18 @@ function App() {
             }
           />
           <Route
-            path="/newplan"
+            path="/league/:leagueid"
             element={
               <PrivateRoute>
-                <HomeTemplate page="NEWPLAN" />
+                <HomeTemplate page="LEAGUE" />
               </PrivateRoute>
             }
           />
-
           <Route
-            path="/plans"
+            path="/compareplayers"
             element={
               <PrivateRoute>
-                <HomeTemplate page="PLANS" />
+                <HomeTemplate page="COMPAREPLAYERS" />
               </PrivateRoute>
             }
           />

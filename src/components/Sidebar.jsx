@@ -1,7 +1,9 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { SiShopware } from "react-icons/si";
 import { MdOutlineCancel } from "react-icons/md";
+import { AiOutlineApartment } from "react-icons/ai";
+import { GoDashboard } from "react-icons/go";
 import { TooltipComponent } from "@syncfusion/ej2-react-popups";
 
 import { links } from "../components/Settings";
@@ -13,8 +15,9 @@ import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
 const Sidebar = () => {
-  const { activeMenu, setActiveMenu, screenSize, currentColor } = useStateContext();
-  catchonst [sleeperLeagues, setSleeperLeagues] = useState([]);
+  const { activeMenu, setActiveMenu, screenSize, currentColor } =
+    useStateContext();
+  const [sleeperLeagues, setSleeperLeagues] = useState([]);
   const { currentUser } = useAuth();
 
   const handleCloseSizeBar = () => {
@@ -22,8 +25,6 @@ const Sidebar = () => {
       setActiveMenu(false);
     }
   };
-
-  
 
   const getSleeperLeaguesFromFirebase = async () => {
     const docCollection = query(
@@ -41,6 +42,13 @@ const Sidebar = () => {
       setSleeperLeagues(list);
     });
   };
+
+  useEffect(() => {
+    getSleeperLeaguesFromFirebase();
+    return () => {
+      setSleeperLeagues([]);
+    };
+  }, []);
 
   const activeLink =
     "flex items-center gap-5 pl-4 pt-3 pb-2.5 rounded-lg  text-white  text-md m-2";
@@ -73,9 +81,58 @@ const Sidebar = () => {
           </div>
           <div className="mt-10">
             <div>
+              <p className="text-gray-400 m-3 mt-4 uppercase">Home</p>
+              <NavLink
+                to={`/home`}
+                onClick={handleCloseSizeBar}
+                style={({ isActive }) => ({
+                  backgroundColor: isActive ? currentColor : "",
+                })}
+                className={({ isActive }) =>
+                  isActive ? activeLink : normalLink
+                }
+              >
+                <GoDashboard />
+                <span className="capitalize">Command Center</span>
+              </NavLink>
+            </div>
+            <div>
               <p className="text-gray-400 m-3 mt-4 uppercase">Leagues</p>
+              {sleeperLeagues.map((league) => (
+                <NavLink
+                  to={`/league/${league.LeagueID}`}
+                  key={league.LeagueID}
+                  onClick={handleCloseSizeBar}
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive ? currentColor : "",
+                  })}
+                  className={({ isActive }) =>
+                    isActive ? activeLink : normalLink
+                  }
+                >
+                  <AiOutlineApartment />
+                  <span className="capitalize">{league.LeagueName}</span>
+                </NavLink>
+              ))}
+            </div>
+            <div>
+              <p className="text-gray-400 m-3 mt-4 uppercase">Helpers</p>
+              <NavLink
+                to={`/compareplayers`}
+                onClick={handleCloseSizeBar}
+                style={({ isActive }) => ({
+                  backgroundColor: isActive ? currentColor : "",
+                })}
+                className={({ isActive }) =>
+                  isActive ? activeLink : normalLink
+                }
+              >
+                <GoDashboard />
+                <span className="capitalize">Compare Players</span>
+              </NavLink>
             </div>
           </div>
+          {/*
           <div className="mt-10">
             {links.map((item) => (
               <div key={item.title}>
@@ -99,6 +156,7 @@ const Sidebar = () => {
               </div>
             ))}
           </div>
+                  */}
         </>
       )}
     </div>

@@ -98,6 +98,22 @@ const ThemeSettings = () => {
     });
   };
 
+  const importQBData = () => {
+    alert("Import QB Data");
+  };
+
+  const importRBData = () => {
+    alert("Import RB Data");
+  };
+
+  const importWRData = () => {
+    alert("Import WR Data");
+  };
+
+  const importTEData = () => {
+    alert("Import TE Data");
+  };
+
   useEffect(() => {
     setSleeperUserName();
     getSleeperLeaguesFromFirebase();
@@ -111,7 +127,7 @@ const ThemeSettings = () => {
       <div className="bg-half-transparent w-screen fixed nav-item top-0 right-0">
         <div className="float-right h-screen bg-white w-400">
           <div className="flex justify-between items-center p-4 ml-4">
-            <p className="font-semibold text-xl">Settings</p>
+            <p className="font-bold text-xl">Settings</p>
             <button
               type="button"
               onClick={() => setThemeSettings(false)}
@@ -123,7 +139,7 @@ const ThemeSettings = () => {
           </div>
 
           <div className="flex-col border-t-1 border-color p-4 ml-4">
-            <p className="font-semibold text-lg mb-5">Sleeper Settings</p>
+            <p className="font-bold text-lg mb-5">Sleeper Settings</p>
             <div className="flex gap-3">
               <TextField
                 label="Sleeper Username"
@@ -138,15 +154,6 @@ const ThemeSettings = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={onSave}
-              style={{ width: "100%" }}
-            >
-              Save
-            </Button>
-            <div className="mt-2"></div>
-            <Button
-              variant="contained"
-              color="primary"
               onClick={onRefresh}
               style={{ width: "100%" }}
             >
@@ -154,10 +161,50 @@ const ThemeSettings = () => {
             </Button>
           </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
-            <p className="font-semibold text-lg mb-5">Leagues: </p>
+            <p className="font-bold text-lg mb-5">My Leagues: </p>
             {sleeperLeagues.map((league) => (
               <p className="font-semibold text-md mb-5">{league.LeagueName}</p>
             ))}
+          </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-bold text-xl">Get Keep Trade Cut Data</p>
+          </div>
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={importQBData}
+              style={{ width: "100%" }}
+            >
+              Import QB Data
+            </Button>
+            <div className="mt-2"></div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={importRBData}
+              style={{ width: "100%" }}
+            >
+              Import RB Data
+            </Button>
+            <div className="mt-2"></div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={importWRData}
+              style={{ width: "100%" }}
+            >
+              Import WR Data
+            </Button>
+            <div className="mt-2"></div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={importTEData}
+              style={{ width: "100%" }}
+            >
+              Import TE Data
+            </Button>
           </div>
           {/*
           <div className="flex-col border-t-1 border-color p-4 ml-4">
