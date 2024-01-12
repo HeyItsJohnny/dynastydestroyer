@@ -11,11 +11,13 @@ import { TextField, Button } from "@mui/material";
 import {
   getSleeperUserID,
   getSleeperUserLeagues,
+  getPlayersFromSleeper
 } from "../globalFunctions/SleeperAPIFunctions";
 import {
   updateSleeperUsername,
   saveUserSleeperLeague,
   deleteLeagueDocument,
+  createOrUpdatePlayerData
 } from "../globalFunctions/firebaseFunctions";
 
 //Firebase
@@ -106,7 +108,23 @@ const ThemeSettings = () => {
   };
 
   const RefreshSleeperPlayerData = () => {
-    alert("Refresh Player Data");
+    getPlayersFromSleeper()
+      .then((data) => {
+        //console.log(data);
+        for (const key in data) {
+          if (data.hasOwnProperty(key)) {
+            if (data[key].position === 'QB' || data[key].position === 'RB' || data[key].position === 'WR' || data[key].position === 'TE')  {
+              if (data[key].status !== "Inactive") {
+                createOrUpdatePlayerData(data[key]);
+              }
+              
+            }
+          }
+        }
+      })
+      .catch((error) => {
+        alert("Error: " + error);
+      });
   };
 
   const importQBData = () => {
