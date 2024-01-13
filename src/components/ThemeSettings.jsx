@@ -28,8 +28,7 @@ import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
 const ThemeSettings = () => {
-  const { setColor, setMode, currentMode, currentColor, setThemeSettings } =
-    useStateContext();
+  const { setThemeSettings } = useStateContext();
   const [sleeperUsername, setSleeperUsername] = useState("");
   const [sleeperLeagues, setSleeperLeagues] = useState([]);
   const { currentUser } = useAuth();
@@ -154,7 +153,9 @@ const ThemeSettings = () => {
 
   };
 
-  const UpdatePlayerData = (KTCData) => {};
+  const UpdatePlayerData = (KTCData) => {
+    console.log(KTCData);
+  };
 
   useEffect(() => {
     setSleeperUserName();
@@ -232,6 +233,12 @@ const ThemeSettings = () => {
               onChange={handleFileChange}
               accept=".csv"
             />
+          </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-bold text-xl">Last Updated SLEEPER Data</p>
+          </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-bold text-xl">Last Updated KTC Data</p>
           </div>
         </div>
       </div>
