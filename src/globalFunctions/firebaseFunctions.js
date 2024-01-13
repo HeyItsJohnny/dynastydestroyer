@@ -21,6 +21,8 @@ export async function createUserProfile(email, fullname, uid) {
       FullName: fullname,
       SleeperUserName: "",
       SleeperUserID: "",
+      LastSleeperDataUpdate: null,
+      LastKTCDataUpdate: null
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -36,6 +38,26 @@ export async function updateSleeperUsername(
     await updateDoc(doc(db, "userprofile", uid), {
       SleeperUserName: sleeperusername,
       SleeperUserID: sleeperuserid,
+    });
+  } catch (error) {
+    alert("Error editing data to Database: " + error);
+  }
+}
+
+export async function timestampSleeperData(uid) {
+  try {
+    await updateDoc(doc(db, "settings", "datasettings"), {
+      LastSleeperDataUpdate: new Date()
+    });
+  } catch (error) {
+    alert("Error editing data to Database: " + error);
+  }
+}
+
+export async function timestampKTCData(uid) {
+  try {
+    await updateDoc(doc(db, "settings", "datasettings"), {
+      LastKTCDataUpdate: new Date()
     });
   } catch (error) {
     alert("Error editing data to Database: " + error);

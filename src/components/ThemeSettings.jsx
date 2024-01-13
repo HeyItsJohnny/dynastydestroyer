@@ -20,7 +20,11 @@ import {
   saveUserSleeperLeague,
   deleteLeagueDocument,
   createOrUpdatePlayerData,
+  timestampSleeperData,
+  timestampKTCData
 } from "../globalFunctions/firebaseFunctions";
+
+import { formatTimestamp } from '../globalFunctions/globalFunctions';
 
 //Firebase
 import { useAuth } from "../contexts/AuthContext";
@@ -31,6 +35,8 @@ const ThemeSettings = () => {
   const { setThemeSettings } = useStateContext();
   const [sleeperUsername, setSleeperUsername] = useState("");
   const [sleeperLeagues, setSleeperLeagues] = useState([]);
+  const [sleeperDataUpdateSettings, setSleeperDataSettings] = useState('');
+  const [ktcDataUpdateSettings, setKTCDataSettings] = useState('');
   const { currentUser } = useAuth();
 
   const [csvFile, setCsvFile] = useState(null);
@@ -89,6 +95,19 @@ const ThemeSettings = () => {
     }
   };
 
+  const getDataSettings = async () => {
+    try {
+      const docRef = doc(db, "settings", "datasettings");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setSleeperDataSettings(formatTimestamp(docSnap.data().LastSleeperDataUpdate));
+        setKTCDataSettings(formatTimestamp(docSnap.data().LastKTCDataUpdate));
+      }
+    } catch (err) {
+      alert(err);
+    }
+  };
+
   const getSleeperLeaguesFromFirebase = async () => {
     const docCollection = query(
       collection(db, "userprofile", currentUser.uid, "leagues")
@@ -109,7 +128,6 @@ const ThemeSettings = () => {
   const RefreshSleeperPlayerData = () => {
     getPlayersFromSleeper()
       .then((data) => {
-        //console.log(data);
         for (const key in data) {
           if (data.hasOwnProperty(key)) {
             if (
@@ -124,6 +142,7 @@ const ThemeSettings = () => {
             }
           }
         }
+        timestampSleeperData(currentUser.uid);
       })
       .catch((error) => {
         alert("Error: " + error);
@@ -154,12 +173,17 @@ const ThemeSettings = () => {
   };
 
   const UpdatePlayerData = (KTCData) => {
-    console.log(KTCData);
+    //console.log(KTCData);
+    KTCData.forEach((data) => {
+      console.log(data.Name);
+    })
+    timestampKTCData(currentUser.uid);
   };
 
   useEffect(() => {
     setSleeperUserName();
     getSleeperLeaguesFromFirebase();
+    getDataSettings();
     return () => {
       setSleeperLeagues([]);
     };
@@ -211,6 +235,12 @@ const ThemeSettings = () => {
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Sleeper Player Data</p>
+            <div className="flex gap-3">
+              
+            </div>
+          </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-semibold text-md">Last Updated: {sleeperDataUpdateSettings}</p>
           </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
             <Button
@@ -225,6 +255,9 @@ const ThemeSettings = () => {
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Import Keep Trade Cut Data</p>
           </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-semibold text-md">Last Updated: {ktcDataUpdateSettings}</p>
+          </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
             <TextField
               type="file"
@@ -233,12 +266,6 @@ const ThemeSettings = () => {
               onChange={handleFileChange}
               accept=".csv"
             />
-          </div>
-          <div className="flex justify-between items-center p-4 ml-4">
-            <p className="font-bold text-xl">Last Updated SLEEPER Data</p>
-          </div>
-          <div className="flex justify-between items-center p-4 ml-4">
-            <p className="font-bold text-xl">Last Updated KTC Data</p>
           </div>
         </div>
       </div>

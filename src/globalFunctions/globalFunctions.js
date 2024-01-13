@@ -1,3 +1,22 @@
+export function formatTimestamp(timestamp) {
+  if (timestamp) {
+    // Convert Firebase timestamp to JavaScript Date object
+    const dateObject = timestamp.toDate();
+
+    // Format the date to MM/DD/YYYY HH:MM
+    return dateObject.toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+  
+  return ''; // Handle the case when timestamp is not available
+};
+
 export function convertDateFormat(inputDate) {
   if (inputDate === "") {
     return;
