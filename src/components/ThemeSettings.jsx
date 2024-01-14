@@ -24,7 +24,7 @@ import {
   timestampKTCData
 } from "../globalFunctions/firebaseFunctions";
 
-import { formatTimestamp } from '../globalFunctions/globalFunctions';
+import { formatTimestamp, formatPlayerName } from '../globalFunctions/globalFunctions';
 
 //Firebase
 import { useAuth } from "../contexts/AuthContext";
@@ -175,7 +175,8 @@ const ThemeSettings = () => {
   const UpdatePlayerData = (KTCData) => {
     //console.log(KTCData);
     KTCData.forEach((data) => {
-      console.log(data.Name);
+      const KTCIdentifier = formatPlayerName(data.Name) + "-" +data.Position;
+      console.log(KTCIdentifier);
     })
     timestampKTCData(currentUser.uid);
   };

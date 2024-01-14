@@ -17,6 +17,10 @@ export function formatTimestamp(timestamp) {
   return ''; // Handle the case when timestamp is not available
 };
 
+export function formatPlayerName(inputString) {
+  return inputString.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 export function convertDateFormat(inputDate) {
   if (inputDate === "") {
     return;
