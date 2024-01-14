@@ -14,6 +14,7 @@ import {
   getSleeperUserID,
   getSleeperUserLeagues,
   getPlayersFromSleeper,
+  
 } from "../globalFunctions/SleeperAPIFunctions";
 import {
   updateSleeperUsername,
@@ -21,7 +22,8 @@ import {
   deleteLeagueDocument,
   createOrUpdatePlayerData,
   timestampSleeperData,
-  timestampKTCData
+  timestampKTCData,
+  updateFields
 } from "../globalFunctions/firebaseFunctions";
 
 import { formatTimestamp, formatPlayerName } from '../globalFunctions/globalFunctions';
@@ -174,9 +176,16 @@ const ThemeSettings = () => {
 
   const UpdatePlayerData = (KTCData) => {
     //console.log(KTCData);
+    
     KTCData.forEach((data) => {
       const KTCIdentifier = formatPlayerName(data.Name) + "-" +data.Position;
-      console.log(KTCIdentifier);
+      const updatedData = {
+        SuperFlexValue: data["SF Value"],
+        NonSuperFlexValue: data["Non-SF Value"],
+      };
+      //console.log(KTCIdentifier);
+      updateFields("players","KeepTradeCutIdentifier",KTCIdentifier,updatedData);
+      
     })
     timestampKTCData(currentUser.uid);
   };
