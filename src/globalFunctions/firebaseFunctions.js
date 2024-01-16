@@ -69,7 +69,7 @@ export async function timestampKTCData(uid) {
 export async function saveUserSleeperLeague(uid, leagueid, leaguename) {
   try {
     await setDoc(doc(db, "userprofile", uid, "leagues", leagueid), {
-      LeagueName: leaguename,
+      LeagueName: leaguename
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -113,8 +113,7 @@ export async function createPlayerData(playerData) {
       FullName: playerData.full_name ?? "",
       InjuryNotes: playerData.injury_notes ?? "",
       InjuryStatus: playerData.injury_status ?? "",
-      KeepTradeCutIdentifier:
-        playerData.search_full_name + "-" + playerData.position,
+      KeepTradeCutIdentifier: playerData.search_full_name + "-" + playerData.position,
       LastName: playerData.last_name ?? "",
       NonSuperFlexValue: 0,
       Position: playerData.position ?? "",
@@ -141,8 +140,7 @@ export async function updatePlayerData(playerData) {
       DepthChartOrder: playerData.depth_chart_order ?? 0,
       InjuryNotes: playerData.injury_notes ?? "",
       InjuryStatus: playerData.injury_status ?? "",
-      KeepTradeCutIdentifier:
-        playerData.search_full_name + "-" + playerData.position,
+      KeepTradeCutIdentifier: playerData.search_full_name + "-" + playerData.position,
       NonSuperFlexValue: 0,
       Position: playerData.position ?? "",
       SleeperID: playerData.player_id ?? "",
