@@ -47,6 +47,10 @@ const ThemeSettings = () => {
     startGetInfoFromSleeper();
   };
 
+  const testPlayerData = () => {
+    alert('TEST Player Data.');
+  };
+
   const startGetInfoFromSleeper = () => {
     getSleeperUserID(sleeperUsername)
       .then((userId) => {
@@ -67,6 +71,7 @@ const ThemeSettings = () => {
   const getSleeperLeagues = (userId) => {
     getSleeperUserLeagues(userId)
       .then((data) => {
+        console.log(data);
         saveSleeperUsername(userId);
         saveSleeperLeagues(data);
       })
@@ -174,18 +179,14 @@ const ThemeSettings = () => {
 
   };
 
-  const UpdatePlayerData = (KTCData) => {
-    //console.log(KTCData);
-    
+  const UpdatePlayerData = (KTCData) => {  
     KTCData.forEach((data) => {
       const KTCIdentifier = formatPlayerName(data.Name) + "-" +data.Position;
       const updatedData = {
         SuperFlexValue: data["SF Value"],
         NonSuperFlexValue: data["Non-SF Value"],
       };
-      //console.log(KTCIdentifier);
       updateFields("players","KeepTradeCutIdentifier",KTCIdentifier,updatedData);
-      
     })
     timestampKTCData(currentUser.uid);
   };
@@ -276,6 +277,16 @@ const ThemeSettings = () => {
               onChange={handleFileChange}
               accept=".csv"
             />
+          </div>
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={testPlayerData}
+              style={{ width: "100%" }}
+            >
+              TEST
+            </Button>
           </div>
         </div>
       </div>

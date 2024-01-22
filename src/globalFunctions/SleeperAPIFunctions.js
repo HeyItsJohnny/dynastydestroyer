@@ -34,7 +34,17 @@ export function getPlayersFromSleeper() {
     });
 }
 
-
+export function getPlayerData() {
+  const apiUrl = `https://api.sleeper.app/v1/players/nfl`;
+  return fetchData(apiUrl)
+    .then((data) => {
+      return data; // Returning the user_id value
+    })
+    .catch((error) => {
+      console.error("Error in onRefresh:", error);
+      throw error; // Re-throw the error to propagate it further
+    });
+}
 
 function fetchData(url, options = {}) {
   return fetch(url, options)

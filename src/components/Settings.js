@@ -16,7 +16,18 @@ export const links = [
         linktoname: "home"
       },
     ],
+  },
+  {
+    title: "Apps",
+    links: [
+      {
+        name: "Compare Players",
+        icon: <GoDashboard />,
+        linktoname: "compareplayers"
+      },
+    ],
   }
+
 ];
 
 export const themeColors = [
