@@ -14,7 +14,7 @@ import {
   getSleeperUserID,
   getSleeperUserLeagues,
   getPlayersFromSleeper,
-  
+  getSleeperLeagueRosters,
 } from "../globalFunctions/SleeperAPIFunctions";
 import {
   updateSleeperUsername,
@@ -23,10 +23,14 @@ import {
   createOrUpdatePlayerData,
   timestampSleeperData,
   timestampKTCData,
-  updateFields
+  updateFields,
+  createOrUpdateUserRosterData
 } from "../globalFunctions/firebaseFunctions";
 
-import { formatTimestamp, formatPlayerName } from '../globalFunctions/globalFunctions';
+import {
+  formatTimestamp,
+  formatPlayerName,
+} from "../globalFunctions/globalFunctions";
 
 //Firebase
 import { useAuth } from "../contexts/AuthContext";
@@ -36,19 +40,16 @@ import { db } from "../firebase/firebase";
 const ThemeSettings = () => {
   const { setThemeSettings } = useStateContext();
   const [sleeperUsername, setSleeperUsername] = useState("");
+  const [sleeperUsernameID, setSleeperUsernameID] = useState("");
   const [sleeperLeagues, setSleeperLeagues] = useState([]);
-  const [sleeperDataUpdateSettings, setSleeperDataSettings] = useState('');
-  const [ktcDataUpdateSettings, setKTCDataSettings] = useState('');
+  const [sleeperDataUpdateSettings, setSleeperDataSettings] = useState("");
+  const [ktcDataUpdateSettings, setKTCDataSettings] = useState("");
   const { currentUser } = useAuth();
 
   const [csvFile, setCsvFile] = useState(null);
 
   const onRefresh = () => {
     startGetInfoFromSleeper();
-  };
-
-  const testPlayerData = () => {
-    alert('TEST Player Data.');
   };
 
   const startGetInfoFromSleeper = () => {
@@ -71,19 +72,101 @@ const ThemeSettings = () => {
   const getSleeperLeagues = (userId) => {
     getSleeperUserLeagues(userId)
       .then((data) => {
-        console.log(data);
         saveSleeperUsername(userId);
-        saveSleeperLeagues(data);
+        saveSleeperLeagues(data, userId);
       })
       .catch((error) => {
         alert("Error. Please check your username");
       });
   };
 
-  const saveSleeperLeagues = (sleeperLeagues) => {
+  const saveSleeperLeagues = (sleeperLeagues, userId) => {
     sleeperLeagues.forEach((data) => {
+      console.log(data);
       saveUserSleeperLeague(currentUser.uid, data.league_id, data.name);
+      getLeagueRoster(data, userId);
     });
+  };
+
+  const getLeagueRoster = (league, userId) => {
+    getSleeperLeagueRosters(league.league_id)
+      .then((data) => {
+        startSaveLeagueRoster(data, userId);
+      })
+      .catch((error) => {
+        alert("Error. Please check your username");
+      });
+  };
+
+  const startSaveLeagueRoster = (userLeagueRosters, userId) => {
+    userLeagueRosters.forEach((data) => {
+      if (data.owner_id === userId) {
+        //Add to User Roster
+        savePlayersToRoster(data.starters, data.league_id, true, "Starters");
+        savePlayersToRoster(data.players, data.league_id, true, "Players");
+        savePlayersToRoster(data.reserve, data.league_id, true, "Reserve");
+        savePlayersToRoster(data.taxi, data.league_id, true, "Taxi");
+      } else {
+        //Add to League Roster
+        //savePlayersToRoster(data.starters, data.league_id, false, "Starters");
+        //savePlayersToRoster(data.players, data.league_id, false, "Players");
+        //savePlayersToRoster(data.reserve,data.league_id, false, "Reserve");
+        //savePlayersToRoster(data.taxi, data.league_id, false, "Taxi");
+      }
+    });
+  };
+
+  const savePlayersToRoster = (
+    playerData,
+    leagueId,
+    isUserRoster,
+    playerBucket
+  ) => {
+    if (playerData !== null) {
+      playerData.forEach((player) => {
+        savePlayerData(player, leagueId, isUserRoster, playerBucket);
+      });
+    }
+  };
+
+  const savePlayerData = async (playerId, leagueID, isUserRoster, playerBucket) => {
+    try {
+      const docRef = doc(db, "players", playerId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const player = {
+          Age: docSnap.data().Age,
+          College: docSnap.data().College,
+          DepthChartOrder: docSnap.data().DepthChartOrder,
+          FirstName: docSnap.data().FirstName,
+          FullName: docSnap.data().FullName,
+          InjuryNotes: docSnap.data().InjuryNotes,
+          InjuryStatus: docSnap.data().InjuryStatus,
+          KeepTradeCutIdentifier: docSnap.data().KeepTradeCutIdentifier,
+          LastName: docSnap.data().LastName,
+          NonSuperFlexValue: docSnap.data().NonSuperFlexValue,
+          Position: docSnap.data().Position,
+          SleeperID: docSnap.data().SleeperID,
+          SearchFirstName: docSnap.data().SearchFirstName,
+          SearchFullName: docSnap.data().SearchFullName,
+          SearchLastName: docSnap.data().SearchLastName,
+          SearchRank: docSnap.data().SearchRank,
+          Status: docSnap.data().Status,
+          SuperFlexValue: docSnap.data().SuperFlexValue,
+          Team: docSnap.data().Team,
+          YearsExperience: docSnap.data().YearsExperience,
+        };
+
+        if (isUserRoster === true) {
+          createOrUpdateUserRosterData(currentUser.uid,leagueID,player,playerBucket);
+        } else {
+          //Add to League Rosters
+        }
+
+      }
+    } catch (err) {
+      alert(err);
+    }
   };
 
   const saveSleeperUsername = (userId) => {
@@ -107,7 +190,9 @@ const ThemeSettings = () => {
       const docRef = doc(db, "settings", "datasettings");
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setSleeperDataSettings(formatTimestamp(docSnap.data().LastSleeperDataUpdate));
+        setSleeperDataSettings(
+          formatTimestamp(docSnap.data().LastSleeperDataUpdate)
+        );
         setKTCDataSettings(formatTimestamp(docSnap.data().LastKTCDataUpdate));
       }
     } catch (err) {
@@ -145,6 +230,9 @@ const ThemeSettings = () => {
             ) {
               if (data[key].status !== "Inactive") {
                 createOrUpdatePlayerData(data[key]);
+              } else {
+                if (data[key].injury_status === "IR")
+                createOrUpdatePlayerData(data[key]);
               }
             }
           }
@@ -160,7 +248,7 @@ const ThemeSettings = () => {
     try {
       const file = event.target.files[0];
       setCsvFile(file);
-  
+
       Papa.parse(file, {
         complete: (result) => {
           if (result && result.data) {
@@ -173,21 +261,25 @@ const ThemeSettings = () => {
         header: true,
         skipEmptyLines: true,
       });
-    } catch(e) {
-      alert('Error: ' + e);
+    } catch (e) {
+      alert("Error: " + e);
     }
-
   };
 
-  const UpdatePlayerData = (KTCData) => {  
+  const UpdatePlayerData = (KTCData) => {
     KTCData.forEach((data) => {
-      const KTCIdentifier = formatPlayerName(data.Name) + "-" +data.Position;
+      const KTCIdentifier = formatPlayerName(data.Name) + "-" + data.Position;
       const updatedData = {
         SuperFlexValue: data["SF Value"],
         NonSuperFlexValue: data["Non-SF Value"],
       };
-      updateFields("players","KeepTradeCutIdentifier",KTCIdentifier,updatedData);
-    })
+      updateFields(
+        "players",
+        "KeepTradeCutIdentifier",
+        KTCIdentifier,
+        updatedData
+      );
+    });
     timestampKTCData(currentUser.uid);
   };
 
@@ -246,12 +338,12 @@ const ThemeSettings = () => {
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Sleeper Player Data</p>
-            <div className="flex gap-3">
-              
-            </div>
+            <div className="flex gap-3"></div>
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
-            <p className="font-semibold text-md">Last Updated: {sleeperDataUpdateSettings}</p>
+            <p className="font-semibold text-md">
+              Last Updated: {sleeperDataUpdateSettings}
+            </p>
           </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
             <Button
@@ -267,7 +359,9 @@ const ThemeSettings = () => {
             <p className="font-bold text-xl">Import Keep Trade Cut Data</p>
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
-            <p className="font-semibold text-md">Last Updated: {ktcDataUpdateSettings}</p>
+            <p className="font-semibold text-md">
+              Last Updated: {ktcDataUpdateSettings}
+            </p>
           </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
             <TextField
@@ -277,16 +371,6 @@ const ThemeSettings = () => {
               onChange={handleFileChange}
               accept=".csv"
             />
-          </div>
-          <div className="flex-col border-t-1 border-color p-4 ml-4">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={testPlayerData}
-              style={{ width: "100%" }}
-            >
-              TEST
-            </Button>
           </div>
         </div>
       </div>

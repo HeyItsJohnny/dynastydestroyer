@@ -22,6 +22,18 @@ export function getSleeperUserLeagues(sleeperID) {
     });
 }
 
+export function getSleeperLeagueRosters(leagueID) {
+  const apiUrl = `https://api.sleeper.app/v1/league/${leagueID}/rosters`;
+  return fetchData(apiUrl)
+    .then((data) => {
+      return data; // Returning the user_id value
+    })
+    .catch((error) => {
+      console.error("Error in onRefresh:", error);
+      throw error; // Re-throw the error to propagate it further
+    });
+}
+
 export function getPlayersFromSleeper() {
   const apiUrl = `https://api.sleeper.app/v1/players/nfl`;
   return fetchData(apiUrl)
