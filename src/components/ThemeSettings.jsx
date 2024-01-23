@@ -15,6 +15,8 @@ import {
   getSleeperUserLeagues,
   getPlayersFromSleeper,
   getSleeperLeagueRosters,
+  getSleeperUserName,
+  getSleeperUserDisplayName,
 } from "../globalFunctions/SleeperAPIFunctions";
 import {
   updateSleeperUsername,
@@ -24,7 +26,9 @@ import {
   timestampSleeperData,
   timestampKTCData,
   updateFields,
-  createOrUpdateUserRosterData
+  createOrUpdateUserRosterData,
+  createOrUpdateLeagueRostersData,
+  createOrUpdateLeagueRosterData
 } from "../globalFunctions/firebaseFunctions";
 
 import {
@@ -40,7 +44,6 @@ import { db } from "../firebase/firebase";
 const ThemeSettings = () => {
   const { setThemeSettings } = useStateContext();
   const [sleeperUsername, setSleeperUsername] = useState("");
-  const [sleeperUsernameID, setSleeperUsernameID] = useState("");
   const [sleeperLeagues, setSleeperLeagues] = useState([]);
   const [sleeperDataUpdateSettings, setSleeperDataSettings] = useState("");
   const [ktcDataUpdateSettings, setKTCDataSettings] = useState("");
@@ -100,28 +103,24 @@ const ThemeSettings = () => {
 
   const startSaveLeagueRoster = (userLeagueRosters, userId) => {
     userLeagueRosters.forEach((data) => {
+      console.log(data);
       if (data.owner_id === userId) {
         //Add to User Roster
-        savePlayersToRoster(data.starters, data.league_id, true, "Starters");
-        savePlayersToRoster(data.players, data.league_id, true, "Players");
-        savePlayersToRoster(data.reserve, data.league_id, true, "Reserve");
-        savePlayersToRoster(data.taxi, data.league_id, true, "Taxi");
+        savePlayersToRoster(data.starters, data.league_id, true, "Starters", "");
+        savePlayersToRoster(data.players, data.league_id, true, "Players", "");
+        savePlayersToRoster(data.reserve, data.league_id, true, "Reserve", "");
+        savePlayersToRoster(data.taxi, data.league_id, true, "Taxi", "");
       } else {
         //Add to League Roster
-        //savePlayersToRoster(data.starters, data.league_id, false, "Starters");
-        //savePlayersToRoster(data.players, data.league_id, false, "Players");
-        //savePlayersToRoster(data.reserve,data.league_id, false, "Reserve");
-        //savePlayersToRoster(data.taxi, data.league_id, false, "Taxi");
+        savePlayersToRoster(data.starters, data.league_id, false, "Starters", data.owner_id);
+        savePlayersToRoster(data.players, data.league_id, false, "Players", data.owner_id);
+        savePlayersToRoster(data.reserve, data.league_id, false, "Reserve", data.owner_id);
+        savePlayersToRoster(data.taxi, data.league_id, false, "Taxi", data.owner_id);
       }
     });
   };
 
-  const savePlayersToRoster = (
-    playerData,
-    leagueId,
-    isUserRoster,
-    playerBucket
-  ) => {
+  const savePlayersToRoster = (playerData, leagueId, isUserRoster, playerBucket) => {
     if (playerData !== null) {
       playerData.forEach((player) => {
         savePlayerData(player, leagueId, isUserRoster, playerBucket);
@@ -129,7 +128,7 @@ const ThemeSettings = () => {
     }
   };
 
-  const savePlayerData = async (playerId, leagueID, isUserRoster, playerBucket) => {
+  const savePlayerData = async (playerId, leagueID, isUserRoster, playerBucket, ownerID) => {
     try {
       const docRef = doc(db, "players", playerId);
       const docSnap = await getDoc(docRef);
@@ -158,15 +157,35 @@ const ThemeSettings = () => {
         };
 
         if (isUserRoster === true) {
-          createOrUpdateUserRosterData(currentUser.uid,leagueID,player,playerBucket);
+          createOrUpdateUserRosterData(currentUser.uid, leagueID, player, playerBucket);
         } else {
-          //Add to League Rosters
+          createOrUpdateLeagueRostersData(currentUser.uid, leagueID, player, playerBucket, ownerID);
+          getLeagueUsername(ownerID, leagueID);
         }
-
       }
     } catch (err) {
       alert(err);
     }
+  };
+
+  const getLeagueUsername = (ownerid, leagueid) => {
+    getSleeperUserName(ownerid)
+      .then((username) => {
+        getLeagueDisplayName(ownerid, username, leagueid)
+      })
+      .catch((error) => {
+        alert("Error: " + error);
+      });
+  };
+
+  const getLeagueDisplayName = (ownerid, username, leagueid) => {
+    getSleeperUserDisplayName(ownerid)
+      .then((displayname) => {
+        createOrUpdateLeagueRosterData(currentUser.uid,leagueid, ownerid, username, displayname);
+      })
+      .catch((error) => {
+        alert("Error: " + error);
+      });
   };
 
   const saveSleeperUsername = (userId) => {
@@ -232,7 +251,7 @@ const ThemeSettings = () => {
                 createOrUpdatePlayerData(data[key]);
               } else {
                 if (data[key].injury_status === "IR")
-                createOrUpdatePlayerData(data[key]);
+                  createOrUpdatePlayerData(data[key]);
               }
             }
           }

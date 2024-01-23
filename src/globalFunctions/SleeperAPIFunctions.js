@@ -10,6 +10,30 @@ export function getSleeperUserID(sleeperUsername) {
     });
 }
 
+export function getSleeperUserName(sleeperID) {
+  const apiUrl = `https://api.sleeper.app/v1/user/${sleeperID}`;
+  return fetchData(apiUrl)
+    .then((data) => {
+      return data.username; // Returning the user_id value
+    })
+    .catch((error) => {
+      console.error("Error in onRefresh:", error);
+      throw error; // Re-throw the error to propagate it further
+    });
+}
+
+export function getSleeperUserDisplayName(sleeperID) {
+  const apiUrl = `https://api.sleeper.app/v1/user/${sleeperID}`;
+  return fetchData(apiUrl)
+    .then((data) => {
+      return data.display_name; // Returning the user_id value
+    })
+    .catch((error) => {
+      console.error("Error in onRefresh:", error);
+      throw error; // Re-throw the error to propagate it further
+    });
+}
+
 export function getSleeperUserLeagues(sleeperID) {
   const apiUrl = `https://api.sleeper.app/v1/user/${sleeperID}/leagues/nfl/2024`;
   return fetchData(apiUrl)

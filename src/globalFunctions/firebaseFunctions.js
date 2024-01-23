@@ -217,6 +217,109 @@ export async function updateUserRosterPlayerData(uid, leagueid, playerBucket,pla
   }
 }
 
+export async function createOrUpdateLeagueRosterData(uid, leagueid, ownerid, username, displayname) {
+  const docRef = doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    updateLeagueRosterData(uid, leagueid, ownerid, username, displayname);
+  } else {
+    createLeagueRosterData(uid, leagueid, ownerid, username, displayname);
+  }
+}
+
+export async function createLeagueRosterData(uid, leagueid, ownerid, username, displayname) {
+  try {
+    await setDoc(doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid), {
+      UserName: username,
+      DisplayName: displayname,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateLeagueRosterData(uid, leagueid, ownerid, username, displayname) {
+  try {
+    await updateDoc(doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid), {
+      UserName: username,
+      DisplayName: displayname,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function createOrUpdateLeagueRostersData(uid, leagueid, playerData,playerBucket,ownerid) {
+  //Create Players
+  const docRef = doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid,playerBucket,playerData.SleeperID);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    updateLeagueRosterPlayerData(uid, leagueid, playerBucket,playerData,ownerid);
+  } else {
+    createLeagueRosterPlayerData(uid, leagueid, playerBucket,playerData,ownerid);
+  }
+}
+
+export async function createLeagueRosterPlayerData(uid, leagueid, playerBucket,playerData,ownerid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await setDoc(doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid,playerBucket,playerData.SleeperID), {
+      Age: playerData.Age,
+      College: playerData.College,
+      DepthChartOrder: playerData.DepthChartOrder,
+      FirstName: playerData.FirstName,
+      FullName: playerData.FullName,
+      InjuryNotes: playerData.InjuryNotes,
+      InjuryStatus: playerData.InjuryStatus,
+      KeepTradeCutIdentifier: playerData.KeepTradeCutIdentifier,
+      LastName: playerData.LastName,
+      NonSuperFlexValue: playerData.NonSuperFlexValue,
+      Position: playerData.Position,
+      SleeperID: playerData.SleeperID,
+      SearchFirstName: playerData.SearchFirstName,
+      SearchFullName: playerData.SearchFullName,
+      SearchLastName: playerData.SearchLastName,
+      SearchRank: playerData.SearchRank,
+      Status: playerData.Status,
+      SuperFlexValue: playerData.SuperFlexValue,
+      Team: playerData.Team,
+      YearsExperience: playerData.YearsExperience,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateLeagueRosterPlayerData(uid, leagueid, playerBucket,playerData,ownerid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid,playerBucket,playerData.SleeperID), {
+      Age: playerData.Age,
+      College: playerData.College,
+      DepthChartOrder: playerData.DepthChartOrder,
+      FirstName: playerData.FirstName,
+      FullName: playerData.FullName,
+      InjuryNotes: playerData.InjuryNotes,
+      InjuryStatus: playerData.InjuryStatus,
+      KeepTradeCutIdentifier: playerData.KeepTradeCutIdentifier,
+      LastName: playerData.LastName,
+      NonSuperFlexValue: playerData.NonSuperFlexValue,
+      Position: playerData.Position,
+      SleeperID: playerData.SleeperID,
+      SearchFirstName: playerData.SearchFirstName,
+      SearchFullName: playerData.SearchFullName,
+      SearchLastName: playerData.SearchLastName,
+      SearchRank: playerData.SearchRank,
+      Status: playerData.Status,
+      SuperFlexValue: playerData.SuperFlexValue,
+      Team: playerData.Team,
+      YearsExperience: playerData.YearsExperience,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
 
 export async function updateFields(collectionName,fieldToSearch,valueToSearch,updatedData) {
   try {
