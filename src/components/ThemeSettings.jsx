@@ -85,7 +85,6 @@ const ThemeSettings = () => {
 
   const saveSleeperLeagues = (sleeperLeagues, userId) => {
     sleeperLeagues.forEach((data) => {
-      console.log(data);
       saveUserSleeperLeague(currentUser.uid, data.league_id, data.name);
       getLeagueRoster(data, userId);
     });
@@ -103,7 +102,6 @@ const ThemeSettings = () => {
 
   const startSaveLeagueRoster = (userLeagueRosters, userId) => {
     userLeagueRosters.forEach((data) => {
-      console.log(data);
       if (data.owner_id === userId) {
         //Add to User Roster
         savePlayersToRoster(data.starters, data.league_id, true, "Starters", "");
@@ -120,15 +118,15 @@ const ThemeSettings = () => {
     });
   };
 
-  const savePlayersToRoster = (playerData, leagueId, isUserRoster, playerBucket) => {
+  const savePlayersToRoster = (playerData, leagueId, isUserRoster, playerBucket, ownerid) => {
     if (playerData !== null) {
       playerData.forEach((player) => {
-        savePlayerData(player, leagueId, isUserRoster, playerBucket);
+        savePlayerData(player, leagueId, isUserRoster, playerBucket, ownerid);
       });
     }
   };
 
-  const savePlayerData = async (playerId, leagueID, isUserRoster, playerBucket, ownerID) => {
+  const savePlayerData = async (playerId, leagueID, isUserRoster, playerBucket, ownerid) => {
     try {
       const docRef = doc(db, "players", playerId);
       const docSnap = await getDoc(docRef);
@@ -159,8 +157,8 @@ const ThemeSettings = () => {
         if (isUserRoster === true) {
           createOrUpdateUserRosterData(currentUser.uid, leagueID, player, playerBucket);
         } else {
-          createOrUpdateLeagueRostersData(currentUser.uid, leagueID, player, playerBucket, ownerID);
-          getLeagueUsername(ownerID, leagueID);
+          getLeagueUsername(ownerid, leagueID);
+          createOrUpdateLeagueRostersData(currentUser.uid, leagueID, player, playerBucket, ownerid);
         }
       }
     } catch (err) {

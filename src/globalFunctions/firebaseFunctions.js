@@ -218,6 +218,7 @@ export async function updateUserRosterPlayerData(uid, leagueid, playerBucket,pla
 }
 
 export async function createOrUpdateLeagueRosterData(uid, leagueid, ownerid, username, displayname) {
+  //console.log(`uSER ID: ${uid} LEAGUEID: ${leagueid} OWNERID: ${ownerid} USERNAME: ${username} DISPLAYNAME: ${displayname}`);
   const docRef = doc(db, "userprofile", uid, "leagues", leagueid,"LeagueRosters",ownerid);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
