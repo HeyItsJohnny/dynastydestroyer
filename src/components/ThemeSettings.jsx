@@ -93,6 +93,7 @@ const ThemeSettings = () => {
   const getLeagueRoster = (league, userId) => {
     getSleeperLeagueRosters(league.league_id)
       .then((data) => {
+        
         startSaveLeagueRoster(data, userId);
       })
       .catch((error) => {
@@ -104,6 +105,7 @@ const ThemeSettings = () => {
     userLeagueRosters.forEach((data) => {
       if (data.owner_id === userId) {
         //Add to User Roster
+        console.log(data);
         savePlayersToRoster(data.starters, data.league_id, true, "Starters", "");
         savePlayersToRoster(data.players, data.league_id, true, "Players", "");
         savePlayersToRoster(data.reserve, data.league_id, true, "Reserve", "");

@@ -6,6 +6,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
+import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
 
 //Functions
 import { useAuth } from "../../contexts/AuthContext";
@@ -60,6 +61,18 @@ const Home = () => {
     onSnapshot(docCollection, (querySnapshot) => {
       const list = [];
       querySnapshot.forEach((doc) => {
+        var iconName = null;
+
+        if (doc.data().Position === "QB") {
+          iconName = <TbLetterQ />;
+        } else if (doc.data().Position === "RB") {
+          iconName = <TbLetterR />;
+        } else if (doc.data().Position === "WR") {
+          iconName = <TbLetterW />;
+        } else if (doc.data().Position === "TE") {
+          iconName = <TbLetterT />;
+        }
+
         var data = {
           id: doc.id,
           Age: doc.data().Age,
@@ -72,6 +85,8 @@ const Home = () => {
           SearchRank: doc.data().SearchRank,
           NonSuperFlexValue: doc.data().NonSuperFlexValue,
           SuperFlexValue: doc.data().SuperFlexValue,
+          Icon: iconName,
+          Team: doc.data().Team
         };
         list.push(data);
       });

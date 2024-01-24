@@ -6,6 +6,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
+import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
 
 //Functions
 import { useAuth } from "../../../contexts/AuthContext";
@@ -57,6 +58,17 @@ const CompareLineups = () => {
     onSnapshot(docCollection, (querySnapshot) => {
       const list = [];
       querySnapshot.forEach((doc) => {
+        var iconName = null;
+
+        if (doc.data().Position === "QB") {
+          iconName = <TbLetterQ />;
+        } else if (doc.data().Position === "RB") {
+          iconName = <TbLetterR />;
+        } else if (doc.data().Position === "WR") {
+          iconName = <TbLetterW />;
+        } else if (doc.data().Position === "TE") {
+          iconName = <TbLetterT />;
+        }
         var data = {
           id: doc.id,
           Age: doc.data().Age,
@@ -69,6 +81,8 @@ const CompareLineups = () => {
           SearchRank: doc.data().SearchRank,
           NonSuperFlexValue: doc.data().NonSuperFlexValue,
           SuperFlexValue: doc.data().SuperFlexValue,
+          Icon: iconName,
+          Team: doc.data().Team,
         };
         list.push(data);
       });
@@ -120,6 +134,17 @@ const CompareLineups = () => {
     onSnapshot(docCollection, (querySnapshot) => {
       const list = [];
       querySnapshot.forEach((doc) => {
+        var iconName = null;
+
+        if (doc.data().Position === "QB") {
+          iconName = <TbLetterQ />;
+        } else if (doc.data().Position === "RB") {
+          iconName = <TbLetterR />;
+        } else if (doc.data().Position === "WR") {
+          iconName = <TbLetterW />;
+        } else if (doc.data().Position === "TE") {
+          iconName = <TbLetterT />;
+        }
         var data = {
           id: doc.id,
           Age: doc.data().Age,
@@ -132,6 +157,8 @@ const CompareLineups = () => {
           SearchRank: doc.data().SearchRank,
           NonSuperFlexValue: doc.data().NonSuperFlexValue,
           SuperFlexValue: doc.data().SuperFlexValue,
+          Icon: iconName,
+          Team: doc.data().Team,
         };
         list.push(data);
       });
@@ -210,8 +237,8 @@ const CompareLineups = () => {
       <div className="flex gap-10 flex-wrap justify-center">
         {selectedLeague !== "" ? (
           <div className="flex gap-10 flex-wrap justify-center">
-            <UserLineup lineup={userStarters} heading={"Your Lineup"}/>
-            <UserLineup lineup={teamStarters} heading={"Opponent Lineup"}/>
+            <UserLineup lineup={userStarters} heading={"Your Lineup"} />
+            <UserLineup lineup={teamStarters} heading={"Opponent Lineup"} />
           </div>
         ) : (
           <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-gray-200">

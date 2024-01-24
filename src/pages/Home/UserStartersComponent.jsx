@@ -14,17 +14,24 @@ const UserStartersComponent = ({ userStarters }) => {
           {userStarters.map((player) => (
             <div className="flex justify-between mt-4">
               <div className="flex gap-4">
-                <AiOutlineCheck />
+                <button
+                  type="button"
+                  style={{
+                    backgroundColor: "#1A97F5",
+                    color: "White",
+                  }}
+                  className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
+                >
+                  {player.Icon}
+                </button>
+                
                 <div>
-                  <p className="text-md font-semibold">{player.FullName}</p>
+                  <p className="text-md font-semibold">{player.FullName} ({player.Team})</p>
                   <p className="text-sm text-gray-400">Age: {player.Age}</p>
-                  <p className="text-sm text-gray-400">
-                    Position: {player.Position}
-                  </p>
                 </div>
               </div>
               <p className={`text-green-600`}>
-                SF: {player.NonSuperFlexValue}{" "}
+                SF: {player.NonSuperFlexValue}
               </p>
             </div>
           ))}
