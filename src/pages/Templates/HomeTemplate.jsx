@@ -9,7 +9,7 @@ import {
   Sidebar,
   ThemeSettings,
 } from "../../components";
-import { Home, ComparePlayers } from "../../pages";
+import { Home, ComparePlayers, CompareLineups } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
 
@@ -30,6 +30,8 @@ const HomeTemplate = ({ page }) => {
         return <Home />;
       case "COMPAREPLAYERS":
         return <ComparePlayers />;
+      case "COMPARELINEUPS":
+        return <CompareLineups />;
       default:
         return (
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">

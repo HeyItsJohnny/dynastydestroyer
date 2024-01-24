@@ -2,7 +2,6 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Login, Registration, ForgotPassword, HomeTemplate } from "./pages";
 import { AuthProvider } from "./contexts/AuthContext";
-//import PrivateRoute from "./PrivateRoute";
 import PrivateRoute from "./PrivateRoute.js";
 import "./App.css";
 
@@ -41,6 +40,14 @@ function App() {
             element={
               <PrivateRoute>
                 <HomeTemplate page="COMPAREPLAYERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/comparelineups"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="COMPARELINEUPS" />
               </PrivateRoute>
             }
           />

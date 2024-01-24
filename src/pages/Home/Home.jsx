@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../../components";
-import { useStateContext } from "../../contexts/ContextProvider";
-import { useNavigate } from "react-router-dom";
 
 //Visual
 import InputLabel from "@mui/material/InputLabel";
@@ -10,7 +8,6 @@ import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
 
 //Functions
-import { useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { db } from "../../firebase/firebase";
 import {
@@ -18,12 +15,15 @@ import {
   query,
   onSnapshot,
   orderBy,
-  where,
 } from "firebase/firestore";
+
+import UserStartersComponent from "./UserStartersComponent";
+import HomeDetails from "./HomeDetails";
 
 const Home = () => {
   const { currentUser } = useAuth();
   const [leagues, setLeagues] = useState([]);
+  const [userStarters, setUserStarters] = useState([]);
   const [selectedLeague, setSelectedLeague] = useState("");
 
   const fetchLeagueData = async () => {
@@ -44,9 +44,44 @@ const Home = () => {
     });
   };
 
+  const fetchUserStarterData = async (leagueid) => {
+    setUserStarters([]);
+    const docCollection = query(
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "leagues",
+        leagueid,
+        "Starters"
+      ),
+      orderBy("Position")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          id: doc.id,
+          Age: doc.data().Age,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          Position: doc.data().Position,
+          Status: doc.data().Status,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          SearchRank: doc.data().SearchRank,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          SuperFlexValue: doc.data().SuperFlexValue,
+        };
+        list.push(data);
+      });
+      setUserStarters(list);
+    });
+  };
+
   const handleLeagueChange = (event) => {
     setSelectedLeague(event.target.value);
-    console.log(event.target.value);
+    fetchUserStarterData(event.target.value);
   };
 
   useEffect(() => {
@@ -58,7 +93,7 @@ const Home = () => {
 
   return (
     <>
-        <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <Header category="Dynasty Destroyer" title="Command Center" />
         <FormControl variant="outlined" fullWidth>
           <InputLabel
@@ -81,9 +116,10 @@ const Home = () => {
       </div>
       <div className="flex gap-10 flex-wrap justify-center">
         {selectedLeague !== "" ? (
-          <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-gray-200">
-            League Selected! {selectedLeague}
-          </p>
+          <div className="flex gap-10 flex-wrap justify-center">
+            <HomeDetails/>
+            <UserStartersComponent userStarters={userStarters}/>
+          </div>
         ) : (
           <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-gray-200">
             Please select a league.
@@ -91,7 +127,6 @@ const Home = () => {
         )}
       </div>
     </>
-
   );
 };
 

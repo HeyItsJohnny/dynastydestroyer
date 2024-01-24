@@ -2,8 +2,9 @@ import React from "react";
 import { AiOutlinePieChart, AiFillSetting } from "react-icons/ai";
 import { FaCarSide } from "react-icons/fa";
 import { FcTodoList } from "react-icons/fc";
-import { MdDirectionsRun, MdFastfood } from "react-icons/md";
+import { MdOutlineCompareArrows } from "react-icons/md";
 import { GoDashboard } from "react-icons/go";
+import { GiAmericanFootballHelmet } from "react-icons/gi";
 import { TbReportMoney } from "react-icons/tb";
 
 export const links = [
@@ -22,8 +23,13 @@ export const links = [
     links: [
       {
         name: "Compare Players",
-        icon: <GoDashboard />,
+        icon: <MdOutlineCompareArrows />,
         linktoname: "compareplayers"
+      },
+      {
+        name: "Lineups",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "comparelineups"
       },
     ],
   }
