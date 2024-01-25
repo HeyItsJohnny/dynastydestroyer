@@ -179,11 +179,3 @@ export async function getTeamsFromLeagueData(userid, leagueid) {
     );
   });
 }
-
-export async function getBenchPlayers(starters, reserve, players) {
-  const starterIDs = starters.map((player) => player.id);
-  const reserveIDs = reserve.map((player) => player.id);
-  const filteredOutStarters = players.filter(benchItem => !starterIDs.includes(benchItem.id));
-  const filteredOutReserve = filteredOutStarters.filter(benchItem => !reserveIDs.includes(benchItem.id));
-  return filteredOutReserve;
-}

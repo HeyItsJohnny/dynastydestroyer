@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Header } from "../../components";
 
 //Functions
-import { getLeaguesData, getRosterData, getBenchPlayers } from "../../globalFunctions/firebaseRostersFunction";
+import { getLeaguesData, getRosterData} from "../../globalFunctions/firebaseRostersFunction";
 
 //Visual
 import InputLabel from "@mui/material/InputLabel";
@@ -12,12 +12,9 @@ import FormControl from "@mui/material/FormControl";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
-import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
 
 //Functions
 import { useAuth } from "../../contexts/AuthContext";
-import { db } from "../../firebase/firebase";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 
 import UserStartersComponent from "./UserStartersComponent";
 import HomeDetails from "./HomeDetails";
@@ -43,7 +40,7 @@ const Home = () => {
 
       const starterIDs = userRosterStartersData.map(player => player.id);
       const reserveIDs = userRosterIRData.map(player => player.id);
-      const filteredOutStarters = userRosterData.filter(benchItem => !starterIDs.includes(benchItem.id))
+      const filteredOutStarters = userRosterData.filter(benchItem => !starterIDs.includes(benchItem.id));
 
       setUserStarters(userRosterStartersData);
       setUserIR(userRosterIRData);
@@ -52,8 +49,6 @@ const Home = () => {
     } catch (error) {
       console.error("Error fetching roster data:", error);
     }
-
-    //fetchUserStarterData(event.target.value);
   };
 
   const handleShowBenchChange = (event) => {

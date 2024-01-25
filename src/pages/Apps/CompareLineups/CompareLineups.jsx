@@ -6,7 +6,16 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
-import { getLeaguesData, getRosterData, getTeamRosterData, getTeamsFromLeagueData } from "../../../globalFunctions/firebaseRostersFunction";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
+
+import {
+  getLeaguesData,
+  getRosterData,
+  getTeamRosterData,
+  getTeamsFromLeagueData,
+} from "../../../globalFunctions/firebaseRostersFunction";
 
 //Functions
 import { useAuth } from "../../../contexts/AuthContext";
@@ -18,7 +27,14 @@ const CompareLineups = () => {
   const [leagues, setLeagues] = useState([]);
   const [teams, setTeams] = useState([]);
   const [userStarters, setUserStarters] = useState([]);
+  const [userIR, setUserIR] = useState([]);
+  const [userBench, setUserBench] = useState([]);
   const [teamStarters, setTeamStarters] = useState([]);
+  const [teamIR, setTeamIR] = useState([]);
+  const [teamBench, setTeamBench] = useState([]);
+
+  const [showBench, setShowBench] = useState(false);
+  const [showIR, setShowIR] = useState(false);
 
   const [selectedLeague, setSelectedLeague] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
@@ -26,15 +42,41 @@ const CompareLineups = () => {
   const handleLeagueChange = async (event) => {
     setSelectedLeague(event.target.value);
     try {
-      const userRosterStartersData = await getRosterData(currentUser.uid, event.target.value, "Starters");
-      const teamsFromLeague = await getTeamsFromLeagueData(currentUser.uid, event.target.value);
+      const userRosterStartersData = await getRosterData(
+        currentUser.uid,
+        event.target.value,
+        "Starters"
+      );
+      const teamsFromLeague = await getTeamsFromLeagueData(
+        currentUser.uid,
+        event.target.value
+      );
 
-      const userRosterIRData = await getRosterData(currentUser.uid, event.target.value, "Reserve");
-      const userRosterData = await getRosterData(currentUser.uid, event.target.value, "Players");
+      const userRosterIRData = await getRosterData(
+        currentUser.uid,
+        event.target.value,
+        "Reserve"
+      );
+      const userRosterData = await getRosterData(
+        currentUser.uid,
+        event.target.value,
+        "Players"
+      );
+
+      const starterIDs = userRosterStartersData.map((player) => player.id);
+      const reserveIDs = userRosterIRData.map((player) => player.id);
+      const filteredOutStarters = userRosterData.filter(
+        (benchItem) => !starterIDs.includes(benchItem.id)
+      );
 
       setUserStarters(userRosterStartersData);
+      setUserIR(userRosterIRData);
+      setUserBench(
+        filteredOutStarters.filter(
+          (benchItem) => !reserveIDs.includes(benchItem.id)
+        )
+      );
       setTeams(teamsFromLeague);
-
 
       setTeamStarters([]);
     } catch (error) {
@@ -45,15 +87,49 @@ const CompareLineups = () => {
   const handleTeamChange = async (event) => {
     setSelectedTeam(event.target.value);
     try {
-      const teamRosterStartersData = await getTeamRosterData(currentUser.uid, selectedLeague, event.target.value, "Starters");
-      const teamRosterIRData = await getTeamRosterData(currentUser.uid, selectedLeague, event.target.value, "Reserve");
-      const teamRosterData = await getTeamRosterData(currentUser.uid, selectedLeague, event.target.value, "Players");
+      const teamRosterStartersData = await getTeamRosterData(
+        currentUser.uid,
+        selectedLeague,
+        event.target.value,
+        "Starters"
+      );
+      const teamRosterIRData = await getTeamRosterData(
+        currentUser.uid,
+        selectedLeague,
+        event.target.value,
+        "Reserve"
+      );
+      const teamRosterData = await getTeamRosterData(
+        currentUser.uid,
+        selectedLeague,
+        event.target.value,
+        "Players"
+      );
 
+      const starterIDs = teamRosterStartersData.map((player) => player.id);
+      const reserveIDs = teamRosterIRData.map((player) => player.id);
+      const filteredOutStarters = teamRosterData.filter(
+        (benchItem) => !starterIDs.includes(benchItem.id)
+      );
 
       setTeamStarters(teamRosterStartersData);
+      setTeamIR(teamRosterIRData);
+      setTeamBench(
+        filteredOutStarters.filter(
+          (benchItem) => !reserveIDs.includes(benchItem.id)
+        )
+      );
     } catch (error) {
       console.error("Error fetching roster data:", error);
     }
+  };
+
+  const handleShowBenchChange = (event) => {
+    setShowBench(event.target.checked);
+  };
+
+  const handleShowIRChange = (event) => {
+    setShowIR(event.target.checked);
   };
 
   useEffect(() => {
@@ -118,8 +194,41 @@ const CompareLineups = () => {
             <br></br>
           )}
         </div>
+        <div className="mb-10">
+          {selectedLeague !== "" ? (
+            <FormControl component="fieldset">
+              <FormGroup aria-label="position" row>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      color="primary"
+                      onChange={handleShowBenchChange}
+                      checked={showBench}
+                    />
+                  }
+                  label="Show Bench Players"
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      color="primary"
+                      onChange={handleShowIRChange}
+                      checked={showIR}
+                    />
+                  }
+                  label="Show IR Players"
+                  labelPlacement="start"
+                />
+              </FormGroup>
+            </FormControl>
+          ) : (
+            <br></br>
+          )}
+        </div>
       </div>
-      <div className="flex gap-10 flex-wrap justify-center">
+
+      <div className="flex gap-10 flex-wrap justify-center mb-10">
         {selectedLeague !== "" ? (
           <div className="flex gap-10 flex-wrap justify-center">
             <UserLineup lineup={userStarters} heading={"Your Lineup"} />
@@ -131,6 +240,22 @@ const CompareLineups = () => {
           </p>
         )}
       </div>
+      {showBench ? (
+        <div className="flex gap-10 flex-wrap justify-center mb-10">
+          <div className="flex gap-10 flex-wrap justify-center">
+            <UserLineup lineup={userBench} heading={"Your Bench"} />
+            <UserLineup lineup={teamBench} heading={"Opponent Bench"} />
+          </div>
+        </div>
+      ) : null}
+      {showIR ? (
+        <div className="flex gap-10 flex-wrap justify-center mb-10">
+          <div className="flex gap-10 flex-wrap justify-center">
+            <UserLineup lineup={userIR} heading={"Your IR"} />
+            <UserLineup lineup={teamIR} heading={"Opponent IR"} />
+          </div>
+        </div>
+      ) : null}
     </>
   );
 };
