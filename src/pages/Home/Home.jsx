@@ -6,17 +6,15 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
 import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
 
 //Functions
 import { useAuth } from "../../contexts/AuthContext";
 import { db } from "../../firebase/firebase";
-import {
-  collection,
-  query,
-  onSnapshot,
-  orderBy,
-} from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 
 import UserStartersComponent from "./UserStartersComponent";
 import HomeDetails from "./HomeDetails";
@@ -25,7 +23,11 @@ const Home = () => {
   const { currentUser } = useAuth();
   const [leagues, setLeagues] = useState([]);
   const [userStarters, setUserStarters] = useState([]);
+  const [userBenchPlayers, setUserBenchPlayers] = useState([]);
+  const [userIR, setUserIR] = useState([]);
   const [selectedLeague, setSelectedLeague] = useState("");
+  const [showBench, setShowBench] = useState(false);
+  const [showIR, setShowIR] = useState(false);
 
   const fetchLeagueData = async () => {
     const docCollection = query(
@@ -86,17 +88,130 @@ const Home = () => {
           NonSuperFlexValue: doc.data().NonSuperFlexValue,
           SuperFlexValue: doc.data().SuperFlexValue,
           Icon: iconName,
-          Team: doc.data().Team
+          Team: doc.data().Team,
         };
         list.push(data);
       });
-      setUserStarters(list);
+      fetchUserIRData(leagueid, list)
+    });
+  };
+
+  const fetchUserIRData = async (leagueid, starters) => {
+    setUserIR([]);
+    const docCollection = query(
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "leagues",
+        leagueid,
+        "Reserve"
+      ),
+      orderBy("Position")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var iconName = null;
+
+        if (doc.data().Position === "QB") {
+          iconName = <TbLetterQ />;
+        } else if (doc.data().Position === "RB") {
+          iconName = <TbLetterR />;
+        } else if (doc.data().Position === "WR") {
+          iconName = <TbLetterW />;
+        } else if (doc.data().Position === "TE") {
+          iconName = <TbLetterT />;
+        }
+
+        var data = {
+          id: doc.id,
+          Age: doc.data().Age,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          Position: doc.data().Position,
+          Status: doc.data().Status,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          SearchRank: doc.data().SearchRank,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          SuperFlexValue: doc.data().SuperFlexValue,
+          Icon: iconName,
+          Team: doc.data().Team,
+        };
+        list.push(data);
+      });
+      fetchUserBenchData(leagueid, starters, list)
+    });
+  };
+
+  const fetchUserBenchData = async (leagueid, starters, reserves) => {
+    setUserBenchPlayers([]);
+    const docCollection = query(
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "leagues",
+        leagueid,
+        "Players"
+      ),
+      orderBy("Position")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var iconName = null;
+
+        if (doc.data().Position === "QB") {
+          iconName = <TbLetterQ />;
+        } else if (doc.data().Position === "RB") {
+          iconName = <TbLetterR />;
+        } else if (doc.data().Position === "WR") {
+          iconName = <TbLetterW />;
+        } else if (doc.data().Position === "TE") {
+          iconName = <TbLetterT />;
+        }
+
+        var data = {
+          id: doc.id,
+          Age: doc.data().Age,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          Position: doc.data().Position,
+          Status: doc.data().Status,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          SearchRank: doc.data().SearchRank,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          SuperFlexValue: doc.data().SuperFlexValue,
+          Icon: iconName,
+          Team: doc.data().Team,
+        };
+        list.push(data);
+      });
+      setUserStarters(starters);
+      setUserIR(reserves);
+
+      const starterIDs = starters.map(player => player.id);
+      const reserveIDs = reserves.map(player => player.id);
+      const filteredOutStarters = list.filter(benchItem => !starterIDs.includes(benchItem.id))
+      setUserBenchPlayers(filteredOutStarters.filter(benchItem => !reserveIDs.includes(benchItem.id)));
+      
     });
   };
 
   const handleLeagueChange = (event) => {
     setSelectedLeague(event.target.value);
     fetchUserStarterData(event.target.value);
+  };
+
+  const handleShowBenchChange = (event) => {
+    setShowBench(event.target.checked);
+  };
+
+  const handleShowIRChange = (event) => {
+    setShowIR(event.target.checked);
   };
 
   useEffect(() => {
@@ -128,12 +243,53 @@ const Home = () => {
             ))}
           </Select>
         </FormControl>
+        <FormControl component="fieldset">
+          <FormGroup aria-label="position" row>
+            <FormControlLabel
+              control={
+                <Switch
+                  color="primary"
+                  onChange={handleShowBenchChange}
+                  checked={showBench}
+                />
+              }
+              label="Show Bench Players"
+              labelPlacement="start"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  color="primary"
+                  onChange={handleShowIRChange}
+                  checked={showIR}
+                />
+              }
+              label="Show IR Players"
+              labelPlacement="start"
+            />
+          </FormGroup>
+        </FormControl>
       </div>
       <div className="flex gap-10 flex-wrap justify-center">
         {selectedLeague !== "" ? (
           <div className="flex gap-10 flex-wrap justify-center">
-            <HomeDetails/>
-            <UserStartersComponent userStarters={userStarters}/>
+            <HomeDetails />
+            <UserStartersComponent
+              userStarters={userStarters}
+              heading="Starters"
+            />
+            {showBench ? (
+              <UserStartersComponent
+                userStarters={userBenchPlayers}
+                heading="Bench"
+              />
+            ) : null}
+            {showIR ? (
+              <UserStartersComponent
+                userStarters={userIR}
+                heading="Injured Reserve"
+              />
+            ) : null}
           </div>
         ) : (
           <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-gray-200">

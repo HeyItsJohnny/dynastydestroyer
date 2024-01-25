@@ -3,12 +3,12 @@ import React from "react";
 //Visual
 import { AiOutlineCheck } from "react-icons/ai";
 
-const UserStartersComponent = ({ userStarters }) => {
+const UserStartersComponent = ({ userStarters, heading }) => {
   return (
     <>
       <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
         <div className="flex justify-between items-center gap-2">
-          <p className="text-xl font-semibold">Starters</p>
+          <p className="text-xl font-semibold">{heading}</p>
         </div>
         <div className="mt-5 w-72 md:w-400">
           {userStarters.map((player) => (
