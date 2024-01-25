@@ -170,7 +170,7 @@ const CompareLineups = () => {
             </Select>
           </FormControl>
         </div>
-        <div className="mb-10">
+        <div className="mb-5">
           {selectedLeague !== "" ? (
             <FormControl variant="outlined" fullWidth>
               <InputLabel
@@ -194,7 +194,7 @@ const CompareLineups = () => {
             <br></br>
           )}
         </div>
-        <div className="mb-10">
+        <div className="mb-5">
           {selectedLeague !== "" ? (
             <FormControl component="fieldset">
               <FormGroup aria-label="position" row>

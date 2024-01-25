@@ -26,19 +26,21 @@ const HomeDetails = () => {
       <div className=" border-r-1 border-color m-4 pr-10">
         <div>
           <p>
-            <span className="text-3xl font-semibold">POINTS</span>
+            <span className="text-3xl font-semibold">34</span>
           </p>
-          <p className="text-gray-500 mt-1">Available Points</p>
+          <p className="text-gray-500 mt-1">Average QB Age</p>
         </div>
         <div className="mt-4">
-          <p className="text-3xl font-semibold">2</p>
-
-          <p className="text-gray-500 mt-1">Overdue Chores</p>
+          <p className="text-3xl font-semibold">26</p>
+          <p className="text-gray-500 mt-1">Average RB Age</p>
         </div>
         <div className="mt-4">
-          <p className="text-3xl font-semibold">5</p>
-
-          <p className="text-gray-500 mt-1">Chores this week</p>
+          <p className="text-3xl font-semibold">30</p>
+          <p className="text-gray-500 mt-1">Average TE Age</p>
+        </div>
+        <div className="mt-4">
+          <p className="text-3xl font-semibold">25</p>
+          <p className="text-gray-500 mt-1">Average WR Age</p>
         </div>
       </div>
       <div>PIE CHART HERE</div>

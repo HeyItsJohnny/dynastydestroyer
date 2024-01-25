@@ -95,6 +95,7 @@ const Home = () => {
             ))}
           </Select>
         </FormControl>
+        <div className="mb-5"></div>
         <FormControl component="fieldset">
           <FormGroup aria-label="position" row>
             <FormControlLabel
