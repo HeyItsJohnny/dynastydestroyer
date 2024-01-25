@@ -6,12 +6,10 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
-import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
+import { getLeaguesData, getRosterData, getTeamRosterData, getTeamsFromLeagueData } from "../../../globalFunctions/firebaseRostersFunction";
 
 //Functions
 import { useAuth } from "../../../contexts/AuthContext";
-import { db } from "../../../firebase/firebase";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 
 import UserLineup from "./UserLineup";
 
@@ -21,165 +19,52 @@ const CompareLineups = () => {
   const [teams, setTeams] = useState([]);
   const [userStarters, setUserStarters] = useState([]);
   const [teamStarters, setTeamStarters] = useState([]);
+
   const [selectedLeague, setSelectedLeague] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
 
-  const fetchLeagueData = async () => {
-    const docCollection = query(
-      collection(db, "userprofile", currentUser.uid, "leagues"),
-      orderBy("LeagueName")
-    );
-    onSnapshot(docCollection, (querySnapshot) => {
-      const list = [];
-      querySnapshot.forEach((doc) => {
-        var data = {
-          id: doc.id,
-          LeagueName: doc.data().LeagueName,
-        };
-        list.push(data);
-      });
-      setLeagues(list);
-    });
-  };
-
-  const fetchUserStarterData = async (leagueid) => {
-    setUserStarters([]);
-    const docCollection = query(
-      collection(
-        db,
-        "userprofile",
-        currentUser.uid,
-        "leagues",
-        leagueid,
-        "Starters"
-      ),
-      orderBy("Position")
-    );
-    onSnapshot(docCollection, (querySnapshot) => {
-      const list = [];
-      querySnapshot.forEach((doc) => {
-        var iconName = null;
-
-        if (doc.data().Position === "QB") {
-          iconName = <TbLetterQ />;
-        } else if (doc.data().Position === "RB") {
-          iconName = <TbLetterR />;
-        } else if (doc.data().Position === "WR") {
-          iconName = <TbLetterW />;
-        } else if (doc.data().Position === "TE") {
-          iconName = <TbLetterT />;
-        }
-        var data = {
-          id: doc.id,
-          Age: doc.data().Age,
-          DepthChartOrder: doc.data().DepthChartOrder,
-          FullName: doc.data().FullName,
-          Position: doc.data().Position,
-          Status: doc.data().Status,
-          InjuryNotes: doc.data().InjuryNotes,
-          InjuryStatus: doc.data().InjuryStatus,
-          SearchRank: doc.data().SearchRank,
-          NonSuperFlexValue: doc.data().NonSuperFlexValue,
-          SuperFlexValue: doc.data().SuperFlexValue,
-          Icon: iconName,
-          Team: doc.data().Team,
-        };
-        list.push(data);
-      });
-      setUserStarters(list);
-    });
-  };
-
-  const fetchTeamsData = async (leagueid) => {
-    setTeams([]);
-    const docCollection = query(
-      collection(
-        db,
-        "userprofile",
-        currentUser.uid,
-        "leagues",
-        leagueid,
-        "LeagueRosters"
-      ),
-      orderBy("DisplayName")
-    );
-    onSnapshot(docCollection, (querySnapshot) => {
-      const list = [];
-      querySnapshot.forEach((doc) => {
-        var data = {
-          id: doc.id,
-          DisplayName: doc.data().DisplayName,
-        };
-        list.push(data);
-      });
-      setTeams(list);
-    });
-  };
-
-  const fetchUserTeamData = async (teamid) => {
-    setTeamStarters([]);
-    const docCollection = query(
-      collection(
-        db,
-        "userprofile",
-        currentUser.uid,
-        "leagues",
-        selectedLeague,
-        "LeagueRosters",
-        teamid,
-        "Starters"
-      ),
-      orderBy("Position")
-    );
-    onSnapshot(docCollection, (querySnapshot) => {
-      const list = [];
-      querySnapshot.forEach((doc) => {
-        var iconName = null;
-
-        if (doc.data().Position === "QB") {
-          iconName = <TbLetterQ />;
-        } else if (doc.data().Position === "RB") {
-          iconName = <TbLetterR />;
-        } else if (doc.data().Position === "WR") {
-          iconName = <TbLetterW />;
-        } else if (doc.data().Position === "TE") {
-          iconName = <TbLetterT />;
-        }
-        var data = {
-          id: doc.id,
-          Age: doc.data().Age,
-          DepthChartOrder: doc.data().DepthChartOrder,
-          FullName: doc.data().FullName,
-          Position: doc.data().Position,
-          Status: doc.data().Status,
-          InjuryNotes: doc.data().InjuryNotes,
-          InjuryStatus: doc.data().InjuryStatus,
-          SearchRank: doc.data().SearchRank,
-          NonSuperFlexValue: doc.data().NonSuperFlexValue,
-          SuperFlexValue: doc.data().SuperFlexValue,
-          Icon: iconName,
-          Team: doc.data().Team,
-        };
-        list.push(data);
-      });
-      setTeamStarters(list);
-    });
-  };
-
-  const handleLeagueChange = (event) => {
+  const handleLeagueChange = async (event) => {
     setSelectedLeague(event.target.value);
-    fetchUserStarterData(event.target.value);
-    fetchTeamsData(event.target.value);
-    setTeamStarters([]);
+    try {
+      const userRosterStartersData = await getRosterData(currentUser.uid, event.target.value, "Starters");
+      const teamsFromLeague = await getTeamsFromLeagueData(currentUser.uid, event.target.value);
+
+      const userRosterIRData = await getRosterData(currentUser.uid, event.target.value, "Reserve");
+      const userRosterData = await getRosterData(currentUser.uid, event.target.value, "Players");
+
+      setUserStarters(userRosterStartersData);
+      setTeams(teamsFromLeague);
+
+
+      setTeamStarters([]);
+    } catch (error) {
+      console.error("Error fetching roster data:", error);
+    }
   };
 
-  const handleTeamChange = (event) => {
+  const handleTeamChange = async (event) => {
     setSelectedTeam(event.target.value);
-    fetchUserTeamData(event.target.value);
+    try {
+      const teamRosterStartersData = await getTeamRosterData(currentUser.uid, selectedLeague, event.target.value, "Starters");
+      const teamRosterIRData = await getTeamRosterData(currentUser.uid, selectedLeague, event.target.value, "Reserve");
+      const teamRosterData = await getTeamRosterData(currentUser.uid, selectedLeague, event.target.value, "Players");
+
+
+      setTeamStarters(teamRosterStartersData);
+    } catch (error) {
+      console.error("Error fetching roster data:", error);
+    }
   };
 
   useEffect(() => {
-    fetchLeagueData();
+    const fetchData = async () => {
+      try {
+        setLeagues(await getLeaguesData(currentUser.uid)); // Uncomment this line to set leagues data
+      } catch (error) {
+        console.error("Error fetching leagues data:", error);
+      }
+    };
+    fetchData();
     return () => {
       setLeagues([]); // This worked for me
     };
