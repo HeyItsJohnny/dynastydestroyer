@@ -373,26 +373,26 @@ export async function createPlayerStats(playerID, year, statsData) {
   try {
     //ID: lowercased firstnamelastname-position-team
     await setDoc(doc(db, "players", playerID, "Stats", year), {
-      FantasyPointsAgainst: statsData["FanPtsAgainst-pts"] ?? "",
-      Fumbles: statsData.Fum ?? "",
-      PassingINT: statsData.PassingInt ?? "",
-      PassingTD: statsData.PassingTD ?? "",
-      PassingYDS: statsData.PassingYDS ?? "",
-      Rank: statsData.Rank ?? "",
-      ReceivingRec: statsData.ReceivingRec ?? "",
-      ReceivingTD: statsData.ReceivingTD ?? "",
-      ReceivingYDS: statsData.ReceivingYDS ?? "",
-      ReceptionPercentage: statsData.ReceptionPercentage ?? "",
-      RushingTD: statsData.RushingTD ?? "",
-      RushingYDS: statsData.RushingYDS ?? "",
-      RedzoneGoalToGo: statsData.RzG2G ?? "",
-      RedzoneTargets: statsData.RzTarget ?? "",
-      RedZoneTouches: statsData.RzTouch ?? "",
-      ReceivingTargets: statsData.Targets ?? "",
-      TargetsReceiptions: statsData.TargetsReceptions ?? "",
-      TotalPoints: statsData.TotalPoints ?? "",
-      TotalCarries: statsData.TouchCarries ?? "",
-      TotalTouches: statsData.Touches ?? ""
+      FantasyPointsAgainst: parseFloat(statsData["FanPtsAgainst-pts"]) ?? 0,
+      Fumbles: parseInt(statsData.Fum) ?? 0,
+      PassingINT: parseInt(statsData.PassingInt) ?? 0,
+      PassingTD: parseInt(statsData.PassingTD) ?? 0,
+      PassingYDS: parseInt(statsData.PassingYDS) ?? 0,
+      Rank: parseInt(statsData.Rank) ?? 0,
+      ReceivingRec: parseInt(statsData.ReceivingRec) ?? 0,
+      ReceivingTD: parseInt(statsData.ReceivingTD) ?? 0,
+      ReceivingYDS: parseInt(statsData.ReceivingYDS) ?? 0,
+      ReceptionPercentage: parseFloat(statsData.ReceptionPercentage) ?? 0,
+      RushingTD: parseInt(statsData.RushingTD) ?? 0,
+      RushingYDS: parseInt(statsData.RushingYDS) ?? 0,
+      RedzoneGoalToGo: parseFloat(statsData.RzG2G) ?? 0,
+      RedzoneTargets: parseInt(statsData.RzTarget) ?? 0,
+      RedZoneTouches: parseInt(statsData.RzTouch) ?? 0,
+      ReceivingTargets: parseInt(statsData.Targets) ?? 0,
+      TargetsReceiptions: parseInt(statsData.TargetsReceptions) ?? 0,
+      TotalPoints: parseFloat(statsData.TotalPoints) ?? 0,
+      TotalCarries: parseInt(statsData.TouchCarries) ?? 0,
+      TotalTouches: parseInt(statsData.Touches) ?? 0
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -402,26 +402,26 @@ export async function createPlayerStats(playerID, year, statsData) {
 export async function updatePlayerStats(playerID, year, statsData) {
   try {
     await updateDoc(doc(db, "players", playerID, "Stats", year), {
-      FantasyPointsAgainst: statsData["FanPtsAgainst-pts"] ?? "",
-      Fumbles: statsData.Fum ?? "",
-      PassingINT: statsData.PassingInt ?? "",
-      PassingTD: statsData.PassingTD ?? "",
-      PassingYDS: statsData.PassingYDS ?? "",
-      Rank: statsData.Rank ?? "",
-      ReceivingRec: statsData.ReceivingRec ?? "",
-      ReceivingTD: statsData.ReceivingTD ?? "",
-      ReceivingYDS: statsData.ReceivingYDS ?? "",
-      ReceptionPercentage: statsData.ReceptionPercentage ?? "",
-      RushingTD: statsData.RushingTD ?? "",
-      RushingYDS: statsData.RushingYDS ?? "",
-      RedzoneGoalToGo: statsData.RzG2G ?? "",
-      RedzoneTargets: statsData.RzTarget ?? "",
-      RedZoneTouches: statsData.RzTouch ?? "",
-      ReceivingTargets: statsData.Targets ?? "",
-      TargetsReceiptions: statsData.TargetsReceptions ?? "",
-      TotalPoints: statsData.TotalPoints ?? "",
-      TotalCarries: statsData.TouchCarries ?? "",
-      TotalTouches: statsData.Touches ?? ""
+      FantasyPointsAgainst: parseFloat(statsData["FanPtsAgainst-pts"]) ?? 0,
+      Fumbles: parseInt(statsData.Fum) ?? 0,
+      PassingINT: parseInt(statsData.PassingInt) ?? 0,
+      PassingTD: parseInt(statsData.PassingTD) ?? 0,
+      PassingYDS: parseInt(statsData.PassingYDS) ?? 0,
+      Rank: parseInt(statsData.Rank) ?? 0,
+      ReceivingRec: parseInt(statsData.ReceivingRec) ?? 0,
+      ReceivingTD: parseInt(statsData.ReceivingTD) ?? 0,
+      ReceivingYDS: parseInt(statsData.ReceivingYDS) ?? 0,
+      ReceptionPercentage: parseFloat(statsData.ReceptionPercentage) ?? 0,
+      RushingTD: parseInt(statsData.RushingTD) ?? 0,
+      RushingYDS: parseInt(statsData.RushingYDS) ?? 0,
+      RedzoneGoalToGo: parseFloat(statsData.RzG2G) ?? 0,
+      RedzoneTargets: parseInt(statsData.RzTarget) ?? 0,
+      RedZoneTouches: parseInt(statsData.RzTouch) ?? 0,
+      ReceivingTargets: parseInt(statsData.Targets) ?? 0,
+      TargetsReceiptions: parseInt(statsData.TargetsReceptions) ?? 0,
+      TotalPoints: parseFloat(statsData.TotalPoints) ?? 0,
+      TotalCarries: parseInt(statsData.TouchCarries) ?? 0,
+      TotalTouches: parseInt(statsData.Touches) ?? 0
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);

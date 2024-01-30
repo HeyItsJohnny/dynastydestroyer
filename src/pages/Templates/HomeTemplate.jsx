@@ -9,7 +9,7 @@ import {
   Sidebar,
   ThemeSettings,
 } from "../../components";
-import { Home, ComparePlayers, CompareLineups } from "../../pages";
+import { Home, ComparePlayers, CompareLineups, Players } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
 
@@ -28,6 +28,8 @@ const HomeTemplate = ({ page }) => {
     switch (page) {
       case "HOME":
         return <Home />;
+      case "PLAYERS":
+        return <Players />;
       case "COMPAREPLAYERS":
         return <ComparePlayers />;
       case "COMPARELINEUPS":

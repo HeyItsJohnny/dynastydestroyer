@@ -52,7 +52,13 @@ const ImportPlayerStatsModal = () => {
         Papa.parse(file, {
           complete: (result) => {
             if (result && result.data) {
-              const jsonData = result.data;
+              //const jsonData = result.data;
+              const jsonData = result.data.map(row => {
+                // Replace empty values with 0
+                return Object.fromEntries(
+                  Object.entries(row).map(([key, value]) => [key, value === "" ? 0 : value])
+                );
+              });
               //console.log(jsonData);
               UpdatePlayerStats(jsonData);
             } else {
