@@ -36,6 +36,8 @@ import {
   formatPlayerName,
 } from "../globalFunctions/globalFunctions";
 
+import ImportPlayerStatsModal from "../modals/ImportPlayerStatsModal";
+
 //Firebase
 import { useAuth } from "../contexts/AuthContext";
 import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
@@ -313,7 +315,7 @@ const ThemeSettings = () => {
 
   return (
     <>
-      <div className="bg-half-transparent w-screen fixed nav-item top-0 right-0">
+      <div className="fixed nav-item top-0 right-0">
         <div className="float-right h-screen bg-white w-400">
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Settings</p>
@@ -349,12 +351,6 @@ const ThemeSettings = () => {
               Refresh
             </Button>
           </div>
-          <div className="flex-col border-t-1 border-color p-4 ml-4">
-            <p className="font-bold text-lg mb-5">My Leagues: </p>
-            {sleeperLeagues.map((league) => (
-              <p className="font-semibold text-md mb-5">{league.LeagueName}</p>
-            ))}
-          </div>
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Sleeper Player Data</p>
             <div className="flex gap-3"></div>
@@ -373,6 +369,12 @@ const ThemeSettings = () => {
             >
               Refresh Player Data
             </Button>
+          </div>
+          <div className="flex justify-between items-center p-4 ml-4">
+            <p className="font-bold text-xl">GitHub Player Stats</p>
+          </div>
+          <div className="flex-col border-t-1 border-color p-4 ml-4">
+            <ImportPlayerStatsModal />
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Import Keep Trade Cut Data</p>

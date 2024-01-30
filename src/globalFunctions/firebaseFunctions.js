@@ -345,3 +345,85 @@ export async function updatePlayerValues(playerID, updatedData) {
     console.error("There was an error adding to the database: " + error);
   }
 }
+
+export async function addOrUpdatePlayerStats(KTCID, year, statsData) {
+  try {
+    const q = query(collection(db, "players"),where("KeepTradeCutIdentifier", "==", KTCID));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      createOrUpdatePlayerStats(doc.id, year, statsData);
+    });
+  } catch (error) {
+    console.log("Error updating fields:", error);
+  }
+}
+
+export async function createOrUpdatePlayerStats(playerID, year, statsData) {
+  //Create Players
+  const docRef = doc(db, "players", playerID, "Stats", year);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    updatePlayerStats(playerID, year, statsData);
+  } else {
+    createPlayerStats(playerID, year, statsData);
+  }
+}
+
+export async function createPlayerStats(playerID, year, statsData) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await setDoc(doc(db, "players", playerID, "Stats", year), {
+      FantasyPointsAgainst: statsData["FanPtsAgainst-pts"] ?? "",
+      Fumbles: statsData.Fum ?? "",
+      PassingINT: statsData.PassingInt ?? "",
+      PassingTD: statsData.PassingTD ?? "",
+      PassingYDS: statsData.PassingYDS ?? "",
+      Rank: statsData.Rank ?? "",
+      ReceivingRec: statsData.ReceivingRec ?? "",
+      ReceivingTD: statsData.ReceivingTD ?? "",
+      ReceivingYDS: statsData.ReceivingYDS ?? "",
+      ReceptionPercentage: statsData.ReceptionPercentage ?? "",
+      RushingTD: statsData.RushingTD ?? "",
+      RushingYDS: statsData.RushingYDS ?? "",
+      RedzoneGoalToGo: statsData.RzG2G ?? "",
+      RedzoneTargets: statsData.RzTarget ?? "",
+      RedZoneTouches: statsData.RzTouch ?? "",
+      ReceivingTargets: statsData.Targets ?? "",
+      TargetsReceiptions: statsData.TargetsReceptions ?? "",
+      TotalPoints: statsData.TotalPoints ?? "",
+      TotalCarries: statsData.TouchCarries ?? "",
+      TotalTouches: statsData.Touches ?? ""
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updatePlayerStats(playerID, year, statsData) {
+  try {
+    await updateDoc(doc(db, "players", playerID, "Stats", year), {
+      FantasyPointsAgainst: statsData["FanPtsAgainst-pts"] ?? "",
+      Fumbles: statsData.Fum ?? "",
+      PassingINT: statsData.PassingInt ?? "",
+      PassingTD: statsData.PassingTD ?? "",
+      PassingYDS: statsData.PassingYDS ?? "",
+      Rank: statsData.Rank ?? "",
+      ReceivingRec: statsData.ReceivingRec ?? "",
+      ReceivingTD: statsData.ReceivingTD ?? "",
+      ReceivingYDS: statsData.ReceivingYDS ?? "",
+      ReceptionPercentage: statsData.ReceptionPercentage ?? "",
+      RushingTD: statsData.RushingTD ?? "",
+      RushingYDS: statsData.RushingYDS ?? "",
+      RedzoneGoalToGo: statsData.RzG2G ?? "",
+      RedzoneTargets: statsData.RzTarget ?? "",
+      RedZoneTouches: statsData.RzTouch ?? "",
+      ReceivingTargets: statsData.Targets ?? "",
+      TargetsReceiptions: statsData.TargetsReceptions ?? "",
+      TotalPoints: statsData.TotalPoints ?? "",
+      TotalCarries: statsData.TouchCarries ?? "",
+      TotalTouches: statsData.Touches ?? ""
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}

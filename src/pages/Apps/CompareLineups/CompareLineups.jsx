@@ -33,6 +33,7 @@ const CompareLineups = () => {
   const [teamIR, setTeamIR] = useState([]);
   const [teamBench, setTeamBench] = useState([]);
 
+  const [showStarters, setShowStarters] = useState(true);
   const [showBench, setShowBench] = useState(false);
   const [showIR, setShowIR] = useState(false);
 
@@ -124,6 +125,10 @@ const CompareLineups = () => {
     }
   };
 
+  const handleShowStartersChange = (event) => {
+    setShowStarters(event.target.checked);
+  };
+
   const handleShowBenchChange = (event) => {
     setShowBench(event.target.checked);
   };
@@ -198,6 +203,17 @@ const CompareLineups = () => {
           {selectedLeague !== "" ? (
             <FormControl component="fieldset">
               <FormGroup aria-label="position" row>
+              <FormControlLabel
+                  control={
+                    <Switch
+                      color="primary"
+                      onChange={handleShowStartersChange}
+                      checked={showStarters}
+                    />
+                  }
+                  label="Show Starters"
+                  labelPlacement="start"
+                />
                 <FormControlLabel
                   control={
                     <Switch
@@ -230,10 +246,12 @@ const CompareLineups = () => {
 
       <div className="flex gap-10 flex-wrap justify-center mb-10">
         {selectedLeague !== "" ? (
+          showStarters ? (
           <div className="flex gap-10 flex-wrap justify-center">
             <UserLineup lineup={userStarters} heading={"Your Lineup"} />
             <UserLineup lineup={teamStarters} heading={"Opponent Lineup"} />
           </div>
+          ) : null
         ) : (
           <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-gray-200">
             Please select a league.

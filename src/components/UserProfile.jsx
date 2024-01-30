@@ -82,20 +82,6 @@ const UserProfile = () => {
           <img className="rounded-full w-14 h-14" src={avatar} />
         </div>
         */}
-        <div className="flex-col border-t-1 border-color p-4 ml-4">
-          <p className="font-semibold text-lg mb-5">Sleeper Settings</p>
-          <TextField
-            label="Sleeper Username"
-            variant="outlined"
-            value={sleeperUsername}
-            onChange={(e) => setSleeperUsername(e.target.value)}
-          />
-        </div>
-        <div className="flex-col border-t-1 border-color p-4 ml-4">
-          <Button variant="contained" color="primary" onClick={onSave}>
-            Save
-          </Button>
-        </div>
       </div>
     </div>
   );
