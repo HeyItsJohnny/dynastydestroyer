@@ -47,8 +47,8 @@ import product8 from "./product8.jpg";
 //NEW 2.0
 export const playersGrid = [
   { field: "Rank", headerText: "Rank", width: "150", textAlign: "Center" },
-  { field: "FirstName", headerText: "First Name", width: "150", textAlign: "Center" },
-  { field: "LastName", headerText: "Last Name", width: "150", textAlign: "Center" },
+  { field: "FullName", headerText: "Name", width: "150", textAlign: "Center" },
+  { field: "Team", headerText: "Team", width: "150", textAlign: "Center" },
   { field: "PassingYDS", headerText: "Yards", width: "150", textAlign: "Center" },
   { field: "PassingTD", headerText: "TDs", width: "150", textAlign: "Center" },
   { field: "PassingINT", headerText: "INTs", width: "150", textAlign: "Center" },
