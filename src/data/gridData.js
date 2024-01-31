@@ -45,7 +45,14 @@ import product7 from "./product7.jpg";
 import product8 from "./product8.jpg";
 
 //NEW 2.0
-export const playersGrid = [
+/*
+export const playersQBGrid = [
+  { field: "FullName", headerText: "Name", width: "150", textAlign: "Center" },
+  { field: "Team", headerText: "Team", width: "150", textAlign: "Center" },
+]; 
+*/
+
+export const playersQBGrid = [
   { field: "Rank", headerText: "Rank", width: "150", textAlign: "Center" },
   { field: "FullName", headerText: "Name", width: "150", textAlign: "Center" },
   { field: "Team", headerText: "Team", width: "150", textAlign: "Center" },
@@ -54,4 +61,5 @@ export const playersGrid = [
   { field: "PassingINT", headerText: "INTs", width: "150", textAlign: "Center" },
   { field: "TotalPoints", headerText: "Total Points", width: "150", textAlign: "Center" },
 ];
+
 

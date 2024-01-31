@@ -7,7 +7,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
 
-import { playersGrid } from "../../../data/gridData";
+import { playersQBGrid } from "../../../data/gridData";
 
 import {
   GridComponent,
@@ -20,17 +20,52 @@ import {
   Toolbar,
 } from "@syncfusion/ej2-react-grids";
 
+import { getPlayerData, getPlayerStatsData } from "../../../globalFunctions/firebasePlayerFunctions";
+
 const Players = () => {
   const [selectedYear, setSelectedYear] = useState("2023");
   const [selectedPosition, setSelectedPosition] = useState("QB");
+  const [playerData, setPlayerData] = useState([]);
 
   const handlePositionChange = async (event) => {
     setSelectedPosition(event.target.value);
+    fetchPlayerData(event.target.value);
   };
 
   const handleYearChange = async (event) => {
     setSelectedYear(event.target.value);
   };
+
+  const fetchPlayerData = async (position) => {
+    try {
+      const pData = await getPlayerData(position);
+      setPlayerData(pData);
+    } catch(e) {
+      alert("Error: " + e);
+    }
+  };
+
+  const TESTFunction = async () => {
+    try {
+      const playerID = "4017"; // Replace with the actual player ID
+      const year = "2023"; // Replace with the actual year
+  
+      const playerStats = await getPlayerStatsData(playerID, year);
+      console.log(playerStats);
+      // Now you can use playerStats directly in this block
+    } catch (error) {
+      console.error("Error in exampleUsage:", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchPlayerData("QB");
+    
+    TESTFunction();
+    return () => {
+      setPlayerData([]);
+    };
+  }, []);
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
@@ -77,7 +112,7 @@ const Players = () => {
       <div className="mb-5"></div>
       <GridComponent
         id="gridcomp"
-        //dataSource={choreLogs}
+        dataSource={playerData}
         allowPaging
         allowSorting
         toolbar={["Search"]}
@@ -87,7 +122,7 @@ const Players = () => {
         width="auto"
       >
         <ColumnsDirective>
-          {playersGrid.map((item, index) => (
+          {playersQBGrid.map((item, index) => (
             <ColumnDirective key={item.id} {...item} />
           ))}
         </ColumnsDirective>

@@ -1,7 +1,7 @@
 //Functions
 import { useAuth } from "../contexts/AuthContext";
 import { db } from "../firebase/firebase";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, where } from "firebase/firestore";
 import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
 
 export async function getLeaguesData(userid) {
