@@ -36,6 +36,38 @@ function App() {
             }
           />
           <Route
+            path="/scouting/quarterbacks"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGQBS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/scouting/runningbacks"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGRBS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/scouting/tightends"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGTES" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/scouting/widereceivers"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGWRS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/players"
             element={
               <PrivateRoute>

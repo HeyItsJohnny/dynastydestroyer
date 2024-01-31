@@ -9,7 +9,6 @@ import {
   getDoc,
   where,
 } from "firebase/firestore";
-import { TbLetterQ, TbLetterR, TbLetterW, TbLetterT } from "react-icons/tb";
 
 export async function getPlayerStatsData(playerID, year) {
   try {
@@ -70,4 +69,45 @@ export async function getPlayerData(positionToSearch) {
       }
     );
   });
+}
+
+export function createPlayerStatObject(playerData, playerStats) {
+  var playerStatData = {
+    Age: playerData.Age,
+    College: playerData.College,
+    DepthChartOrder: playerData.DepthChartOrder,
+    FullName: playerData.FullName,
+    InjuryNotes: playerData.InjuryNotes,
+    InjuryStatus: playerData.InjuryStatus,
+    KeepTradeCutIdentifier: playerData.KeepTradeCutIdentifier,
+    NonSuperFlexValue: playerData.NonSuperFlexValue,
+    Position: playerData.Position,
+    SleeperID: playerData.SleeperID,
+    SearchRank: playerData.SearchRank,
+    Status: playerData.Status,
+    SuperFlexValue: playerData.SuperFlexValue,
+    Team: playerData.Team,
+    YearsExperience: playerData.YearsExperience,
+    FantasyPointsAgainst: playerStats.FantasyPointsAgainst,
+    Fumbles: playerStats.Fumbles,
+    PassingINT: playerStats.PassingINT,
+    PassingTD: playerStats.PassingTD,
+    PassingYDS: playerStats.PassingYDS,
+    Rank: playerStats.Rank,
+    ReceivingRec: playerStats.ReceivingRec,
+    ReceivingTD: playerStats.ReceivingTD,
+    ReceivingYDS: playerStats.ReceivingYDS,
+    ReceptionPercentage: playerStats.ReceptionPercentage,
+    RushingTD: playerStats.RushingTD,
+    RushingYDS: playerStats.RushingYDS,
+    RedzoneGoalToGo: playerStats.RedzoneGoalToGo,
+    RedzoneTargets: playerStats.RedzoneTargets,
+    RedZoneTouches: playerStats.RedZoneTouches,
+    ReceivingTargets: playerStats.ReceivingTargets,
+    TargetsReceiptions: playerStats.TargetsReceiptions,
+    TotalPoints: playerStats.TotalPoints,
+    TotalCarries: playerStats.TotalCarries,
+    TotalTouches: playerStats.TotalTouches,
+  };
+  return playerStatData;
 }

@@ -9,7 +9,16 @@ import {
   Sidebar,
   ThemeSettings,
 } from "../../components";
-import { Home, ComparePlayers, CompareLineups, Players } from "../../pages";
+import {
+  Home,
+  ComparePlayers,
+  CompareLineups,
+  Players,
+  QBScouting,
+  RBScouting,
+  TEScouting,
+  WRScouting,
+} from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
 
@@ -28,6 +37,14 @@ const HomeTemplate = ({ page }) => {
     switch (page) {
       case "HOME":
         return <Home />;
+      case "SCOUTINGQBS":
+        return <QBScouting />;
+      case "SCOUTINGRBS":
+        return <RBScouting />;
+      case "SCOUTINGTES":
+        return <TEScouting />;
+      case "SCOUTINGWRS":
+        return <WRScouting />;
       case "PLAYERS":
         return <Players />;
       case "COMPAREPLAYERS":

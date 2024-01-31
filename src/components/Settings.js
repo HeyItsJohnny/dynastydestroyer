@@ -19,6 +19,31 @@ export const links = [
     ],
   },
   {
+    title: "Scouting",
+    links: [
+      {
+        name: "Quarterbacks",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "scouting/quarterbacks"
+      },
+      {
+        name: "Running Backs",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "scouting/runningbacks"
+      },
+      {
+        name: "Tight Ends",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "scouting/tightends"
+      },
+      {
+        name: "Wide Receivers",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "scouting/widereceivers"
+      },
+    ],
+  },
+  {
     title: "Apps",
     links: [
       {

@@ -4,6 +4,12 @@ export { default as ComparePlayers } from './Apps/ComparePlayers/ComparePlayers'
 export { default as CompareLineups } from './Apps/CompareLineups/CompareLineups';
 export { default as Players } from './Apps/Players/Players';
 
+//Scouting
+export { default as QBScouting } from './Scouting/QBScouting';
+export { default as RBScouting } from './Scouting/RBScouting';
+export { default as TEScouting } from './Scouting/TEScouting';
+export { default as WRScouting } from './Scouting/WRScouting';
+
 //AUTH
 export { default as Login } from './Authentication/Login';
 export { default as ForgotPassword } from './Authentication/ForgotPassword';
