@@ -7,7 +7,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
 
-import { playersQBGrid } from "../../../data/gridData";
+import { playersQBGrid, playersRBGrid, playersTEWRGrid } from "../../../data/gridData";
 
 import {
   GridComponent,
@@ -22,46 +22,95 @@ import {
 
 import { getPlayerData, getPlayerStatsData } from "../../../globalFunctions/firebasePlayerFunctions";
 
+//Visual
+import ClipLoader from "react-spinners/ClipLoader";
+
 const Players = () => {
   const [selectedYear, setSelectedYear] = useState("2023");
   const [selectedPosition, setSelectedPosition] = useState("QB");
   const [playerData, setPlayerData] = useState([]);
+  let [loading, setLoading] = useState(false);
 
   const handlePositionChange = async (event) => {
     setSelectedPosition(event.target.value);
-    fetchPlayerData(event.target.value);
+    fetchPlayerData(event.target.value, selectedYear);
   };
 
   const handleYearChange = async (event) => {
     setSelectedYear(event.target.value);
+    fetchPlayerData(selectedPosition, event.target.value);
   };
 
-  const fetchPlayerData = async (position) => {
+  const fetchPlayerData = async (position, year) => {
     try {
-      const pData = await getPlayerData(position);
-      setPlayerData(pData);
+      setLoading(true);
+      const data = await getPlayerData(position);
+      addPlayerStats(data, year);
     } catch(e) {
+      console.log(e);
       alert("Error: " + e);
     }
   };
 
-  const TESTFunction = async () => {
+  const addPlayerStats = async (data, year) => {
     try {
-      const playerID = "4017"; // Replace with the actual player ID
-      const year = "2023"; // Replace with the actual year
+      const playerStatsArray = [];
   
-      const playerStats = await getPlayerStatsData(playerID, year);
-      console.log(playerStats);
-      // Now you can use playerStats directly in this block
+      for (const player of data) {
+        try {
+          const getPlayerStats = await getPlayerStatsData(player.SleeperID, year);
+          var playerStats = {
+            Age: player.Age,
+            College: player.College,
+            DepthChartOrder: player.DepthChartOrder,
+            FullName: player.FullName,
+            InjuryNotes: player.InjuryNotes,
+            InjuryStatus: player.InjuryStatus,
+            KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
+            NonSuperFlexValue: player.NonSuperFlexValue,
+            Position: player.Position,
+            SleeperID: player.SleeperID,
+            SearchRank: player.SearchRank,
+            Status: player.Status,
+            SuperFlexValue: player.SuperFlexValue,
+            Team: player.Team,
+            YearsExperience: player.YearsExperience,
+            FantasyPointsAgainst: getPlayerStats.FantasyPointsAgainst,
+            Fumbles: getPlayerStats.Fumbles,
+            PassingINT: getPlayerStats.PassingINT,
+            PassingTD: getPlayerStats.PassingTD,
+            PassingYDS: getPlayerStats.PassingYDS,
+            Rank: getPlayerStats.Rank,
+            ReceivingRec: getPlayerStats.ReceivingRec,
+            ReceivingTD: getPlayerStats.ReceivingTD,
+            ReceivingYDS: getPlayerStats.ReceivingYDS,
+            ReceptionPercentage: getPlayerStats.ReceptionPercentage,
+            RushingTD: getPlayerStats.RushingTD,
+            RushingYDS: getPlayerStats.RushingYDS,
+            RedzoneGoalToGo: getPlayerStats.RedzoneGoalToGo,
+            RedzoneTargets: getPlayerStats.RedzoneTargets,
+            RedZoneTouches: getPlayerStats.RedZoneTouches,
+            ReceivingTargets: getPlayerStats.ReceivingTargets,
+            TargetsReceiptions: getPlayerStats.TargetsReceiptions,
+            TotalPoints: getPlayerStats.TotalPoints,
+            TotalCarries: getPlayerStats.TotalCarries,
+            TotalTouches: getPlayerStats.TotalTouches
+          }
+          playerStatsArray.push(playerStats);
+        } catch (error) {
+          console.error(`Error fetching stats for player ${player.SleeperID}:`, error);
+        }
+      }
+      const sortedPlayerStatsArray = playerStatsArray.sort((a, b) => a.Rank - b.Rank);
+      setPlayerData(sortedPlayerStatsArray);
+      setLoading(false);
     } catch (error) {
-      console.error("Error in exampleUsage:", error);
+      console.error("Error in addPlayerStats:", error);
     }
   }
 
   useEffect(() => {
-    fetchPlayerData("QB");
-    
-    TESTFunction();
+    fetchPlayerData(selectedPosition, selectedYear);    
     return () => {
       setPlayerData([]);
     };
@@ -110,6 +159,17 @@ const Players = () => {
         </Select>
       </FormControl>
       <div className="mb-5"></div>
+      {loading ? (
+        <div className="flex justify-between items-center gap-2">
+          <ClipLoader
+            color="#ffffff"
+            loading={loading}
+            size={150}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+          />
+        </div>
+      ) : (
       <GridComponent
         id="gridcomp"
         dataSource={playerData}
@@ -122,14 +182,49 @@ const Players = () => {
         width="auto"
       >
         <ColumnsDirective>
-          {playersQBGrid.map((item, index) => (
-            <ColumnDirective key={item.id} {...item} />
-          ))}
+        
+          
+          {selectedPosition === "QB" ? (
+            playersQBGrid.map((item, index) => (
+              <ColumnDirective key={item.id} {...item} />
+            ))
+          ) : (
+            <br></br>
+          )}
+
+          {selectedPosition === "RB" ? (
+            playersRBGrid.map((item, index) => (
+              <ColumnDirective key={item.id} {...item} />
+            ))
+          ) : (
+            <br></br>
+          )}
+
+          {selectedPosition === "TE" ? (
+            playersTEWRGrid.map((item, index) => (
+              <ColumnDirective key={item.id} {...item} />
+            ))
+          ) : (
+            <br></br>
+          )}
+
+          {selectedPosition === "WR" ? (
+            playersTEWRGrid.map((item, index) => (
+              <ColumnDirective key={item.id} {...item} />
+            ))
+          ) : (
+            <br></br>
+          )}
         </ColumnsDirective>
         <Inject services={[Page, Search, Edit, Toolbar]} />
       </GridComponent>
+      )}
     </div>
   );
 };
+
+{playersQBGrid.map((item, index) => (
+  <ColumnDirective key={item.id} {...item} />
+))}
 
 export default Players;

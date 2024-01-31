@@ -30,7 +30,8 @@ export async function getPlayerData(positionToSearch) {
   return new Promise((resolve, reject) => {
     const docCollection = query(
       collection(db, "players"),
-      where("Position", "==", positionToSearch)
+      where("Position", "==", positionToSearch),
+      where("Team","!=","")
     );
     onSnapshot(
       docCollection,
