@@ -2,7 +2,6 @@ export { default as Home } from './Home/Home';
 export { default as HomeTemplate } from './Templates/HomeTemplate';
 export { default as ComparePlayers } from './Apps/ComparePlayers/ComparePlayers';
 export { default as CompareLineups } from './Apps/CompareLineups/CompareLineups';
-export { default as Players } from './Apps/Players/Players';
 
 //Scouting
 export { default as QBScouting } from './Scouting/QBScouting';

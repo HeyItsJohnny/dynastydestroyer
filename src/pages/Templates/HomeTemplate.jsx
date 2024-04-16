@@ -13,7 +13,6 @@ import {
   Home,
   ComparePlayers,
   CompareLineups,
-  Players,
   QBScouting,
   RBScouting,
   TEScouting,
@@ -45,8 +44,6 @@ const HomeTemplate = ({ page }) => {
         return <TEScouting />;
       case "SCOUTINGWRS":
         return <WRScouting />;
-      case "PLAYERS":
-        return <Players />;
       case "COMPAREPLAYERS":
         return <ComparePlayers />;
       case "COMPARELINEUPS":

@@ -47,11 +47,6 @@ export const links = [
     title: "Apps",
     links: [
       {
-        name: "Players",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "players"
-      },
-      {
         name: "Compare Players",
         icon: <MdOutlineCompareArrows />,
         linktoname: "compareplayers"
