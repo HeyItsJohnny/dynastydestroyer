@@ -11,6 +11,10 @@ import {
 } from "../../components";
 import {
   Home,
+  CommandCenter,
+  SnakeDraft,
+  AuctionDraft,
+  Settings,
   ComparePlayers,
   CompareLineups,
   QBScouting,
@@ -34,8 +38,12 @@ const HomeTemplate = ({ page }) => {
 
   function getCurrentPage() {
     switch (page) {
-      case "HOME":
-        return <Home />;
+      case "COMMANDCENTER":
+        return <CommandCenter />;
+      case "AUCTIONDRAFT":
+        return <AuctionDraft />;
+      case "SNAKEDRAFT":
+        return <SnakeDraft />;
       case "SCOUTINGQBS":
         return <QBScouting />;
       case "SCOUTINGRBS":
@@ -48,6 +56,8 @@ const HomeTemplate = ({ page }) => {
         return <ComparePlayers />;
       case "COMPARELINEUPS":
         return <CompareLineups />;
+      case "SETTINGS":
+        return <Settings />;
       default:
         return (
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">

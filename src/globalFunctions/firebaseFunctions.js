@@ -56,6 +56,16 @@ export async function timestampSleeperData() {
   }
 }
 
+export async function timestampStatsData() {
+  try {
+    await updateDoc(doc(db, "settings", "datasettings"), {
+      LastPlayerStatsUpdate: new Date(),
+    });
+  } catch (error) {
+    alert("Error editing data to Database: " + error);
+  }
+}
+
 export async function timestampKTCData() {
   try {
     await updateDoc(doc(db, "settings", "datasettings"), {

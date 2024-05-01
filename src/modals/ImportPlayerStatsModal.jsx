@@ -12,7 +12,7 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 
 import { formatPlayerName } from "../globalFunctions/globalFunctions";
-import { addOrUpdatePlayerStats } from "../globalFunctions/firebaseFunctions";
+import { addOrUpdatePlayerStats, timestampStatsData } from "../globalFunctions/firebaseFunctions";
 
 import Papa from "papaparse";
 
@@ -79,7 +79,7 @@ const ImportPlayerStatsModal = () => {
       const KTCIdentifier = formatPlayerName(data.PlayerName) + "-" + importPosition;
       addOrUpdatePlayerStats(KTCIdentifier, importYear, data);
     });
-    //timestampKTCData(currentUser.uid);
+    timestampStatsData();
     handleReset();
   }
 

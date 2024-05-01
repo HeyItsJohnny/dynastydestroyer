@@ -9,13 +9,29 @@ import { TbReportMoney } from "react-icons/tb";
 
 export const links = [
   {
-    title: "Leagues",
+    title: "Home",
     links: [
+      {
+        name: "Command Center",
+        icon: <GoDashboard />,
+        linktoname: "commandcenter"
+      },
+      {
+        name: "Auction Draft",
+        icon: <GoDashboard />,
+        linktoname: "auctiondraft"
+      },
+      {
+        name: "Snake Draft",
+        icon: <GoDashboard />,
+        linktoname: "snakedraft"
+      },
+      /*
       {
         name: "command center",
         icon: <GoDashboard />,
         linktoname: "home"
-      },
+      },*/
     ],
   },
   {
@@ -44,18 +60,13 @@ export const links = [
     ],
   },
   {
-    title: "Apps",
+    title: "Settings",
     links: [
       {
-        name: "Compare Players",
-        icon: <MdOutlineCompareArrows />,
-        linktoname: "compareplayers"
-      },
-      {
-        name: "Lineups",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "comparelineups"
-      },
+        name: "User Settings",
+        icon: <AiFillSetting />,
+        linktoname: "settings"
+      }
     ],
   }
 

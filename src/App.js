@@ -15,15 +15,31 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <HomeTemplate page="HOME" />
+                <HomeTemplate page="COMMANDCENTER" />
               </PrivateRoute>
             }
           />
           <Route
-            path="/home"
+            path="/commandcenter"
             element={
               <PrivateRoute>
-                <HomeTemplate page="HOME" />
+                <HomeTemplate page="COMMANDCENTER" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/auctiondraft"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="AUCTIONDRAFT" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/snakedraft"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SNAKEDRAFT" />
               </PrivateRoute>
             }
           />
@@ -80,6 +96,14 @@ function App() {
             element={
               <PrivateRoute>
                 <HomeTemplate page="COMPARELINEUPS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SETTINGS" />
               </PrivateRoute>
             }
           />
