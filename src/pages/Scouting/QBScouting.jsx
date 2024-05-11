@@ -28,8 +28,10 @@ import {
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
+import { useNavigate } from "react-router-dom";
 
 const QBScouting = () => {
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2023");
   const [playerData, setPlayerData] = useState([]);
   let [loading, setLoading] = useState(false);
@@ -78,6 +80,12 @@ const QBScouting = () => {
       console.error("Error in addPlayerStats:", error);
     }
   };
+
+  function handleDoubleClick(args) {
+    alert(args.rowData.id);
+    //navigate("/plandetails/" + args.rowData.id);
+  }
+
 
   useEffect(() => {
     fetchPlayerData(selectedYear);
@@ -130,6 +138,7 @@ const QBScouting = () => {
               allowDeleting: true,
             }}
             width="auto"
+            recordDoubleClick={handleDoubleClick}
           >
             <ColumnsDirective>
               {playersQBGrid.map((item, index) => (
