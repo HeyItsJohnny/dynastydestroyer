@@ -21,6 +21,10 @@ import {
   RBScouting,
   TEScouting,
   WRScouting,
+  QBDetails,
+  RBDetails,
+  TEDetails,
+  WRDetails,
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
@@ -52,6 +56,14 @@ const HomeTemplate = ({ page }) => {
         return <TEScouting />;
       case "SCOUTINGWRS":
         return <WRScouting />;
+      case "QBDetails":
+        return <QBDetails />;
+      case "RBDETAILS":
+        return <RBDetails />;
+      case "TEDETAILS":
+        return <TEDetails />;
+      case "WRDETAILS":
+        return <WRDetails />;
       case "COMPAREPLAYERS":
         return <ComparePlayers />;
       case "COMPARELINEUPS":

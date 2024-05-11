@@ -11,6 +11,10 @@ export { default as QBScouting } from './Scouting/QBScouting';
 export { default as RBScouting } from './Scouting/RBScouting';
 export { default as TEScouting } from './Scouting/TEScouting';
 export { default as WRScouting } from './Scouting/WRScouting';
+export { default as QBDetails } from './Scouting/Details/QBDetails';
+export { default as RBDetails } from './Scouting/Details/RBDetails';
+export { default as TEDetails } from './Scouting/Details/TEDetails';
+export { default as WRDetails } from './Scouting/Details/WRDetails';
 
 //AUTH
 export { default as Login } from './Authentication/Login';

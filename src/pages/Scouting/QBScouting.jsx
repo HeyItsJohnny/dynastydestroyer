@@ -74,6 +74,7 @@ const QBScouting = () => {
       const sortedPlayerStatsArray = playerStatsArray.sort(
         (a, b) => a.Rank - b.Rank
       );
+      console.log(sortedPlayerStatsArray);
       setPlayerData(sortedPlayerStatsArray);
       setLoading(false);
     } catch (error) {
@@ -82,8 +83,8 @@ const QBScouting = () => {
   };
 
   function handleDoubleClick(args) {
-    alert(args.rowData.id);
-    //navigate("/plandetails/" + args.rowData.id);
+    alert(args.rowData.SleeperID);
+    //navigate("/scouting/quarterbacks/details/" + args.rowData.id);
   }
 
 
