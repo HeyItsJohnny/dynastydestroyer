@@ -40,10 +40,8 @@ const QBDetails = () => {
           error
         );
       }
-    console.log(playerStats);
     setPlayerData(playerStats);
     setLoading(false);
-
   };
 
   useEffect(() => {
@@ -55,20 +53,20 @@ const QBDetails = () => {
   return (
     <>
     {loading ? (
-          <div className="flex justify-between items-center gap-2">
-            <ClipLoader
-              color="#ffffff"
-              loading={loading}
-              size={150}
-              aria-label="Loading Spinner"
-              data-testid="loader"
-            />
-          </div>
-        ) : (
-          <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-            <Header category="QB Details" title={playerData.FullName} />
-          </div>
-        )}
+      <div className="flex justify-between items-center gap-2">
+        <ClipLoader
+          color="#ffffff"
+          loading={loading}
+          size={150}
+          aria-label="Loading Spinner"
+          data-testid="loader"
+        />
+      </div>
+    ) : (
+      <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+        <Header category="QB Details" title={playerData.FullName} />
+      </div>
+    )}
     </>
   )
 }
