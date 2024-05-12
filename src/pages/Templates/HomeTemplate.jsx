@@ -56,7 +56,7 @@ const HomeTemplate = ({ page }) => {
         return <TEScouting />;
       case "SCOUTINGWRS":
         return <WRScouting />;
-      case "QBDetails":
+      case "QBDETAILS":
         return <QBDetails />;
       case "RBDETAILS":
         return <RBDetails />;

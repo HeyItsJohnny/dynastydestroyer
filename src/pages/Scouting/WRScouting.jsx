@@ -23,15 +23,17 @@ import {
 } from "@syncfusion/ej2-react-grids";
 
 import {
-  getPlayerData,
+  getPlayerDataByPosition,
   getPlayerStatsData,
   createPlayerStatObject,
 } from "../../globalFunctions/firebasePlayerFunctions";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
+import { useNavigate } from "react-router-dom";
 
 const WRScouting = () => {
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2023");
   const [playerData, setPlayerData] = useState([]);
   let [loading, setLoading] = useState(false);
@@ -44,7 +46,7 @@ const WRScouting = () => {
   const fetchPlayerData = async (year) => {
     try {
       setLoading(true);
-      const data = await getPlayerData("WR");
+      const data = await getPlayerDataByPosition("WR");
       addPlayerStats(data, year);
     } catch (e) {
       console.log(e);
@@ -80,6 +82,11 @@ const WRScouting = () => {
       console.error("Error in addPlayerStats:", error);
     }
   };
+
+  function handleDoubleClick(args) {
+    //alert(args.rowData.SleeperID);
+    navigate("/scouting/widereceivers/details/" + args.rowData.SleeperID);
+  }
 
   useEffect(() => {
     fetchPlayerData(selectedYear);
@@ -131,6 +138,7 @@ const WRScouting = () => {
             allowDeleting: true,
           }}
           width="auto"
+          recordDoubleClick={handleDoubleClick}
         >
           <ColumnsDirective>
             {playersTEWRGrid.map((item, index) => (

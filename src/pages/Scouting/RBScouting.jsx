@@ -21,15 +21,17 @@ import {
 } from "@syncfusion/ej2-react-grids";
 
 import {
-  getPlayerData,
+  getPlayerDataByPosition,
   getPlayerStatsData,
   createPlayerStatObject,
 } from "../../globalFunctions/firebasePlayerFunctions";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
+import { useNavigate } from "react-router-dom";
 
 const RBScouting = () => {
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2023");
   const [playerData, setPlayerData] = useState([]);
   let [loading, setLoading] = useState(false);
@@ -42,7 +44,7 @@ const RBScouting = () => {
   const fetchPlayerData = async (year) => {
     try {
       setLoading(true);
-      const data = await getPlayerData("RB");
+      const data = await getPlayerDataByPosition("RB");
       addPlayerStats(data, year);
     } catch (e) {
       console.log(e);
@@ -78,6 +80,11 @@ const RBScouting = () => {
       console.error("Error in addPlayerStats:", error);
     }
   };
+
+  function handleDoubleClick(args) {
+    //alert(args.rowData.SleeperID);
+    navigate("/scouting/runningbacks/details/" + args.rowData.SleeperID);
+  }
 
   useEffect(() => {
     fetchPlayerData(selectedYear);
@@ -130,6 +137,7 @@ const RBScouting = () => {
             allowDeleting: true,
           }}
           width="auto"
+          recordDoubleClick={handleDoubleClick}
         >
           <ColumnsDirective>
             {playersRBGrid.map((item, index) => (

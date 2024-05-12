@@ -21,7 +21,7 @@ import {
 } from "@syncfusion/ej2-react-grids";
 
 import {
-  getPlayerData,
+  getPlayerDataByPosition,
   getPlayerStatsData,
   createPlayerStatObject
 } from "../../globalFunctions/firebasePlayerFunctions";
@@ -44,7 +44,7 @@ const QBScouting = () => {
   const fetchPlayerData = async (year) => {
     try {
       setLoading(true);
-      const data = await getPlayerData("QB");
+      const data = await getPlayerDataByPosition("QB");
       addPlayerStats(data, year);
     } catch (e) {
       console.log(e);
@@ -83,8 +83,8 @@ const QBScouting = () => {
   };
 
   function handleDoubleClick(args) {
-    alert(args.rowData.SleeperID);
-    //navigate("/scouting/quarterbacks/details/" + args.rowData.id);
+    //alert(args.rowData.SleeperID);
+    navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
   }
 
 
