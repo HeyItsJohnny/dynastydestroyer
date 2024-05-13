@@ -4,7 +4,8 @@ import { Header } from "../../../components";
 import {
   getPlayerDataByID,
   getPlayerStatsData,
-  createPlayerStatObject
+  createPlayerStatObject,
+  getPlayerDataByPositionAndTeam
 } from "../../../globalFunctions/firebasePlayerFunctions";
 import { useParams } from "react-router-dom";
 

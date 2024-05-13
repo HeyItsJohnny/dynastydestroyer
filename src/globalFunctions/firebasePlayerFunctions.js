@@ -86,6 +86,52 @@ export async function getPlayerDataByPosition(positionToSearch) {
   });
 }
 
+export async function getPlayerDataByPositionAndTeam(positionToSearch,teamToSearch) {
+  return new Promise((resolve, reject) => {
+    const docCollection = query(
+      collection(db, "players"),
+      where("Position", "==", positionToSearch),
+      where("Team","-=",teamToSearch)
+    );
+    onSnapshot(
+      docCollection,
+      (querySnapshot) => {
+        const list = [];
+        querySnapshot.forEach((doc) => {
+          var data = {
+            Age: doc.data().Age,
+            College: doc.data().College,
+            DepthChartOrder: doc.data().DepthChartOrder,
+            FirstName: doc.data().FirstName,
+            FullName: doc.data().FullName,
+            InjuryNotes: doc.data().InjuryNotes,
+            InjuryStatus: doc.data().InjuryStatus,
+            KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
+            LastName: doc.data().LastName,
+            NonSuperFlexValue: doc.data().NonSuperFlexValue,
+            Position: doc.data().Position,
+            SleeperID: doc.data().SleeperID,
+            SearchFirstName: doc.data().SearchFirstName,
+            SearchFullName: doc.data().SearchFullName,
+            SearchLastName: doc.data().SearchLastName,
+            SearchRank: doc.data().SearchRank,
+            Status: doc.data().Status,
+            SuperFlexValue: doc.data().SuperFlexValue,
+            Team: doc.data().Team,
+            YearsExperience: doc.data().YearsExperience,
+          };
+          list.push(data);
+        });
+
+        resolve(list); // Resolve the promise with the list when the data is ready
+      },
+      (error) => {
+        reject(error); // Reject the promise if there's an error
+      }
+    );
+  });
+}
+
 export function createPlayerStatObject(playerData, playerStats) {
   var playerStatData = {
     Age: playerData.Age,

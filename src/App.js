@@ -20,6 +20,14 @@ function App() {
             }
           />
           <Route
+            path="/home"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="HOME" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/commandcenter"
             element={
               <PrivateRoute>

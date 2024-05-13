@@ -42,6 +42,8 @@ const HomeTemplate = ({ page }) => {
 
   function getCurrentPage() {
     switch (page) {
+      case "HOME":
+        return <Home />;
       case "COMMANDCENTER":
         return <CommandCenter />;
       case "AUCTIONDRAFT":
