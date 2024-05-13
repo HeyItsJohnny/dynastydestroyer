@@ -91,7 +91,7 @@ export async function getPlayerDataByPositionAndTeam(positionToSearch,teamToSear
     const docCollection = query(
       collection(db, "players"),
       where("Position", "==", positionToSearch),
-      where("Team","-=",teamToSearch)
+      where("Team","==",teamToSearch)
     );
     onSnapshot(
       docCollection,
