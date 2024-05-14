@@ -83,7 +83,6 @@ const QBScouting = () => {
   };
 
   function handleDoubleClick(args) {
-    //alert(args.rowData.SleeperID);
     navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
   }
 

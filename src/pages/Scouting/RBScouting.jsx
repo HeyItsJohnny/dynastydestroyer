@@ -82,7 +82,6 @@ const RBScouting = () => {
   };
 
   function handleDoubleClick(args) {
-    //alert(args.rowData.SleeperID);
     navigate("/scouting/runningbacks/details/" + args.rowData.SleeperID);
   }
 

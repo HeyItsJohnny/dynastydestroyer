@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../../../components";
 import { GoPrimitiveDot } from "react-icons/go";
+import { FaStar } from "react-icons/fa";
 import { TbSquareRoundedLetterW } from "react-icons/tb";
 import { TbSquareRoundedLetterT } from "react-icons/tb";
 import { TbSquareRoundedLetterR } from "react-icons/tb";
+
+import SkillPlayerComponent from "../../../components/PlayerComponents/SkillPlayerComponent";
+import PlayerDetailComponent from "../../../components/PlayerComponents/PlayerDetailComponent";
 
 import {
   getPlayerDataByID,
@@ -45,7 +49,6 @@ const QBDetails = () => {
         error
       );
     }
-    console.log(playerStats);
     setPlayerData(playerStats);
     fetchPlayerWRData(playerStats.Team);
     fetchPlayerRBData(playerStats.Team);
@@ -135,7 +138,7 @@ const QBDetails = () => {
   return (
     <>
       {loading ? (
-        <div className="flex justify-between items-center gap-2">
+        <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
           <ClipLoader
             color="#ffffff"
             loading={loading}
@@ -152,7 +155,9 @@ const QBDetails = () => {
           <div className="flex gap-10 flex-wrap justify-center">
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-780  ">
               <div className="flex justify-between">
-                <p className="font-semibold text-xl">{playerData.FullName}'s Fantasy Stats</p>
+                <p className="font-semibold text-xl">
+                  {playerData.FullName}'s Fantasy Stats
+                </p>
                 <div className="flex items-center gap-4">
                   <p className="flex items-center gap-2 text-gray-600 hover:drop-shadow-xl">
                     <span>
@@ -170,24 +175,6 @@ const QBDetails = () => {
               </div>
               <div className="mt-5 flex gap-10 flex-wrap justify-left">
                 <div className=" border-r-1 border-color m-4 pr-10">
-                  <div className="mt-1">
-                    <p className="text-grey-500 text-3xl font-semibold">
-                      {playerData.Age}
-                    </p>
-                    <p className="text-gray-500 mt-1">Age</p>
-                  </div>
-                  <div className="mt-1">
-                    <p className="text-grey-500 text-3xl font-semibold">
-                      {playerData.Rank}
-                    </p>
-                    <p className="text-gray-500 mt-1">Rank</p>
-                  </div>
-                  <div className="mt-1">
-                    <p className="text-grey-500 text-3xl font-semibold">
-                      {playerData.SearchRank}
-                    </p>
-                    <p className="text-gray-500 mt-1">Search Rank</p>
-                  </div>
                   <div className="mt-1">
                     <p className="text-green-500 text-3xl font-semibold">
                       {playerData.PassingYDS}
@@ -230,92 +217,49 @@ const QBDetails = () => {
             </div>
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
               <div className="flex justify-between items-center gap-2">
+                <p className="text-xl font-semibold">Fantasy Details</p>
+              </div>
+              <PlayerDetailComponent
+                rank={playerData.Rank}
+                searchrank={playerData.SearchRank}
+                age={playerData.Age}
+              />
+              <div className="flex justify-between items-center gap-2 mt-5">
                 <p className="text-xl font-semibold">
                   {playerData.Team} Skill Positions
                 </p>
               </div>
               <div className="mt-5 w-72 md:w-400">
                 {teamWRData.map((player) => (
-                  <div className="flex justify-between mt-4">
-                    <div className="flex gap-4">
-                      <button
-                        type="button"
-                        style={{
-                          backgroundColor: "#1A97F5",
-                          color: "White",
-                        }}
-                        className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
-                      >
-                        <TbSquareRoundedLetterW />
-                      </button>
-
-                      <div>
-                        <p className="text-md font-semibold">
-                          {player.FullName} ({player.Position})
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          Total Points: {player.TotalPoints}
-                        </p>
-                      </div>
-                    </div>
-                    <p className={`text-green-600`}>Rank: {player.Rank}</p>
-                  </div>
+                  <SkillPlayerComponent
+                    fullname={player.FullName}
+                    position={player.Position}
+                    totalpoints={player.TotalPoints}
+                    rank={player.Rank}
+                    icon={<TbSquareRoundedLetterW />}
+                  />
                 ))}
               </div>
               <div className="mt-5 w-72 md:w-400">
                 {teamTEData.map((player) => (
-                  <div className="flex justify-between mt-4">
-                    <div className="flex gap-4">
-                      <button
-                        type="button"
-                        style={{
-                          backgroundColor: "#1A97F5",
-                          color: "White",
-                        }}
-                        className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
-                      >
-                        <TbSquareRoundedLetterT />
-                      </button>
-
-                      <div>
-                        <p className="text-md font-semibold">
-                          {player.FullName} ({player.Position})
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          Total Points: {player.TotalPoints}
-                        </p>
-                      </div>
-                    </div>
-                    <p className={`text-green-600`}>Rank: {player.Rank}</p>
-                  </div>
+                  <SkillPlayerComponent
+                    fullname={player.FullName}
+                    position={player.Position}
+                    totalpoints={player.TotalPoints}
+                    rank={player.Rank}
+                    icon={<TbSquareRoundedLetterT />}
+                  />
                 ))}
               </div>
               <div className="mt-5 w-72 md:w-400">
                 {teamRBData.map((player) => (
-                  <div className="flex justify-between mt-4">
-                    <div className="flex gap-4">
-                      <button
-                        type="button"
-                        style={{
-                          backgroundColor: "#1A97F5",
-                          color: "White",
-                        }}
-                        className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
-                      >
-                        <TbSquareRoundedLetterR />
-                      </button>
-
-                      <div>
-                        <p className="text-md font-semibold">
-                          {player.FullName} ({player.Position})
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          Total Points: {player.TotalPoints}
-                        </p>
-                      </div>
-                    </div>
-                    <p className={`text-green-600`}>Rank: {player.Rank}</p>
-                  </div>
+                  <SkillPlayerComponent
+                    fullname={player.FullName}
+                    position={player.Position}
+                    totalpoints={player.TotalPoints}
+                    rank={player.Rank}
+                    icon={<TbSquareRoundedLetterR />}
+                  />
                 ))}
               </div>
             </div>

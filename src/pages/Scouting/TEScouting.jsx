@@ -84,7 +84,6 @@ const TEScouting = () => {
   };
 
   function handleDoubleClick(args) {
-    //alert(args.rowData.SleeperID);
     navigate("/scouting/tightends/details/" + args.rowData.SleeperID);
   }
 
