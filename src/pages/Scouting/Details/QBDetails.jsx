@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../../../components";
 import { GoPrimitiveDot } from "react-icons/go";
-import { FaStar } from "react-icons/fa";
 import { TbSquareRoundedLetterW } from "react-icons/tb";
 import { TbSquareRoundedLetterT } from "react-icons/tb";
 import { TbSquareRoundedLetterR } from "react-icons/tb";
@@ -150,7 +149,7 @@ const QBDetails = () => {
       ) : (
         <>
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-            <Header category="QB Details" title={playerData.FullName} />
+            <Header category="Quarterback Details" title={playerData.FullName} />
           </div>
           <div className="flex gap-10 flex-wrap justify-center">
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-780  ">
@@ -223,6 +222,7 @@ const QBDetails = () => {
                 rank={playerData.Rank}
                 searchrank={playerData.SearchRank}
                 age={playerData.Age}
+                yearsexperience={playerData.YearsExperience}
               />
               <div className="flex justify-between items-center gap-2 mt-5">
                 <p className="text-xl font-semibold">

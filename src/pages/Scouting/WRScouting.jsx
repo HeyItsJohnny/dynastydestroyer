@@ -84,7 +84,6 @@ const WRScouting = () => {
   };
 
   function handleDoubleClick(args) {
-    //alert(args.rowData.SleeperID);
     navigate("/scouting/widereceivers/details/" + args.rowData.SleeperID);
   }
 
