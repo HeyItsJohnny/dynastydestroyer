@@ -11,6 +11,7 @@ import {
 } from "../../globalFunctions/firebaseFunctions";
 
 import ImportPlayerStatsModal from "../../modals/ImportPlayerStatsModal";
+import ImportPlayerWeeklyStatsModal from "../../modals/ImportPlayerWeeklyStatsModal";
 
 import {
   getPlayersFromSleeper,
@@ -154,7 +155,7 @@ const Settings = () => {
       </div>
 
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Players" title="Statistics" />
+        <Header category="Players" title="Season Statistics" />
         <div className="flex justify-between items-center p-4 ml-4">
           <p className="font-semibold text-md">
             Last Updated: {sleeperPlayerStatsSettings}
@@ -162,6 +163,13 @@ const Settings = () => {
         </div>
         <div className="flex-col border-t-1 border-color p-4 ml-4">
           <ImportPlayerStatsModal />
+        </div>
+      </div>
+
+      <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+        <Header category="Players" title="Weekly Statistics" />
+        <div className="flex-col border-t-1 border-color p-4 ml-4">
+          <ImportPlayerWeeklyStatsModal />
         </div>
       </div>
     </>

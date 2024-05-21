@@ -4,6 +4,7 @@ import { GoPrimitiveDot } from "react-icons/go";
 import { TbSquareRoundedLetterW } from "react-icons/tb";
 import { TbSquareRoundedLetterT } from "react-icons/tb";
 import { TbSquareRoundedLetterQ } from "react-icons/tb";
+import { useStateContext } from "../../../contexts/ContextProvider";
 
 import SkillPlayerComponent from "../../../components/PlayerComponents/SkillPlayerComponent";
 import PlayerDetailComponent from "../../../components/PlayerComponents/PlayerDetailComponent";
@@ -13,18 +14,35 @@ import {
   getPlayerStatsData,
   createPlayerStatObject,
   getPlayerDataByPositionAndTeam,
+  getPlayerWeeklyPoints,
 } from "../../../globalFunctions/firebasePlayerFunctions";
 import { useParams } from "react-router-dom";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
+import {
+  stackedPrimaryXAxis,
+  stackedPrimaryYAxis,
+} from "../../../data/gridData";
+import {
+  ChartComponent,
+  SeriesCollectionDirective,
+  SeriesDirective,
+  Inject,
+  Legend,
+  Category,
+  StackingColumnSeries,
+  Tooltip,
+} from "@syncfusion/ej2-react-charts";
 
 const RBDetails = () => {
   const { id } = useParams();
+  const { currentMode } = useStateContext();
   const [playerData, setPlayerData] = useState({});
   const [teamQBData, setTeamQBData] = useState([]);
   const [teamWRData, setTeamWRData] = useState([]);
   const [teamTEData, setTeamTEData] = useState([]);
+  const [weeklyChartData, setWeeklyChartData] = useState([]);
   let [loading, setLoading] = useState(false);
 
   const fetchPlayerData = async () => {
@@ -52,6 +70,7 @@ const RBDetails = () => {
     fetchPlayerQBData(playerStats.Team);
     fetchPlayerWRData(playerStats.Team);
     fetchPlayerTEData(playerStats.Team);
+    fetchWeeklyData(playerStats.KeepTradeCutIdentifier);
   };
 
   const fetchPlayerQBData = async (team) => {
@@ -82,7 +101,6 @@ const RBDetails = () => {
       console.log(e);
       alert("Error: " + e);
     }
-    setLoading(false);
   };
 
   const addSkillPlayerStats = async (data, year, position) => {
@@ -107,7 +125,7 @@ const RBDetails = () => {
       const sortedPlayerStatsArray = playerStatsArray.sort(
         (a, b) => a.Rank - b.Rank
       );
-      
+
       if (position === "WR") {
         setTeamWRData(sortedPlayerStatsArray);
       } else if (position === "TE") {
@@ -120,6 +138,134 @@ const RBDetails = () => {
     }
   };
 
+  const fetchWeeklyData = async (KTCIdentifier) => {
+    try {
+      //Fetch Weekly Data Here
+      const WeekStatsArray = [];
+      const Week1Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week1"
+      );
+      const Week2Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week2"
+      );
+      const Week3Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week3"
+      );
+      const Week4Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week4"
+      );
+      const Week5Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week5"
+      );
+      const Week6Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week6"
+      );
+      const Week7Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week7"
+      );
+      const Week8Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week8"
+      );
+      const Week9Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week9"
+      );
+      const Week10Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week10"
+      );
+      const Week11Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week11"
+      );
+      const Week12Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week12"
+      );
+      const Week13Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week13"
+      );
+      const Week14Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week14"
+      );
+      const Week15Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week15"
+      );
+      const Week16Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week16"
+      );
+      const Week17Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week17"
+      );
+
+      WeekStatsArray.push(Week1Points);
+      WeekStatsArray.push(Week2Points);
+      WeekStatsArray.push(Week3Points);
+      WeekStatsArray.push(Week4Points);
+      WeekStatsArray.push(Week5Points);
+      WeekStatsArray.push(Week6Points);
+      WeekStatsArray.push(Week7Points);
+      WeekStatsArray.push(Week8Points);
+      WeekStatsArray.push(Week9Points);
+      WeekStatsArray.push(Week10Points);
+      WeekStatsArray.push(Week11Points);
+      WeekStatsArray.push(Week12Points);
+      WeekStatsArray.push(Week13Points);
+      WeekStatsArray.push(Week14Points);
+      WeekStatsArray.push(Week15Points);
+      WeekStatsArray.push(Week16Points);
+      WeekStatsArray.push(Week17Points);
+
+      const tmpArray = [
+        {
+          dataSource: WeekStatsArray,
+          xName: "x",
+          yName: "y",
+          name: "Weekly Points",
+          type: "StackingColumn",
+          background: "blue",
+        },
+      ];
+
+      setWeeklyChartData(tmpArray);
+
+      setLoading(false);
+    } catch (e) {
+      console.log(e);
+      alert("Error: " + e);
+    }
+  };
+
   useEffect(() => {
     fetchPlayerData();
     return () => {
@@ -127,6 +273,7 @@ const RBDetails = () => {
       setTeamQBData([]);
       setTeamWRData([]);
       setTeamTEData([]);
+      setWeeklyChartData([]);
     };
   }, []);
 
@@ -145,26 +292,23 @@ const RBDetails = () => {
       ) : (
         <>
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-            <Header category="Running Back Details" title={playerData.FullName} />
+            <Header
+              category="Running Back Details"
+              title={playerData.FullName}
+            />
           </div>
           <div className="flex gap-10 flex-wrap justify-center">
-            <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-780  ">
+            <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">
               <div className="flex justify-between">
                 <p className="font-semibold text-xl">
                   {playerData.FullName}'s Fantasy Stats
                 </p>
                 <div className="flex items-center gap-4">
-                  <p className="flex items-center gap-2 text-gray-600 hover:drop-shadow-xl">
-                    <span>
-                      <GoPrimitiveDot />
-                    </span>
-                    <span>Expense</span>
-                  </p>
                   <p className="flex items-center gap-2 text-green-400 hover:drop-shadow-xl">
                     <span>
                       <GoPrimitiveDot />
                     </span>
-                    <span>Budget</span>
+                    <span>2023 Weekly Points Breakdown</span>
                   </p>
                 </div>
               </div>
@@ -219,7 +363,33 @@ const RBDetails = () => {
                     <p className="text-gray-500 mt-1">Receiving TDs</p>
                   </div>
                 </div>
-                <div>PIE CHART HERE</div>
+                <div className="mt-5">
+                  <ChartComponent
+                    id="charts"
+                    primaryXAxis={stackedPrimaryXAxis}
+                    primaryYAxis={stackedPrimaryYAxis}
+                    width="500px"
+                    height="360px"
+                    chartArea={{ border: { width: 0 } }}
+                    tooltip={{ enable: true }}
+                    background={currentMode === "Dark" ? "#33373E" : "#fff"}
+                    legendSettings={{ background: "white" }}
+                  >
+                    <Inject
+                      services={[
+                        StackingColumnSeries,
+                        Category,
+                        Legend,
+                        Tooltip,
+                      ]}
+                    />
+                    <SeriesCollectionDirective>
+                      {weeklyChartData.map((item, index) => (
+                        <SeriesDirective key={index} {...item} />
+                      ))}
+                    </SeriesCollectionDirective>
+                  </ChartComponent>
+                </div>
               </div>
             </div>
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">

@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { useStateContext } from "../contexts/ContextProvider";
 import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
@@ -24,8 +22,6 @@ const ImportPlayerStatsModal = () => {
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
-
-  const { currentColor } = useStateContext();
 
   const handleReset = () => {
     setImportPosition("");

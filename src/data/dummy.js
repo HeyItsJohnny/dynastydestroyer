@@ -3073,18 +3073,18 @@ export const lineChartData = [
 export const dropdownData = [
   {
     Id: '1',
-    Time: 'Taylor Swift Concert',
+    Time: '2023',
   },
   {
     Id: '2',
-    Time: 'Martinez Trips',
+    Time: '2022',
   }, {
     Id: '3',
-    Time: 'Bay Area Trips',
+    Time: '2021',
   },
   {
     Id: '4',
-    Time: 'Hawaii 2024',
+    Time: '2020',
   }
 ];
 export const SparklineAreaData = [
@@ -3161,23 +3161,24 @@ export const ecomPieChartData = [
 
 export const stackedChartData = [
   [
-    { x: 'Jan', y: 111.1 },
-    { x: 'Feb', y: 127.3 },
-    { x: 'Mar', y: 143.4 },
-    { x: 'Apr', y: 159.9 },
-    { x: 'May', y: 159.9 },
-    { x: 'Jun', y: 159.9 },
-    { x: 'July', y: 159.9 },
-  ],
-  [
-    { x: 'Jan', y: 111.1 },
-    { x: 'Feb', y: 127.3 },
-    { x: 'Mar', y: 143.4 },
-    { x: 'Apr', y: 159.9 },
-    { x: 'May', y: 159.9 },
-    { x: 'Jun', y: 159.9 },
-    { x: 'July', y: 159.9 },
-  ],
+    { x: 'Week 1', y: 24 },
+    { x: 'Week 2', y: 35 },
+    { x: 'Week 3', y: 20 },
+    { x: 'Week 4', y: 18 },
+    { x: 'Week 5', y: 28 },
+    { x: 'Week 6', y: 17 },
+    { x: 'Week 7', y: 16 },
+    { x: 'Week 8', y: 15 },
+    { x: 'Week 9', y: 0 },
+    { x: 'Week 10', y: 10 },
+    { x: 'Week 11', y: 11 },
+    { x: 'Week 12', y: 26 },
+    { x: 'Week 13', y: 34 },
+    { x: 'Week 14', y: 24 },
+    { x: 'Week 15', y: 3 },
+    { x: 'Week 16', y: 19 },
+    { x: '17', y: 20 },
+  ]
 ];
 
 export const stackedCustomSeries = [
@@ -3190,16 +3191,6 @@ export const stackedCustomSeries = [
     background: 'blue',
 
   },
-
-  { dataSource: stackedChartData[1],
-    xName: 'x',
-    yName: 'y',
-    name: 'Expense',
-    type: 'StackingColumn',
-    background: 'red',
-
-  },
-
 ];
 
 export const stackedPrimaryXAxis = {
@@ -3215,9 +3206,9 @@ export const stackedPrimaryXAxis = {
 
 export const stackedPrimaryYAxis = {
   lineStyle: { width: 0 },
-  minimum: 100,
-  maximum: 400,
-  interval: 100,
+  minimum: 0,
+  maximum: 80,
+  interval: 10,
   majorTickLines: { width: 0 },
   majorGridLines: { width: 1 },
   minorGridLines: { width: 1 },

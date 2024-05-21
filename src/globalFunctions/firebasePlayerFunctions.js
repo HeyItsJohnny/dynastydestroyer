@@ -172,3 +172,28 @@ export function createPlayerStatObject(playerData, playerStats) {
   };
   return playerStatData;
 }
+
+export async function getPlayerWeeklyPoints( playerID, year, week ) {
+  try {
+    const weekNumber = week.replace(/[a-zA-Z]/g, '');
+
+    const docRef = doc(db, "weeklystats", year, "Week", week, "Players", playerID);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const doc = {
+        x: weekNumber,
+        y: docSnap.data().TotalPoints
+      }
+      return doc;
+    } else {
+      const doc = {
+        x: weekNumber,
+        y: 0
+      }
+      return doc;
+    }
+  } catch (error) {
+    console.log("Error updating fields:", error);
+  }
+  
+}
