@@ -124,7 +124,7 @@ function App() {
             }
           />
           <Route
-            path="/compareplayers"
+            path="/apps/compareplayers"
             element={
               <PrivateRoute>
                 <HomeTemplate page="COMPAREPLAYERS" />

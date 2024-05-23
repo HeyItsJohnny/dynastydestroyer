@@ -173,6 +173,35 @@ export function createPlayerStatObject(playerData, playerStats) {
   return playerStatData;
 }
 
+export async function getPlayerName() {
+  return new Promise((resolve, reject) => {
+    const docCollection = query(
+      collection(db, "players"),
+      where("Team","!=","")
+    );
+    onSnapshot(
+      docCollection,
+      (querySnapshot) => {
+        const list = [];
+        querySnapshot.forEach((doc) => {
+          var data = {
+            DocID: doc.id,
+            FullName: doc.data().FullName,
+            SleeperID: doc.data().SleeperID,
+            Position: doc.data().Position,
+          };
+          list.push(data);
+        });
+
+        resolve(list); // Resolve the promise with the list when the data is ready
+      },
+      (error) => {
+        reject(error); // Reject the promise if there's an error
+      }
+    );
+  });
+}
+
 export async function getPlayerWeeklyPoints( playerID, year, week ) {
   try {
     const weekNumber = week.replace(/[a-zA-Z]/g, '');

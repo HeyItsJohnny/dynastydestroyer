@@ -26,12 +26,16 @@ export const links = [
         icon: <GoDashboard />,
         linktoname: "snakedraft"
       },
-      /*
+    ],
+  },
+  {
+    title: "Apps",
+    links: [
       {
-        name: "command center",
-        icon: <GoDashboard />,
-        linktoname: "home"
-      },*/
+        name: "Compare Players",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "apps/compareplayers"
+      },
     ],
   },
   {
