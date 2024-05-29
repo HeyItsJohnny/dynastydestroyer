@@ -71,11 +71,11 @@ const SetTier = ({ playerData }) => {
                 onChange={handleTierChange}
                 required
               >
-                <MenuItem value="Tier1">Tier 1</MenuItem>
-                <MenuItem value="Tier2">Tier 2</MenuItem>
-                <MenuItem value="Tier3">Tier 3</MenuItem>
-                <MenuItem value="Tier4">Tier 4</MenuItem>
-                <MenuItem value="Tier5">Tier 5</MenuItem>
+                <MenuItem value="Tier 1">Tier 1</MenuItem>
+                <MenuItem value="Tier 2">Tier 2</MenuItem>
+                <MenuItem value="Tier 3">Tier 3</MenuItem>
+                <MenuItem value="Tier 4">Tier 4</MenuItem>
+                <MenuItem value="Tier 5">Tier 5</MenuItem>
               </Select>
             </FormControl>
           </DialogContent>

@@ -40,11 +40,11 @@ const WRTiers = () => {
         id="kanban"
         dataSource={tierList}
         columns={[
-          { headerText: "Tier 1", keyField: "Tier1" },
-          { headerText: "Tier 2", keyField: "Tier2" },
-          { headerText: "Tier 3", keyField: "Tier3" },
-          { headerText: "Tier 4", keyField: "Tier4" },
-          { headerText: "Tier 5", keyField: "Tier5" },
+          { headerText: "Tier 1", keyField: "Tier 1" },
+          { headerText: "Tier 2", keyField: "Tier 2" },
+          { headerText: "Tier 3", keyField: "Tier 3" },
+          { headerText: "Tier 4", keyField: "Tier 4" },
+          { headerText: "Tier 5", keyField: "Tier 5" },
         ]}
         cardSettings={{ contentField: "Team", headerField: "Id" }}
         keyField="Tier"
