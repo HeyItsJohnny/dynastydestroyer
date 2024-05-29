@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../../../components";
 
+import { useAuth } from "../../../contexts/AuthContext";
+
 import {
   KanbanComponent,
 } from "@syncfusion/ej2-react-kanban";
 
+import { getUserTierList } from "../../../globalFunctions/firebaseUserFunctions";
+
 const QBTiers = () => {
   const [tierList, setTierList] = useState([]);
+  const { currentUser } = useAuth();
 
   const addEvent = async (args) => {
     console.log(args);
@@ -27,7 +32,18 @@ const QBTiers = () => {
     }
   }
 
+  const fetchPlayerTierData = async () => {
+    try {
+      const data = await getUserTierList(currentUser.uid, "QB");
+      setTierList(data);
+    } catch (e) {
+      console.log(e);
+      alert("Error: " + e);
+    }
+  };
+
   useEffect(() => {
+    fetchPlayerTierData();
     return () => {
       setTierList([]);
     };
@@ -46,7 +62,7 @@ const QBTiers = () => {
           { headerText: "Tier 4", keyField: "Tier 4" },
           { headerText: "Tier 5", keyField: "Tier 5" },
         ]}
-        cardSettings={{ contentField: "Team", headerField: "Id" }}
+        cardSettings={{ contentField: "Team", headerField: "FullName" }}
         keyField="Tier"
         actionComplete={addEvent}
       ></KanbanComponent>

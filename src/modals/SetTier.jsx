@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { useStateContext } from "../contexts/ContextProvider";
 
+//Database
+import { createOrUpdateTierData } from "../globalFunctions/firebaseUserFunctions";
+import { useAuth } from "../contexts/AuthContext";
+
 //Dialog
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -14,6 +17,7 @@ import Select from "@mui/material/Select";
 
 const SetTier = ({ playerData }) => {
   const { currentColor } = useStateContext();
+  const { currentUser } = useAuth();
   const [show, setShow] = useState(false);
   const [tier, setTier] = useState("");
 
@@ -31,8 +35,7 @@ const SetTier = ({ playerData }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    //addNewPlanDoc(e);
-    //Add or update Tier
+    createOrUpdateTierData(currentUser.uid, playerData, tier);
     handleReset();
   };
 
