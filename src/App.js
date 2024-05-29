@@ -132,6 +132,38 @@ function App() {
             }
           />
           <Route
+            path="/tiers/qb"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="QBTIERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tiers/rb"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="RBTIERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tiers/te"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="TETIERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tiers/wr"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="WRTIERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/comparelineups"
             element={
               <PrivateRoute>

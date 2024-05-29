@@ -14,14 +14,27 @@ import {
   getPlayerStatsData,
   createPlayerStatObject,
   getPlayerDataByPositionAndTeam,
-  getPlayerWeeklyPoints
+  getPlayerWeeklyPoints,
 } from "../../../globalFunctions/firebasePlayerFunctions";
 import { useParams } from "react-router-dom";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
-import { stackedPrimaryXAxis, stackedPrimaryYAxis } from "../../../data/gridData";
-import { ChartComponent, SeriesCollectionDirective, SeriesDirective, Inject, Legend, Category, StackingColumnSeries, Tooltip } from '@syncfusion/ej2-react-charts';
+import SetTier from "../../../modals/SetTier";
+import {
+  stackedPrimaryXAxis,
+  stackedPrimaryYAxis,
+} from "../../../data/gridData";
+import {
+  ChartComponent,
+  SeriesCollectionDirective,
+  SeriesDirective,
+  Inject,
+  Legend,
+  Category,
+  StackingColumnSeries,
+  Tooltip,
+} from "@syncfusion/ej2-react-charts";
 
 const QBDetails = () => {
   const { id } = useParams();
@@ -129,24 +142,92 @@ const QBDetails = () => {
   const fetchWeeklyData = async (KTCIdentifier) => {
     try {
       //Fetch Weekly Data Here
-      const WeekStatsArray = []
-      const Week1Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week1");
-      const Week2Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week2");
-      const Week3Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week3");
-      const Week4Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week4");
-      const Week5Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week5");
-      const Week6Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week6");
-      const Week7Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week7");
-      const Week8Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week8");
-      const Week9Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week9");
-      const Week10Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week10");
-      const Week11Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week11");
-      const Week12Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week12");
-      const Week13Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week13");
-      const Week14Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week14");
-      const Week15Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week15");
-      const Week16Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week16");
-      const Week17Points = await getPlayerWeeklyPoints(KTCIdentifier,"2023","Week17");
+      const WeekStatsArray = [];
+      const Week1Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week1"
+      );
+      const Week2Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week2"
+      );
+      const Week3Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week3"
+      );
+      const Week4Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week4"
+      );
+      const Week5Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week5"
+      );
+      const Week6Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week6"
+      );
+      const Week7Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week7"
+      );
+      const Week8Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week8"
+      );
+      const Week9Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week9"
+      );
+      const Week10Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week10"
+      );
+      const Week11Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week11"
+      );
+      const Week12Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week12"
+      );
+      const Week13Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week13"
+      );
+      const Week14Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week14"
+      );
+      const Week15Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week15"
+      );
+      const Week16Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week16"
+      );
+      const Week17Points = await getPlayerWeeklyPoints(
+        KTCIdentifier,
+        "2023",
+        "Week17"
+      );
 
       WeekStatsArray.push(Week1Points);
       WeekStatsArray.push(Week2Points);
@@ -169,17 +250,17 @@ const QBDetails = () => {
       console.log(WeekStatsArray);
 
       const tmpArray = [
-
-        { dataSource: WeekStatsArray,
-          xName: 'x',
-          yName: 'y',
-          name: 'Weekly Points',
-          type: 'StackingColumn',
-          background: 'blue',
+        {
+          dataSource: WeekStatsArray,
+          xName: "x",
+          yName: "y",
+          name: "Weekly Points",
+          type: "StackingColumn",
+          background: "blue",
         },
       ];
 
-      setWeeklyChartData(tmpArray)
+      setWeeklyChartData(tmpArray);
 
       setLoading(false);
     } catch (e) {
@@ -187,7 +268,6 @@ const QBDetails = () => {
       alert("Error: " + e);
     }
   };
-
 
   useEffect(() => {
     fetchPlayerData();
@@ -218,6 +298,7 @@ const QBDetails = () => {
               category="Quarterback Details"
               title={playerData.FullName}
             />
+            <SetTier playerData={playerData} />
           </div>
           <div className="flex gap-10 flex-wrap justify-center">
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">

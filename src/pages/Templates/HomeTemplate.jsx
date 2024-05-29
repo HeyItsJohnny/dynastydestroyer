@@ -25,6 +25,10 @@ import {
   RBDetails,
   TEDetails,
   WRDetails,
+  QBTiers,
+  RBTiers,
+  TETiers,
+  WRTiers,
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
@@ -50,6 +54,14 @@ const HomeTemplate = ({ page }) => {
         return <AuctionDraft />;
       case "SNAKEDRAFT":
         return <SnakeDraft />;
+      case "QBTIERS":
+        return <QBTiers />;
+      case "RBTIERS":
+        return <RBTiers />;
+      case "TETIERS":
+        return <TETiers />;
+      case "WRTIERS":
+        return <WRTiers />;
       case "SCOUTINGQBS":
         return <QBScouting />;
       case "SCOUTINGRBS":

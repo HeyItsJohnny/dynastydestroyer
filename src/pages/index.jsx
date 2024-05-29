@@ -6,6 +6,12 @@ export { default as HomeTemplate } from './Templates/HomeTemplate';
 export { default as ComparePlayers } from './Apps/ComparePlayers/ComparePlayers';
 export { default as CompareLineups } from './Apps/CompareLineups/CompareLineups';
 
+//Tiers
+export { default as QBTiers } from './PlayerTiers/QBTiers/QBTiers';
+export { default as RBTiers } from './PlayerTiers/RBTiers/RBTiers';
+export { default as TETiers } from './PlayerTiers/TETiers/TETiers';
+export { default as WRTiers } from './PlayerTiers/WRTiers/WRTiers';
+
 //Scouting
 export { default as QBScouting } from './Scouting/QBScouting';
 export { default as RBScouting } from './Scouting/RBScouting';

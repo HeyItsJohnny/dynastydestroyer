@@ -20,6 +20,7 @@ import { useParams } from "react-router-dom";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
+import SetTier from "../../../modals/SetTier";
 import {
   stackedPrimaryXAxis,
   stackedPrimaryYAxis,
@@ -296,6 +297,7 @@ const RBDetails = () => {
               category="Running Back Details"
               title={playerData.FullName}
             />
+            <SetTier playerData={playerData} />
           </div>
           <div className="flex gap-10 flex-wrap justify-center">
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">

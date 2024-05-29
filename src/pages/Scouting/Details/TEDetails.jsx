@@ -20,6 +20,7 @@ import { useParams } from "react-router-dom";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
+import SetTier from "../../../modals/SetTier";
 import {
   stackedPrimaryXAxis,
   stackedPrimaryYAxis,
@@ -293,6 +294,7 @@ const TEDetails = () => {
         <>
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
             <Header category="Tight End Details" title={playerData.FullName} />
+            <SetTier playerData={playerData} />
           </div>
           <div className="flex gap-10 flex-wrap justify-center">
             <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">

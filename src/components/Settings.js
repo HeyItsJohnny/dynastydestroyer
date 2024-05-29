@@ -6,6 +6,7 @@ import { MdOutlineCompareArrows } from "react-icons/md";
 import { GoDashboard } from "react-icons/go";
 import { GiAmericanFootballHelmet } from "react-icons/gi";
 import { TbReportMoney } from "react-icons/tb";
+import { TfiArrowTopRight } from "react-icons/tfi";
 
 export const links = [
   {
@@ -29,13 +30,38 @@ export const links = [
     ],
   },
   {
+    title: "Tiers",
+    links: [
+      {
+        name: "QB Tier List",
+        icon: <TfiArrowTopRight />,
+        linktoname: "tiers/qb"
+      },
+      {
+        name: "RB Tier List",
+        icon: <TfiArrowTopRight />,
+        linktoname: "tiers/rb"
+      },
+      {
+        name: "TE Tier List",
+        icon: <TfiArrowTopRight />,
+        linktoname: "tiers/te"
+      },
+      {
+        name: "WR Tier List",
+        icon: <TfiArrowTopRight />,
+        linktoname: "tiers/wr"
+      },
+    ],
+  },
+  {
     title: "Apps",
     links: [
       {
         name: "Compare Players",
-        icon: <GiAmericanFootballHelmet />,
+        icon: <MdOutlineCompareArrows />,
         linktoname: "apps/compareplayers"
-      },
+      }
     ],
   },
   {
