@@ -15,10 +15,10 @@ import {
   GridComponent,
   ColumnsDirective,
   ColumnDirective,
+  Selection,
   Page,
   Search,
   Inject,
-  Edit,
   Toolbar,
 } from "@syncfusion/ej2-react-grids";
 
@@ -33,6 +33,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { useNavigate } from "react-router-dom";
 
 const WRScouting = () => {
+  let grid;
   const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2023");
   const [playerData, setPlayerData] = useState([]);
@@ -133,18 +134,16 @@ const WRScouting = () => {
           allowPaging
           allowSorting
           toolbar={["Search"]}
-          editSettings={{
-            allowDeleting: true,
-          }}
           width="auto"
           recordDoubleClick={handleDoubleClick}
+          ref={(g) => (grid = g)}
         >
           <ColumnsDirective>
             {playersTEWRGrid.map((item, index) => (
               <ColumnDirective key={item.id} {...item} />
             ))}
           </ColumnsDirective>
-          <Inject services={[Page, Search, Edit, Toolbar]} />
+          <Inject services={[Page, Search, Selection, Toolbar]} />
         </GridComponent>
       )}
     </div>

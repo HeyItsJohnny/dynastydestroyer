@@ -13,10 +13,10 @@ import {
   GridComponent,
   ColumnsDirective,
   ColumnDirective,
+  Selection,
   Page,
   Search,
   Inject,
-  Edit,
   Toolbar,
 } from "@syncfusion/ej2-react-grids";
 
@@ -31,6 +31,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { useNavigate } from "react-router-dom";
 
 const QBScouting = () => {
+  let grid;
   const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2023");
   const [playerData, setPlayerData] = useState([]);
@@ -82,6 +83,10 @@ const QBScouting = () => {
     }
   };
 
+  const handleActionComplete = (args) => {
+    console.log(args);
+  };
+
   function handleDoubleClick(args) {
     navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
   }
@@ -129,24 +134,23 @@ const QBScouting = () => {
           </div>
         ) : (
           <GridComponent
-            id="gridcomp"
-            dataSource={playerData}
-            allowPaging
-            allowSorting
-            toolbar={["Search"]}
-            editSettings={{
-              allowDeleting: true,
-            }}
-            width="auto"
-            recordDoubleClick={handleDoubleClick}
-          >
-            <ColumnsDirective>
-              {playersQBGrid.map((item, index) => (
-                <ColumnDirective key={item.id} {...item} />
-              ))}
-            </ColumnsDirective>
-            <Inject services={[Page, Search, Edit, Toolbar]} />
-          </GridComponent>
+          id="gridcomp"
+          dataSource={playerData}
+          actionComplete={handleActionComplete}
+          allowPaging
+          allowSorting
+          toolbar={["Search"]}
+          width="auto"
+          recordDoubleClick={handleDoubleClick}
+          ref={(g) => (grid = g)}
+        >
+          <ColumnsDirective>
+            {playersQBGrid.map((item, index) => (
+              <ColumnDirective key={item.id} {...item} />
+            ))}
+          </ColumnsDirective>
+          <Inject services={[Page, Search, Toolbar, Selection]} />
+        </GridComponent>
         )}
     </div>
   );
