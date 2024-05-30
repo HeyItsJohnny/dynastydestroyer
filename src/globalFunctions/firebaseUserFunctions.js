@@ -80,6 +80,42 @@ export async function updatePlayerTierData(uid, playerData, tier) {
   }
 }
 
+export async function updatePlayerTier(uid, id, tier) {
+  try {
+    await updateDoc(
+      doc(
+        db,
+        "userprofile",
+        uid,
+        "playertiers",
+        id
+      ),
+      {
+        Tier: tier,
+      }
+    );
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function deletePlayerTierData(uid, playerData) {
+  try {
+    await deleteDoc(
+      doc(
+        db,
+        "userprofile",
+        uid,
+        "playertiers",
+        playerData.KeepTradeCutIdentifier
+      )
+    );
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+
 export async function getUserTierList(uid, positionToSearch) {
     return new Promise((resolve, reject) => {
       const docCollection = query(

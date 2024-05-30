@@ -39,10 +39,6 @@ const SetTier = ({ playerData }) => {
     handleReset();
   };
 
-  const setPlayerTier = () => {
-    console.log(playerData);
-  };
-
   return (
     <>
       <div className="mb-0">

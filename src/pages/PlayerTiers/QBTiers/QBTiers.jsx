@@ -7,25 +7,24 @@ import {
   KanbanComponent,
 } from "@syncfusion/ej2-react-kanban";
 
-import { getUserTierList } from "../../../globalFunctions/firebaseUserFunctions";
+import { getUserTierList, updatePlayerTier, deletePlayerTierData } from "../../../globalFunctions/firebaseUserFunctions";
 
 const QBTiers = () => {
   const [tierList, setTierList] = useState([]);
   const { currentUser } = useAuth();
 
   const addEvent = async (args) => {
-    console.log(args);
     if (args.requestType === "cardChanged") {
       //Updated
       try {
-        console.log(args.changedRecords[0]);
+        updatePlayerTier(currentUser.uid,args.changedRecords[0].KeepTradeCutIdentifier,args.changedRecords[0].Tier);
       } catch (error) {
         alert("Error editing data to Database: " + error);
       }
     } else if (args.requestType === "cardRemoved") {
       //Deleted
       try {
-        console.log(args.deletedRecords[0]);
+        deletePlayerTierData(currentUser.uid,args.deletedRecords[0]);
       } catch (error) {
         alert("Error deleting data from Database: " + error);
       }

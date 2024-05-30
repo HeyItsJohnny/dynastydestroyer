@@ -1,33 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../../../components";
 
+import { useAuth } from "../../../contexts/AuthContext";
+
 import {
   KanbanComponent,
 } from "@syncfusion/ej2-react-kanban";
 
+import { getUserTierList, updatePlayerTier, deletePlayerTierData } from "../../../globalFunctions/firebaseUserFunctions";
+
 const RBTiers = () => {
   const [tierList, setTierList] = useState([]);
+  const { currentUser } = useAuth();
 
   const addEvent = async (args) => {
-    console.log(args);
     if (args.requestType === "cardChanged") {
       //Updated
       try {
-        console.log(args.changedRecords[0]);
+        updatePlayerTier(currentUser.uid,args.changedRecords[0].KeepTradeCutIdentifier,args.changedRecords[0].Tier);
       } catch (error) {
         alert("Error editing data to Database: " + error);
       }
     } else if (args.requestType === "cardRemoved") {
       //Deleted
       try {
-        console.log(args.deletedRecords[0]);
+        deletePlayerTierData(currentUser.uid,args.deletedRecords[0]);
       } catch (error) {
         alert("Error deleting data from Database: " + error);
       }
     }
   }
 
+  const fetchPlayerTierData = async () => {
+    try {
+      const data = await getUserTierList(currentUser.uid, "RB");
+      setTierList(data);
+    } catch (e) {
+      console.log(e);
+      alert("Error: " + e);
+    }
+  };
+
   useEffect(() => {
+    fetchPlayerTierData();
     return () => {
       setTierList([]);
     };
@@ -46,7 +61,7 @@ const RBTiers = () => {
           { headerText: "Tier 4", keyField: "Tier 4" },
           { headerText: "Tier 5", keyField: "Tier 5" },
         ]}
-        cardSettings={{ contentField: "Team", headerField: "Id" }}
+        cardSettings={{ contentField: "Team", headerField: "FullName" }}
         keyField="Tier"
         actionComplete={addEvent}
       ></KanbanComponent>
