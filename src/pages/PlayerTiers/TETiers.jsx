@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Header } from "../../../components";
+import { Header } from "../../components";
 
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
+
+import { KanbanComponent } from "@syncfusion/ej2-react-kanban";
 
 import {
-  KanbanComponent,
-} from "@syncfusion/ej2-react-kanban";
+  getUserTierList,
+  updatePlayerTier,
+  deletePlayerTierData,
+} from "../../globalFunctions/firebaseUserFunctions";
 
-import { getUserTierList, updatePlayerTier, deletePlayerTierData } from "../../../globalFunctions/firebaseUserFunctions";
+//Toast
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const WRTiers = () => {
+const TETiers = () => {
   const [tierList, setTierList] = useState([]);
   const { currentUser } = useAuth();
 
@@ -17,19 +23,23 @@ const WRTiers = () => {
     if (args.requestType === "cardChanged") {
       //Updated
       try {
-        updatePlayerTier(currentUser.uid,args.changedRecords[0].KeepTradeCutIdentifier,args.changedRecords[0].Tier);
+        updatePlayerTier(
+          currentUser.uid,
+          args.changedRecords[0].KeepTradeCutIdentifier,
+          args.changedRecords[0].Tier
+        );
       } catch (error) {
         alert("Error editing data to Database: " + error);
       }
     } else if (args.requestType === "cardRemoved") {
       //Deleted
       try {
-        deletePlayerTierData(currentUser.uid,args.deletedRecords[0]);
+        deletePlayerTierData(currentUser.uid, args.deletedRecords[0]);
       } catch (error) {
         alert("Error deleting data from Database: " + error);
       }
     }
-  }
+  };
 
   const fetchPlayerTierData = async () => {
     try {
@@ -41,6 +51,18 @@ const WRTiers = () => {
     }
   };
 
+  const clearPlayerData = async () => {
+    for (const player of tierList) {
+      try {
+        deletePlayerTierData(currentUser.uid, player);
+      } catch (error) {
+        alert("Error deleting data from Database: " + error);
+      }
+    }
+    toast('Board Cleared!');
+    fetchPlayerTierData();
+  };
+
   useEffect(() => {
     fetchPlayerTierData();
     return () => {
@@ -50,7 +72,22 @@ const WRTiers = () => {
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-      <Header category="Tiers" title="Wide Receivers" />
+      <Header category="Tiers" title="Tight Ends" />
+      <div className="mb-5">
+        <button
+          type="button"
+          style={{
+            backgroundColor: "red",
+            color: "White",
+            borderRadius: "10px",
+          }}
+          className={`text-md p-3 hover:drop-shadow-xl`}
+          onClick={clearPlayerData}
+        >
+          Clear Board
+        </button>
+      </div>
+      <ToastContainer />
       <KanbanComponent
         id="kanban"
         dataSource={tierList}
@@ -69,4 +106,4 @@ const WRTiers = () => {
   );
 };
 
-export default WRTiers;
+export default TETiers;

@@ -7,10 +7,10 @@ export { default as ComparePlayers } from './Apps/ComparePlayers/ComparePlayers'
 export { default as CompareLineups } from './Apps/CompareLineups/CompareLineups';
 
 //Tiers
-export { default as QBTiers } from './PlayerTiers/QBTiers/QBTiers';
-export { default as RBTiers } from './PlayerTiers/RBTiers/RBTiers';
-export { default as TETiers } from './PlayerTiers/TETiers/TETiers';
-export { default as WRTiers } from './PlayerTiers/WRTiers/WRTiers';
+export { default as QBTiers } from './PlayerTiers/QBTiers';
+export { default as RBTiers } from './PlayerTiers/RBTiers';
+export { default as TETiers } from './PlayerTiers/TETiers';
+export { default as WRTiers } from './PlayerTiers/WRTiers';
 
 //Scouting
 export { default as QBScouting } from './Scouting/QBScouting';
