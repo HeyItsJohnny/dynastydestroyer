@@ -18,15 +18,17 @@ export const links = [
         linktoname: "commandcenter"
       },
       {
-        name: "Auction Draft",
+        name: "Kyle's Draft",
         icon: <GoDashboard />,
         linktoname: "auctiondraft"
       },
+      /*
       {
         name: "Snake Draft",
         icon: <GoDashboard />,
         linktoname: "snakedraft"
       },
+      */
     ],
   },
   {
