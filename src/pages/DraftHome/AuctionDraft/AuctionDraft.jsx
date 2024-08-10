@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+import { TbSquareRoundedLetterW } from "react-icons/tb";
+
 //Firebase
 import { db } from "../../../firebase/firebase";
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -239,16 +241,42 @@ const AuctionDraft = () => {
           </div>
 
           <div className="mt-5 w-72 md:w-200">
-            {/** 
-            {teamWRData.map((player) => (
-              <SkillPlayerComponent
-                fullname={player.FullName}
-                position={player.Position}
-                totalpoints={player.TotalPoints}
-                rank={player.Rank}
-                icon={<TbSquareRoundedLetterW />}
-              />
-            ))}*/}
+            <Paper
+              elevation={3}
+              sx={{
+                maxHeight: 200,
+                overflow: "auto",
+                padding: 2,
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              {testData.map((item) => (
+                <div className="flex justify-between mt-4">
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    style={{
+                      backgroundColor: "#1A97F5",
+                      color: "White",
+                    }}
+                    className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
+                  >
+                    <TbSquareRoundedLetterW />
+                  </button>
+          
+                  <div>
+                    <p className="text-md font-semibold">
+                      {item.name}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+                <p className={`text-green-600`}>Rank: 69</p>
+              </div>
+              ))}
+            </Paper>
           </div>
         </div>
         <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
