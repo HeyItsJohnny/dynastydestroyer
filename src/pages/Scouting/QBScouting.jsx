@@ -12,6 +12,7 @@ import { useStateContext } from "../../contexts/ContextProvider";
 import { useAuth } from "../../contexts/AuthContext";
 
 import { createOrUpdateTierData } from "../../globalFunctions/firebaseUserFunctions";
+import { createOrUpdatePlayerAuctionData } from "../../globalFunctions/firebaseAuctionDraft";
 
 import {
   GridComponent,
@@ -33,8 +34,8 @@ import {
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const QBScouting = () => {
   let grid;
@@ -83,7 +84,7 @@ const QBScouting = () => {
       const sortedPlayerStatsArray = playerStatsArray.sort(
         (a, b) => a.Rank - b.Rank
       );
-      console.log(sortedPlayerStatsArray);
+      //console.log(sortedPlayerStatsArray);
       setPlayerData(sortedPlayerStatsArray);
       setLoading(false);
     } catch (error) {
@@ -98,6 +99,15 @@ const QBScouting = () => {
   function handleDoubleClick(args) {
     navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
   }
+
+  const addAllPlayersToAuctionDraft = () => {
+    var rank = 1;
+    playerData.forEach((data) => {
+      createOrUpdatePlayerAuctionData(data,rank);
+      rank += 1;
+    });
+    toast("Players added to Auction Draft");
+  };
 
   const handleTier1 = () => {
     if (grid) {
@@ -206,6 +216,18 @@ const QBScouting = () => {
                 borderRadius: "10px",
               }}
               className={`text-md p-3 hover:drop-shadow-xl`}
+              onClick={addAllPlayersToAuctionDraft}
+            >
+              Add Players to Auction Draft
+            </button>
+            <button
+              type="button"
+              style={{
+                backgroundColor: currentColor,
+                color: "White",
+                borderRadius: "10px",
+              }}
+              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
               onClick={handleTier1}
             >
               Set Tier 1

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 
 import { TbSquareRoundedLetterW } from "react-icons/tb";
 
+//Components
+import PlayerComponentQB from "./PlayerComponentQB";
+
 //Firebase
 import { db } from "../../../firebase/firebase";
-import { collection, query, onSnapshot } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import {
   getAuctionDataSettings,
   createOrUpdateAuctionDraftSettings,
@@ -27,8 +30,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AuctionDraft = () => {
-  const [auctionSettings, setAuctionSettings] = useState({});
-
   const [auctionAmount, setAuctionAmount] = useState(null);
   const [qbPercent, setQBPercent] = useState(null);
   const [rbPercent, setRBPercent] = useState(null);
@@ -37,42 +38,42 @@ const AuctionDraft = () => {
   const [kPercent, setKPercent] = useState(null);
   const [defPercent, setDEFPercent] = useState(null);
 
+  //search
+  const [searchQBQuery, setSearchQBQuery] = useState("");
+  const [searchRBQuery, setSearchRBQuery] = useState("");
+  const [searchWRQuery, setSearchWRQuery] = useState("");
+  const [searchTEQuery, setSearchTEQuery] = useState("");
+
+  //player data
+  const [QBProspects, setQBProspects] = useState([]);
+  const [RBProspects, setRBProspects] = useState([]);
+  const [WRProspects, setWRProspects] = useState([]);
+  const [TEProspects, setTEProspects] = useState([]);
+
   const inputStyles = {
     color: "white",
   };
 
-  const testData = [
-    {
-      id: 1,
-      name: "Name 1",
-      Description: "Description 1",
-    },
-    {
-      id: 2,
-      name: "Name 3",
-      Description: "Description 2",
-    },
-    {
-      id: 3,
-      name: "Name 3",
-      Description: "Description 3",
-    },
-    {
-      id: 4,
-      name: "Name 4",
-      Description: "Description 4",
-    },
-    {
-      id: 5,
-      name: "Name 5",
-      Description: "Description 5",
-    },
-  ];
+  const filteredQBs = QBProspects.filter((item) =>
+    item.FullName.toLowerCase().includes(searchQBQuery.toLowerCase())
+  );
 
+  const filteredRBs = RBProspects.filter((item) =>
+    item.FullName.toLowerCase().includes(searchRBQuery.toLowerCase())
+  );
+
+  const filteredWRs = WRProspects.filter((item) =>
+    item.FullName.toLowerCase().includes(searchWRQuery.toLowerCase())
+  );
+
+  const filteredTEs = TEProspects.filter((item) =>
+    item.FullName.toLowerCase().includes(searchTEQuery.toLowerCase())
+  );
+
+  //Fetch Data
   const fetchAuctionSettings = async () => {
     try {
       const data = await getAuctionDataSettings();
-      setAuctionSettings(data);
       setAuctionAmount(data.AuctionAmount);
       setQBPercent(data.QBPercent);
       setRBPercent(data.RBPercent);
@@ -84,6 +85,65 @@ const AuctionDraft = () => {
       console.log(e);
       //alert("Error: " + e);
     }
+  };
+
+  const fetchPlayerData = async (position) => {
+    const docCollection = query(
+      collection(db, "auctiondraft", "players", position),
+      orderBy("AuctionRank")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          id: doc.id,
+          AuctionRank: doc.data().AuctionRank,
+          Age: doc.data().Age,
+          College: doc.data().College,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          Position: doc.data().Position,
+          SleeperID: doc.data().SleeperID,
+          SearchRank: doc.data().SearchRank,
+          Status: doc.data().Status,
+          SuperFlexValue: doc.data().SuperFlexValue,
+          Team: doc.data().Team,
+          YearsExperience: doc.data().YearsExperience,
+          FantasyPointsAgainst: doc.data().FantasyPointsAgainst,
+          Fumbles: doc.data().Fumbles,
+          PassingINT: doc.data().PassingINT,
+          PassingTD: doc.data().PassingTD,
+          PassingYDS: doc.data().PassingYDS,
+          Rank: doc.data().Rank,
+          ReceivingRec: doc.data().ReceivingRec,
+          ReceivingTD: doc.data().ReceivingTD,
+          ReceivingYDS: doc.data().ReceivingYDS,
+          ReceptionPercentage: doc.data().ReceptionPercentage,
+          RushingTD: doc.data().RushingTD,
+          RushingYDS: doc.data().RushingYDS,
+          RedzoneGoalToGo: doc.data().RedzoneGoalToGo,
+          RedzoneTargets: doc.data().RedzoneTargets,
+          RedZoneTouches: doc.data().RedZoneTouches,
+          ReceivingTargets: doc.data().ReceivingTargets,
+          TargetsReceiptions: doc.data().TargetsReceiptions,
+          TotalPoints: doc.data().TotalPoints,
+          TotalCarries: doc.data().TotalCarries,
+          TotalTouches: doc.data().TotalTouches,
+        };
+        list.push(data);
+      });
+      switch (position) {
+        case "QB": setQBProspects(list);
+        case "RB": setRBProspects(list);
+        case "WR": setWRProspects(list);
+        case "TE": setTEProspects(list);
+      }
+      
+    });
   };
 
   //Handle Save
@@ -103,8 +163,15 @@ const AuctionDraft = () => {
 
   useEffect(() => {
     fetchAuctionSettings();
+    fetchPlayerData("QB");
+    fetchPlayerData("RB");
+    fetchPlayerData("WR");
+    fetchPlayerData("TE");
     return () => {
-      setAuctionSettings({});
+      setQBProspects([]);
+      setRBProspects([]);
+      setWRProspects([]);
+      setTEProspects([]);
     };
   }, []);
 
@@ -232,52 +299,38 @@ const AuctionDraft = () => {
           </Box>
         </FormControl>
       </div>
-      <div className="flex gap-10 flex-wrap justify-center gap-6">
-        <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl w-64">
+      <div className="flex flex-wrap justify-center gap-6">
+        <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
           <div className="flex justify-between items-center gap-2">
             <Typography variant="h6" gutterBottom>
               QB Prospects
             </Typography>
           </div>
-
-          <div className="mt-5 w-72 md:w-200">
-            <Paper
-              elevation={3}
-              sx={{
-                maxHeight: 200,
-                overflow: "auto",
-                padding: 2,
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-              }}
-            >
-              {testData.map((item) => (
-                <div className="flex justify-between mt-4">
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    style={{
-                      backgroundColor: "#1A97F5",
-                      color: "White",
-                    }}
-                    className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
-                  >
-                    <TbSquareRoundedLetterW />
-                  </button>
-          
-                  <div>
-                    <p className="text-md font-semibold">
-                      {item.name}
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-                <p className={`text-green-600`}>Rank: 69</p>
-              </div>
-              ))}
-            </Paper>
-          </div>
+          <TextField
+            InputProps={{ style: inputStyles }}
+            InputLabelProps={{ style: inputStyles }}
+            variant="outlined"
+            fullWidth
+            placeholder="Search QB Prospects"
+            value={searchQBQuery}
+            onChange={(e) => setSearchQBQuery(e.target.value)}
+            sx={{ marginBottom: 1 }} // Add some margin at the bottom
+          />
+          <Box
+            sx={{
+              maxHeight: 300, // Set a fixed height
+              overflowY: "auto", // Enable vertical scrolling
+              paddingRight: 2, // Add some padding on the right for better look
+            }}
+            className="mt-5 w-72 md:w-200"
+          >
+            {filteredQBs.map((item) => (
+              <PlayerComponentQB
+                item={item}
+                icon={<TbSquareRoundedLetterW />}
+              />
+            ))}
+          </Box>
         </div>
         <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
           <div className="flex justify-between items-center gap-2">
@@ -285,18 +338,31 @@ const AuctionDraft = () => {
               RB Prospects
             </Typography>
           </div>
-          <div className="mt-5 w-72 md:w-200">
-            {/** 
-            {teamWRData.map((player) => (
-              <SkillPlayerComponent
-                fullname={player.FullName}
-                position={player.Position}
-                totalpoints={player.TotalPoints}
-                rank={player.Rank}
+          <TextField
+            InputProps={{ style: inputStyles }}
+            InputLabelProps={{ style: inputStyles }}
+            variant="outlined"
+            fullWidth
+            placeholder="Search RB Prospects"
+            value={searchRBQuery}
+            onChange={(e) => setSearchRBQuery(e.target.value)}
+            sx={{ marginBottom: 1 }} // Add some margin at the bottom
+          />
+          <Box
+            sx={{
+              maxHeight: 300, // Set a fixed height
+              overflowY: "auto", // Enable vertical scrolling
+              paddingRight: 2, // Add some padding on the right for better look
+            }}
+            className="mt-5 w-72 md:w-200"
+          >
+            {filteredRBs.map((item) => (
+              <PlayerComponentQB
+                item={item}
                 icon={<TbSquareRoundedLetterW />}
               />
-            ))}*/}
-          </div>
+            ))}
+          </Box>
         </div>
         <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
           <div className="flex justify-between items-center gap-2">
@@ -304,18 +370,31 @@ const AuctionDraft = () => {
               WR Prospects
             </Typography>
           </div>
-          <div className="mt-5 w-72 md:w-200">
-            {/** 
-            {teamWRData.map((player) => (
-              <SkillPlayerComponent
-                fullname={player.FullName}
-                position={player.Position}
-                totalpoints={player.TotalPoints}
-                rank={player.Rank}
+          <TextField
+            InputProps={{ style: inputStyles }}
+            InputLabelProps={{ style: inputStyles }}
+            variant="outlined"
+            fullWidth
+            placeholder="Search WR Prospects"
+            value={searchWRQuery}
+            onChange={(e) => setSearchWRQuery(e.target.value)}
+            sx={{ marginBottom: 1 }} // Add some margin at the bottom
+          />
+          <Box
+            sx={{
+              maxHeight: 300, // Set a fixed height
+              overflowY: "auto", // Enable vertical scrolling
+              paddingRight: 2, // Add some padding on the right for better look
+            }}
+            className="mt-5 w-72 md:w-200"
+          >
+            {filteredWRs.map((item) => (
+              <PlayerComponentQB
+                item={item}
                 icon={<TbSquareRoundedLetterW />}
               />
-            ))}*/}
-          </div>
+            ))}
+          </Box>
         </div>
         <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
           <div className="flex justify-between items-center gap-2">
@@ -323,18 +402,31 @@ const AuctionDraft = () => {
               TE Prospects
             </Typography>
           </div>
-          <div className="mt-5 w-72 md:w-200">
-            {/** 
-            {teamWRData.map((player) => (
-              <SkillPlayerComponent
-                fullname={player.FullName}
-                position={player.Position}
-                totalpoints={player.TotalPoints}
-                rank={player.Rank}
+          <TextField
+            InputProps={{ style: inputStyles }}
+            InputLabelProps={{ style: inputStyles }}
+            variant="outlined"
+            fullWidth
+            placeholder="Search TE Prospects"
+            value={searchTEQuery}
+            onChange={(e) => setSearchTEQuery(e.target.value)}
+            sx={{ marginBottom: 1 }} // Add some margin at the bottom
+          />
+          <Box
+            sx={{
+              maxHeight: 300, // Set a fixed height
+              overflowY: "auto", // Enable vertical scrolling
+              paddingRight: 2, // Add some padding on the right for better look
+            }}
+            className="mt-5 w-72 md:w-200"
+          >
+            {filteredTEs.map((item) => (
+              <PlayerComponentQB
+                item={item}
                 icon={<TbSquareRoundedLetterW />}
               />
-            ))}*/}
-          </div>
+            ))}
+          </Box>
         </div>
       </div>
       {/* Scrollable List Section */}
@@ -351,6 +443,7 @@ const AuctionDraft = () => {
             backgroundColor: "rgba(255, 255, 255, 0.1)",
           }}
         >
+          {/** 
           {testData.map((item) => (
             <Box
               key={item.id}
@@ -364,6 +457,7 @@ const AuctionDraft = () => {
               <Typography variant="body2">{item.Description}</Typography>
             </Box>
           ))}
+            */}
         </Paper>
       </div>
     </>

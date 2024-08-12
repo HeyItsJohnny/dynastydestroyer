@@ -10,6 +10,7 @@ import FormControl from "@mui/material/FormControl";
 import { playersTEWRGrid } from "../../data/gridData";
 
 import { createOrUpdateTierData } from "../../globalFunctions/firebaseUserFunctions";
+import { createOrUpdatePlayerAuctionData } from "../../globalFunctions/firebaseAuctionDraft";
 
 import { useStateContext } from "../../contexts/ContextProvider";
 import { useAuth } from "../../contexts/AuthContext";
@@ -34,8 +35,8 @@ import {
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const WRScouting = () => {
   let grid;
@@ -94,6 +95,15 @@ const WRScouting = () => {
   function handleDoubleClick(args) {
     navigate("/scouting/widereceivers/details/" + args.rowData.SleeperID);
   }
+
+  const addAllPlayersToAuctionDraft = () => {
+    var rank = 1;
+    playerData.forEach((data) => {
+      createOrUpdatePlayerAuctionData(data, rank);
+      rank += 1;
+    });
+    toast("Players added to Auction Draft");
+  };
 
   const handleTier1 = () => {
     if (grid) {
@@ -201,6 +211,18 @@ const WRScouting = () => {
                 borderRadius: "10px",
               }}
               className={`text-md p-3 hover:drop-shadow-xl`}
+              onClick={addAllPlayersToAuctionDraft}
+            >
+              Add Players to Auction Draft
+            </button>
+            <button
+              type="button"
+              style={{
+                backgroundColor: currentColor,
+                color: "White",
+                borderRadius: "10px",
+              }}
+              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
               onClick={handleTier1}
             >
               Set Tier 1
