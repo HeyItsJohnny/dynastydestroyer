@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from "react";
 
+import { FiSettings } from "react-icons/fi";
+import { TooltipComponent } from "@syncfusion/ej2-react-popups";
+import { useStateContext } from "../../../contexts/ContextProvider";
+
+//Player Buttons
+import { TbSquareRoundedLetterQ } from "react-icons/tb";
+import { TbSquareRoundedLetterR } from "react-icons/tb";
 import { TbSquareRoundedLetterW } from "react-icons/tb";
+import { TbSquareRoundedLetterT } from "react-icons/tb";
 
 //Components
-import PlayerComponentQB from "./PlayerComponentQB";
+import PlayerComponentQB from "./QB/PlayerComponentQB";
+import PlayerComponentRB from "./RB/PlayerComponentRB";
+import PlayerComponentWR from "./WR/PlayerComponentWR";
+import PlayerComponentTE from "./TE/PlayerComponentTE";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
@@ -30,6 +41,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AuctionDraft = () => {
+  const { currentColor } = useStateContext();
   const [auctionAmount, setAuctionAmount] = useState(null);
   const [qbPercent, setQBPercent] = useState(null);
   const [rbPercent, setRBPercent] = useState(null);
@@ -137,12 +149,15 @@ const AuctionDraft = () => {
         list.push(data);
       });
       switch (position) {
-        case "QB": setQBProspects(list);
-        case "RB": setRBProspects(list);
-        case "WR": setWRProspects(list);
-        case "TE": setTEProspects(list);
+        case "QB":
+          setQBProspects(list);
+        case "RB":
+          setRBProspects(list);
+        case "WR":
+          setWRProspects(list);
+        case "TE":
+          setTEProspects(list);
       }
-      
     });
   };
 
@@ -327,7 +342,7 @@ const AuctionDraft = () => {
             {filteredQBs.map((item) => (
               <PlayerComponentQB
                 item={item}
-                icon={<TbSquareRoundedLetterW />}
+                icon={<TbSquareRoundedLetterQ />}
               />
             ))}
           </Box>
@@ -357,9 +372,9 @@ const AuctionDraft = () => {
             className="mt-5 w-72 md:w-200"
           >
             {filteredRBs.map((item) => (
-              <PlayerComponentQB
+              <PlayerComponentRB
                 item={item}
-                icon={<TbSquareRoundedLetterW />}
+                icon={<TbSquareRoundedLetterR />}
               />
             ))}
           </Box>
@@ -389,7 +404,7 @@ const AuctionDraft = () => {
             className="mt-5 w-72 md:w-200"
           >
             {filteredWRs.map((item) => (
-              <PlayerComponentQB
+              <PlayerComponentWR
                 item={item}
                 icon={<TbSquareRoundedLetterW />}
               />
@@ -421,9 +436,9 @@ const AuctionDraft = () => {
             className="mt-5 w-72 md:w-200"
           >
             {filteredTEs.map((item) => (
-              <PlayerComponentQB
+              <PlayerComponentTE
                 item={item}
-                icon={<TbSquareRoundedLetterW />}
+                icon={<TbSquareRoundedLetterT />}
               />
             ))}
           </Box>
