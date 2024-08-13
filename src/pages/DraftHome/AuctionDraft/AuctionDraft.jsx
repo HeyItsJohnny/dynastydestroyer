@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-import { FiSettings } from "react-icons/fi";
-import { TooltipComponent } from "@syncfusion/ej2-react-popups";
-import { useStateContext } from "../../../contexts/ContextProvider";
-
 //Player Buttons
 import { TbSquareRoundedLetterQ } from "react-icons/tb";
 import { TbSquareRoundedLetterR } from "react-icons/tb";
@@ -33,6 +29,7 @@ import {
   Grid,
   Paper,
   Typography,
+  Switch,
 } from "@mui/material";
 import { Header } from "../../../components";
 
@@ -41,7 +38,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AuctionDraft = () => {
-  const { currentColor } = useStateContext();
+  const [checkedDraftResults, setCheckedDraftResults] = useState(false);
+
   const [auctionAmount, setAuctionAmount] = useState(null);
   const [qbPercent, setQBPercent] = useState(null);
   const [rbPercent, setRBPercent] = useState(null);
@@ -64,6 +62,11 @@ const AuctionDraft = () => {
 
   const inputStyles = {
     color: "white",
+  };
+
+  //Handle Checkboxes
+  const handleDraftResultsCheckboxChange = (event) => {
+    setCheckedDraftResults(event.target.checked);
   };
 
   const filteredQBs = QBProspects.filter((item) =>
@@ -145,9 +148,11 @@ const AuctionDraft = () => {
           TotalPoints: doc.data().TotalPoints,
           TotalCarries: doc.data().TotalCarries,
           TotalTouches: doc.data().TotalTouches,
+          WeeklyPoints: doc.data().WeeklyPoints,
         };
         list.push(data);
       });
+      console.log(list);
       switch (position) {
         case "QB":
           setQBProspects(list);
@@ -311,6 +316,18 @@ const AuctionDraft = () => {
             >
               Save Settings
             </Button>
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Typography gutterBottom>Show Draft Results</Typography>
+            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Typography gutterBottom>Show QB Tiers</Typography>
+            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Typography gutterBottom>Show RB Tiers</Typography>
+            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Typography gutterBottom>Show WR Tiers</Typography>
+            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Typography gutterBottom>Show TE Tiers</Typography>
+            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
           </Box>
         </FormControl>
       </div>

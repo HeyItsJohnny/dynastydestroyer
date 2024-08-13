@@ -1,5 +1,22 @@
 import React, { useState } from "react";
 
+//Weekly Chart
+import {
+  stackedPrimaryXAxis,
+  stackedPrimaryYAxis,
+} from "../../../../data/gridData";
+import {
+  ChartComponent,
+  SeriesCollectionDirective,
+  SeriesDirective,
+  Inject,
+  Legend,
+  Category,
+  StackingColumnSeries,
+  Tooltip,
+} from "@syncfusion/ej2-react-charts";
+import { useStateContext } from "../../../../contexts/ContextProvider";
+
 //Icons
 import { GoPrimitiveDot } from "react-icons/go";
 
@@ -9,6 +26,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 
 const PlayerDetailsWR = ({ item, icon }) => {
+  const { currentMode } = useStateContext();
   const [show, setShow] = useState(false);
 
   const handleClose = () => setShow(false);
@@ -107,28 +125,37 @@ const PlayerDetailsWR = ({ item, icon }) => {
                 </div>
               </div>
               <div className="mt-5">
-                {/** 
-                      <ChartComponent
-                        id="charts"
-                        primaryXAxis={stackedPrimaryXAxis}
-                        primaryYAxis={stackedPrimaryYAxis}
-                        width="500px"
-                        height="360px"
-                        chartArea={{ border: { width: 0 } }}
-                        tooltip={{ enable: true }}
-                        background={currentMode === "Dark" ? "#33373E" : "#fff"}
-                        legendSettings={{ background: "white" }}
-                      >
-                        <Inject
-                          services={[StackingColumnSeries, Category, Legend, Tooltip]}
-                        />
-                        <SeriesCollectionDirective>
-                          {weeklyChartData.map((item, index) => (
-                            <SeriesDirective key={index} {...item} />
-                          ))}
-                        </SeriesCollectionDirective>
-                      </ChartComponent>
-                      */}
+                <ChartComponent
+                  id="charts"
+                  primaryXAxis={stackedPrimaryXAxis}
+                  primaryYAxis={stackedPrimaryYAxis}
+                  width="500px"
+                  height="360px"
+                  chartArea={{ border: { width: 0 } }}
+                  tooltip={{ enable: true }}
+                  background={currentMode === "Dark" ? "#33373E" : "#fff"}
+                  legendSettings={{ background: "white" }}
+                >
+                  <Inject
+                    services={[StackingColumnSeries, Category, Legend, Tooltip]}
+                  />
+                  <SeriesCollectionDirective>
+                    {item.WeeklyPoints && item.WeeklyPoints.length > 0 ? (
+                      item.WeeklyPoints.map((seriesData, index) => (
+                        <SeriesDirective key={index} {...seriesData} />
+                      ))
+                    ) : (
+                      <SeriesDirective
+                        // Provide a default/fallback series if necessary
+                        type="StackingColumn"
+                        dataSource={[]}
+                        xName="week"
+                        yName="points"
+                        name="No Data Available"
+                      />
+                    )}
+                  </SeriesCollectionDirective>
+                </ChartComponent>
               </div>
             </div>
           </div>
