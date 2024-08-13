@@ -1,5 +1,6 @@
 import React from "react";
 import PlayerDetailsWR from "./PlayerDetailsWR";
+import PlayerDrafted from "../Modals/PlayerDrafted";
 
 const PlayerComponentWR = ({ item, icon }) => {
   const nameClick = () => {
@@ -10,11 +11,9 @@ const PlayerComponentWR = ({ item, icon }) => {
     <>
       <div className="flex justify-between mt-4">
         <div className="flex gap-4">
-          <PlayerDetailsWR item={item} icon={icon} />
+          <PlayerDrafted item={item} icon={icon} />
           <div>
-            <button type="button" onClick={nameClick}>
-              <p className="text-sm font-semibold">{item.FullName}</p>
-            </button>
+            <PlayerDetailsWR item={item} icon={icon} />
             <p className="text-sm text-gray-400">
               Total Points: {item.TotalPoints}
             </p>

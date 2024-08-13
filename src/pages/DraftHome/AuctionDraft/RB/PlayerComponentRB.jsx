@@ -1,7 +1,8 @@
 import React from "react";
 import PlayerDetailsRB from "./PlayerDetailsRB";
+import PlayerDrafted from "../Modals/PlayerDrafted";
 
-const PlayerComponentRB = ({item, icon}) => {
+const PlayerComponentRB = ({ item, icon }) => {
   const nameClick = () => {
     alert("Name Click");
   };
@@ -10,11 +11,9 @@ const PlayerComponentRB = ({item, icon}) => {
     <>
       <div className="flex justify-between mt-4">
         <div className="flex gap-4">
-          <PlayerDetailsRB item={item} icon={icon} />
+          <PlayerDrafted item={item} icon={icon} />
           <div>
-            <button type="button" onClick={nameClick}>
-              <p className="text-sm font-semibold">{item.FullName}</p>
-            </button>
+            <PlayerDetailsRB item={item} icon={icon} />
             <p className="text-sm text-gray-400">
               Total Points: {item.TotalPoints}
             </p>

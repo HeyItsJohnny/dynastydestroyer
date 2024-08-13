@@ -25,7 +25,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 
-const PlayerDetailsWR = ({ item, icon }) => {
+const PlayerDetailsWR = ({ item }) => {
   const { currentMode } = useStateContext();
   const [show, setShow] = useState(false);
 
@@ -38,16 +38,8 @@ const PlayerDetailsWR = ({ item, icon }) => {
 
   return (
     <>
-      <button
-        type="button"
-        style={{
-          backgroundColor: "#1A97F5",
-          color: "White",
-        }}
-        className="text-2xl rounded-lg p-2 hover:drop-shadow-xl"
-        onClick={handleShow}
-      >
-        {icon}
+      <button type="button" onClick={handleShow}>
+        <p className="text-sm font-semibold">{item.FullName}</p>
       </button>
       <Dialog
         open={show}

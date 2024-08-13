@@ -39,6 +39,10 @@ import "react-toastify/dist/ReactToastify.css";
 
 const AuctionDraft = () => {
   const [checkedDraftResults, setCheckedDraftResults] = useState(false);
+  const [checkedQBTiers, setCheckedQBTiers] = useState(false);
+  const [checkedRBTiers, setCheckedRBTiers] = useState(false);
+  const [checkedWRTiers, setCheckedWRTiers] = useState(false);
+  const [checkedTETiers, setCheckedTETiers] = useState(false);
 
   const [auctionAmount, setAuctionAmount] = useState(null);
   const [qbPercent, setQBPercent] = useState(null);
@@ -67,6 +71,22 @@ const AuctionDraft = () => {
   //Handle Checkboxes
   const handleDraftResultsCheckboxChange = (event) => {
     setCheckedDraftResults(event.target.checked);
+  };
+
+  const handleQBTiersCheckboxChange = (event) => {
+    setCheckedQBTiers(event.target.checked);
+  };
+
+  const handleRBTiersCheckboxChange = (event) => {
+    setCheckedRBTiers(event.target.checked);
+  };
+
+  const handleWRTiersCheckboxChange = (event) => {
+    setCheckedWRTiers(event.target.checked);
+  };
+
+  const handleTETiersCheckboxChange = (event) => {
+    setCheckedTETiers(event.target.checked);
   };
 
   const filteredQBs = QBProspects.filter((item) =>
@@ -321,13 +341,13 @@ const AuctionDraft = () => {
             <Typography gutterBottom>Show Draft Results</Typography>
             <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
             <Typography gutterBottom>Show QB Tiers</Typography>
-            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Switch checked={checkedQBTiers} onChange={handleQBTiersCheckboxChange} />
             <Typography gutterBottom>Show RB Tiers</Typography>
-            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Switch checked={checkedRBTiers} onChange={handleRBTiersCheckboxChange} />
             <Typography gutterBottom>Show WR Tiers</Typography>
-            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Switch checked={checkedWRTiers} onChange={handleWRTiersCheckboxChange} />
             <Typography gutterBottom>Show TE Tiers</Typography>
-            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Switch checked={checkedTETiers} onChange={handleTETiersCheckboxChange} />
           </Box>
         </FormControl>
       </div>
