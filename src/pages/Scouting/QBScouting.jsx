@@ -100,7 +100,8 @@ const QBScouting = () => {
     navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
   }
 
-  const addAllPlayersToAuctionDraft = () => {
+  const addAllPlayersToAuctionDraft = async () => {
+
     var rank = 1;
     playerData.forEach((data) => {
       createOrUpdatePlayerAuctionData(data,rank);

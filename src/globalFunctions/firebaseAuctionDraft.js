@@ -14,6 +14,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 
+import { getPlayerWeeklyPoints } from "./firebasePlayerFunctions";
+
 export async function getAuctionDataSettings() {
   try {
     const docRef = doc(db, "auctiondraft", "settings");
@@ -91,6 +93,95 @@ export async function createOrUpdatePlayerAuctionData(playerData, auctionRank) {
 
 export async function updatePlayerAuctionData(playerData) {
   try {
+
+    const KTCIdentifier = playerData.KTCIdentifier;
+
+    const Week1Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week1"
+    );
+    const Week2Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week2"
+    );
+    const Week3Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week3"
+    );
+    const Week4Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week4"
+    );
+    const Week5Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week5"
+    );
+    const Week6Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week6"
+    );
+    const Week7Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week7"
+    );
+    const Week8Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week8"
+    );
+    const Week9Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week9"
+    );
+    const Week10Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week10"
+    );
+    const Week11Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week11"
+    );
+    const Week12Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week12"
+    );
+    const Week13Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week13"
+    );
+    const Week14Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week14"
+    );
+    const Week15Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week15"
+    );
+    const Week16Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week16"
+    );
+    const Week17Points = await getPlayerWeeklyPoints(
+      KTCIdentifier,
+      "2023",
+      "Week17"
+    );
+
     //ID: lowercased firstnamelastname-position-team
     await updateDoc(doc(db, "auctiondraft", "players", playerData.Position, playerData.KeepTradeCutIdentifier), {
       Age: playerData.Age,
@@ -128,6 +219,23 @@ export async function updatePlayerAuctionData(playerData) {
       TotalPoints: playerData.TotalPoints,
       TotalCarries: playerData.TotalCarries,
       TotalTouches: playerData.TotalTouches,
+      Week1Points: Week1Points,
+      Week2Points: Week2Points,
+      Week3Points: Week3Points,
+      Week4Points: Week4Points,
+      Week5Points: Week5Points,
+      Week6Points: Week6Points,
+      Week7Points: Week7Points,
+      Week8Points: Week8Points,
+      Week9Points: Week9Points,
+      Week10Points: Week10Points,
+      Week11Points: Week11Points,
+      Week12Points: Week12Points,
+      Week13Points: Week13Points,
+      Week14Points: Week14Points,
+      Week15Points: Week15Points,
+      Week16Points: Week16Points,
+      Week17Points: Week17Points,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
