@@ -361,6 +361,7 @@ const AuctionDraft = () => {
   };
 
   const handleDraftBoardReset = () => {
+    //Not working because everything doesnt equal OPEN
     QBProspects.forEach((doc) => {
       updateDraftStatus(doc,"Open");
     })
