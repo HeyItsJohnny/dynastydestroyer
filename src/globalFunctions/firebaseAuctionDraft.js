@@ -392,7 +392,9 @@ export async function createPlayerAuctionData(playerData, auctionRank) {
         playerData.KeepTradeCutIdentifier
       ),
       {
+        CurrentAuctionRank: auctionRank,
         AuctionRank: auctionRank,
+        DraftStatus: "Open",
         Age: playerData.Age,
         College: playerData.College,
         DepthChartOrder: playerData.DepthChartOrder,

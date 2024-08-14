@@ -32,6 +32,7 @@ import {
   Switch,
 } from "@mui/material";
 import { Header } from "../../../components";
+import { GoPrimitiveDot } from "react-icons/go";
 
 //Toast
 import { ToastContainer, toast } from "react-toastify";
@@ -125,7 +126,7 @@ const AuctionDraft = () => {
   const fetchPlayerData = async (position) => {
     const docCollection = query(
       collection(db, "auctiondraft", "players", position),
-      orderBy("AuctionRank")
+      orderBy("CurrentAuctionRank")
     );
     onSnapshot(docCollection, (querySnapshot) => {
       const list = [];
@@ -199,6 +200,10 @@ const AuctionDraft = () => {
     };
     createOrUpdateAuctionDraftSettings(auctionSettings);
     toast("Settings have been saved & updated.");
+  };
+
+  const handleDraftBoardReset = async () => {
+    toast("Draft Board has been reset.");
   };
 
   useEffect(() => {
@@ -333,21 +338,44 @@ const AuctionDraft = () => {
               variant="contained"
               color="primary"
               onClick={handleSaveSettings}
+              sx={{ mr: 2 }} // Adds margin to the right of the button
             >
               Save Settings
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDraftBoardReset}
+            >
+              Reset Draft Board
             </Button>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Typography gutterBottom>Show Draft Results</Typography>
-            <Switch checked={checkedDraftResults} onChange={handleDraftResultsCheckboxChange} />
+            <Switch
+              checked={checkedDraftResults}
+              onChange={handleDraftResultsCheckboxChange}
+            />
             <Typography gutterBottom>Show QB Tiers</Typography>
-            <Switch checked={checkedQBTiers} onChange={handleQBTiersCheckboxChange} />
+            <Switch
+              checked={checkedQBTiers}
+              onChange={handleQBTiersCheckboxChange}
+            />
             <Typography gutterBottom>Show RB Tiers</Typography>
-            <Switch checked={checkedRBTiers} onChange={handleRBTiersCheckboxChange} />
+            <Switch
+              checked={checkedRBTiers}
+              onChange={handleRBTiersCheckboxChange}
+            />
             <Typography gutterBottom>Show WR Tiers</Typography>
-            <Switch checked={checkedWRTiers} onChange={handleWRTiersCheckboxChange} />
+            <Switch
+              checked={checkedWRTiers}
+              onChange={handleWRTiersCheckboxChange}
+            />
             <Typography gutterBottom>Show TE Tiers</Typography>
-            <Switch checked={checkedTETiers} onChange={handleTETiersCheckboxChange} />
+            <Switch
+              checked={checkedTETiers}
+              onChange={handleTETiersCheckboxChange}
+            />
           </Box>
         </FormControl>
       </div>
@@ -482,36 +510,57 @@ const AuctionDraft = () => {
         </div>
       </div>
       {/* Scrollable List Section */}
-      <div className="m-2 md:m-10 mt-6 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Typography variant="h6" gutterBottom>
-          Scrollable List
-        </Typography>
-        <Paper
-          elevation={3}
-          sx={{
-            maxHeight: 300,
-            overflow: "auto",
-            padding: 2,
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-          }}
-        >
-          {/** 
-          {testData.map((item) => (
-            <Box
-              key={item.id}
-              sx={{
-                padding: 2,
-                borderBottom: "1px solid gray",
-                color: "white",
-              }}
-            >
-              <Typography variant="subtitle1">{item.name}</Typography>
-              <Typography variant="body2">{item.Description}</Typography>
-            </Box>
-          ))}
-            */}
-        </Paper>
-      </div>
+      {checkedDraftResults && (
+        <div className="flex gap-10 flex-wrap justify-center mt-12">
+          <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">
+            <div className="flex justify-between">
+              <p className="font-semibold text-xl">Draft Results 2</p>
+
+              <div className="flex items-center gap-4">
+                <p className="flex items-center gap-2 text-green-400 hover:drop-shadow-xl">
+                  <span>
+                    <GoPrimitiveDot />
+                  </span>
+                  <span>2023 Weekly Points Breakdown</span>
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-10 flex-wrap justify-left">
+              <div className=" border-r-1 border-color m-4 pr-10">
+                <div className="mt-1">
+                  <p className="text-green-500 text-3xl font-semibold">
+                    Passing Yards
+                  </p>
+                  <p className="text-gray-500 mt-1">Passing Yards</p>
+                </div>
+                <div className="mt-1">
+                  <p className="text-green-500 text-3xl font-semibold">
+                    Passing TDS
+                  </p>
+                  <p className="text-gray-500 mt-1">Passing TDs</p>
+                </div>
+                <div className="mt-1">
+                  <p className="text-red-500 text-3xl font-semibold">
+                    Passing INTs
+                  </p>
+                  <p className="text-gray-500 mt-1">Passing Ints</p>
+                </div>
+              </div>
+              <div className="mt-5">Pie Chart Component</div>
+            </div>
+          </div>
+          <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
+            <div className="flex justify-between items-center gap-2">
+              <p className="text-xl font-semibold">Draft Details</p>
+            </div>
+            Draft Details
+            <div className="flex justify-between items-center gap-2 mt-5">
+              <p className="text-xl font-semibold">Drafted Players</p>
+            </div>
+            <div className="mt-5 w-72 md:w-400">Skilled Positions HERE</div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
