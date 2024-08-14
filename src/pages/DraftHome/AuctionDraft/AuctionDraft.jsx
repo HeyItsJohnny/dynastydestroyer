@@ -360,7 +360,7 @@ const AuctionDraft = () => {
     toast("Settings have been saved & updated.");
   };
 
-  const handleDraftBoardReset = async () => {
+  const handleDraftBoardReset = () => {
     QBProspects.forEach((doc) => {
       updateDraftStatus(doc,"Open");
     })
