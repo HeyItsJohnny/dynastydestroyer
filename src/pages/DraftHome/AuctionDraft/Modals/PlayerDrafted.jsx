@@ -9,6 +9,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 
+//Firebase
+import { updateDraftStatus } from "../../../../globalFunctions/firebaseAuctionDraft";
+
 //Toast
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -24,20 +27,23 @@ const PlayerDrafted = ({ item, icon }) => {
     handleClose();
   };
 
-  const handleDrafted = (e) => {
-    //Update Status to
+  const handleDrafted = async () => {
+    //Update Status to Drafted
+    await updateDraftStatus(item,"Drafted");
     toast("Congrats! You Drafted: " + item.FullName);
     handleReset();
   };
 
-  const handleTaken = (e) => {
+  const handleTaken = async () => {
     //Update Status to Taken
+    await updateDraftStatus(item,"Taken");
     toast(item.FullName + " was drafted by someone else.");
     handleReset();
   };
 
   return (
     <>
+      <ToastContainer />
       <button
         type="button"
         style={{

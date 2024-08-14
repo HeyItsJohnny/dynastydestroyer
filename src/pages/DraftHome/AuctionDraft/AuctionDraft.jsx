@@ -14,7 +14,7 @@ import PlayerComponentTE from "./TE/PlayerComponentTE";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, where } from "firebase/firestore";
 import {
   getAuctionDataSettings,
   createOrUpdateAuctionDraftSettings,
@@ -126,6 +126,7 @@ const AuctionDraft = () => {
   const fetchPlayerData = async (position) => {
     const docCollection = query(
       collection(db, "auctiondraft", "players", position),
+      where("DraftStatus", "==", "Open"),
       orderBy("CurrentAuctionRank")
     );
     onSnapshot(docCollection, (querySnapshot) => {

@@ -437,3 +437,23 @@ export async function createPlayerAuctionData(playerData, auctionRank) {
     console.error("There was an error adding to the database: " + error);
   }
 }
+
+export async function updateDraftStatus(playerData, status) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(
+      doc(
+        db,
+        "auctiondraft",
+        "players",
+        playerData.Position,
+        playerData.KeepTradeCutIdentifier
+      ),
+      {
+        DraftStatus: status,
+      }
+    );
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
