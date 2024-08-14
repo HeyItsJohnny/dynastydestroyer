@@ -18,6 +18,7 @@ import { collection, query, onSnapshot, orderBy, where } from "firebase/firestor
 import {
   getAuctionDataSettings,
   createOrUpdateAuctionDraftSettings,
+  updateDraftStatus
 } from "../../../globalFunctions/firebaseAuctionDraft";
 
 //UI
@@ -123,9 +124,9 @@ const AuctionDraft = () => {
     }
   };
 
-  const fetchPlayerData = async (position) => {
+  const fetchQBPlayerData = async () => {
     const docCollection = query(
-      collection(db, "auctiondraft", "players", position),
+      collection(db, "auctiondraft", "players", "QB"),
       where("DraftStatus", "==", "Open"),
       orderBy("CurrentAuctionRank")
     );
@@ -174,19 +175,175 @@ const AuctionDraft = () => {
         };
         list.push(data);
       });
-      console.log(list);
-      switch (position) {
-        case "QB":
-          setQBProspects(list);
-        case "RB":
-          setRBProspects(list);
-        case "WR":
-          setWRProspects(list);
-        case "TE":
-          setTEProspects(list);
-      }
+      setQBProspects(list);
     });
   };
+
+  const fetchRBPlayerData = async () => {
+    const docCollection = query(
+      collection(db, "auctiondraft", "players", "RB"),
+      where("DraftStatus", "==", "Open"),
+      orderBy("CurrentAuctionRank")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          id: doc.id,
+          AuctionRank: doc.data().AuctionRank,
+          Age: doc.data().Age,
+          College: doc.data().College,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          Position: doc.data().Position,
+          SleeperID: doc.data().SleeperID,
+          SearchRank: doc.data().SearchRank,
+          Status: doc.data().Status,
+          SuperFlexValue: doc.data().SuperFlexValue,
+          Team: doc.data().Team,
+          YearsExperience: doc.data().YearsExperience,
+          FantasyPointsAgainst: doc.data().FantasyPointsAgainst,
+          Fumbles: doc.data().Fumbles,
+          PassingINT: doc.data().PassingINT,
+          PassingTD: doc.data().PassingTD,
+          PassingYDS: doc.data().PassingYDS,
+          Rank: doc.data().Rank,
+          ReceivingRec: doc.data().ReceivingRec,
+          ReceivingTD: doc.data().ReceivingTD,
+          ReceivingYDS: doc.data().ReceivingYDS,
+          ReceptionPercentage: doc.data().ReceptionPercentage,
+          RushingTD: doc.data().RushingTD,
+          RushingYDS: doc.data().RushingYDS,
+          RedzoneGoalToGo: doc.data().RedzoneGoalToGo,
+          RedzoneTargets: doc.data().RedzoneTargets,
+          RedZoneTouches: doc.data().RedZoneTouches,
+          ReceivingTargets: doc.data().ReceivingTargets,
+          TargetsReceiptions: doc.data().TargetsReceiptions,
+          TotalPoints: doc.data().TotalPoints,
+          TotalCarries: doc.data().TotalCarries,
+          TotalTouches: doc.data().TotalTouches,
+          WeeklyPoints: doc.data().WeeklyPoints,
+        };
+        list.push(data);
+      });
+      setRBProspects(list);
+    });
+  };
+
+  const fetchWRPlayerData = async () => {
+    const docCollection = query(
+      collection(db, "auctiondraft", "players", "WR"),
+      where("DraftStatus", "==", "Open"),
+      orderBy("CurrentAuctionRank")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          id: doc.id,
+          AuctionRank: doc.data().AuctionRank,
+          Age: doc.data().Age,
+          College: doc.data().College,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          Position: doc.data().Position,
+          SleeperID: doc.data().SleeperID,
+          SearchRank: doc.data().SearchRank,
+          Status: doc.data().Status,
+          SuperFlexValue: doc.data().SuperFlexValue,
+          Team: doc.data().Team,
+          YearsExperience: doc.data().YearsExperience,
+          FantasyPointsAgainst: doc.data().FantasyPointsAgainst,
+          Fumbles: doc.data().Fumbles,
+          PassingINT: doc.data().PassingINT,
+          PassingTD: doc.data().PassingTD,
+          PassingYDS: doc.data().PassingYDS,
+          Rank: doc.data().Rank,
+          ReceivingRec: doc.data().ReceivingRec,
+          ReceivingTD: doc.data().ReceivingTD,
+          ReceivingYDS: doc.data().ReceivingYDS,
+          ReceptionPercentage: doc.data().ReceptionPercentage,
+          RushingTD: doc.data().RushingTD,
+          RushingYDS: doc.data().RushingYDS,
+          RedzoneGoalToGo: doc.data().RedzoneGoalToGo,
+          RedzoneTargets: doc.data().RedzoneTargets,
+          RedZoneTouches: doc.data().RedZoneTouches,
+          ReceivingTargets: doc.data().ReceivingTargets,
+          TargetsReceiptions: doc.data().TargetsReceiptions,
+          TotalPoints: doc.data().TotalPoints,
+          TotalCarries: doc.data().TotalCarries,
+          TotalTouches: doc.data().TotalTouches,
+          WeeklyPoints: doc.data().WeeklyPoints,
+        };
+        list.push(data);
+      });
+      setWRProspects(list);
+    });
+  };
+
+  const fetchTEPlayerData = async () => {
+    const docCollection = query(
+      collection(db, "auctiondraft", "players", "TE"),
+      where("DraftStatus", "==", "Open"),
+      orderBy("CurrentAuctionRank")
+    );
+    onSnapshot(docCollection, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        var data = {
+          id: doc.id,
+          AuctionRank: doc.data().AuctionRank,
+          Age: doc.data().Age,
+          College: doc.data().College,
+          DepthChartOrder: doc.data().DepthChartOrder,
+          FullName: doc.data().FullName,
+          InjuryNotes: doc.data().InjuryNotes,
+          InjuryStatus: doc.data().InjuryStatus,
+          KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
+          NonSuperFlexValue: doc.data().NonSuperFlexValue,
+          Position: doc.data().Position,
+          SleeperID: doc.data().SleeperID,
+          SearchRank: doc.data().SearchRank,
+          Status: doc.data().Status,
+          SuperFlexValue: doc.data().SuperFlexValue,
+          Team: doc.data().Team,
+          YearsExperience: doc.data().YearsExperience,
+          FantasyPointsAgainst: doc.data().FantasyPointsAgainst,
+          Fumbles: doc.data().Fumbles,
+          PassingINT: doc.data().PassingINT,
+          PassingTD: doc.data().PassingTD,
+          PassingYDS: doc.data().PassingYDS,
+          Rank: doc.data().Rank,
+          ReceivingRec: doc.data().ReceivingRec,
+          ReceivingTD: doc.data().ReceivingTD,
+          ReceivingYDS: doc.data().ReceivingYDS,
+          ReceptionPercentage: doc.data().ReceptionPercentage,
+          RushingTD: doc.data().RushingTD,
+          RushingYDS: doc.data().RushingYDS,
+          RedzoneGoalToGo: doc.data().RedzoneGoalToGo,
+          RedzoneTargets: doc.data().RedzoneTargets,
+          RedZoneTouches: doc.data().RedZoneTouches,
+          ReceivingTargets: doc.data().ReceivingTargets,
+          TargetsReceiptions: doc.data().TargetsReceiptions,
+          TotalPoints: doc.data().TotalPoints,
+          TotalCarries: doc.data().TotalCarries,
+          TotalTouches: doc.data().TotalTouches,
+          WeeklyPoints: doc.data().WeeklyPoints,
+        };
+        list.push(data);
+      });
+      setTEProspects(list);
+    });
+  };
+
 
   //Handle Save
   const handleSaveSettings = async () => {
@@ -204,15 +361,31 @@ const AuctionDraft = () => {
   };
 
   const handleDraftBoardReset = async () => {
+    QBProspects.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+
+    RBProspects.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+
+    WRProspects.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+
+    TEProspects.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+
     toast("Draft Board has been reset.");
   };
 
   useEffect(() => {
     fetchAuctionSettings();
-    fetchPlayerData("QB");
-    fetchPlayerData("RB");
-    fetchPlayerData("WR");
-    fetchPlayerData("TE");
+    fetchQBPlayerData();
+    fetchRBPlayerData();
+    fetchWRPlayerData();
+    fetchTEPlayerData();
     return () => {
       setQBProspects([]);
       setRBProspects([]);
