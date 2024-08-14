@@ -2,7 +2,7 @@ import React from "react";
 import PlayerDetailsQB from "./PlayerDetailsQB";
 import PlayerDrafted from "../Modals/PlayerDrafted";
 
-const PlayerComponentQB = ({ item, icon }) => {
+const PlayerComponentQB = ({ item, icon, auctionSettings }) => {
   const nameClick = () => {
     alert("Name Click");
   };
@@ -11,7 +11,7 @@ const PlayerComponentQB = ({ item, icon }) => {
     <>
       <div className="flex justify-between mt-4">
         <div className="flex gap-4">
-          <PlayerDrafted item={item} icon={icon} />
+          <PlayerDrafted item={item} icon={icon} auctionSettings={auctionSettings} />
           <div>
             <PlayerDetailsQB item={item} icon={icon} />
             <p className="text-sm text-gray-400">

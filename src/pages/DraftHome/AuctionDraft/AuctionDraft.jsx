@@ -18,7 +18,7 @@ import { collection, query, onSnapshot, orderBy, where } from "firebase/firestor
 import {
   getAuctionDataSettings,
   createOrUpdateAuctionDraftSettings,
-  updateDraftStatus
+  resetDraftBoard
 } from "../../../globalFunctions/firebaseAuctionDraft";
 
 //UI
@@ -46,6 +46,7 @@ const AuctionDraft = () => {
   const [checkedWRTiers, setCheckedWRTiers] = useState(false);
   const [checkedTETiers, setCheckedTETiers] = useState(false);
 
+  const [auctionSettings, setAuctionSettings] = useState({});
   const [auctionAmount, setAuctionAmount] = useState(null);
   const [qbPercent, setQBPercent] = useState(null);
   const [rbPercent, setRBPercent] = useState(null);
@@ -53,6 +54,11 @@ const AuctionDraft = () => {
   const [tePercent, setTEPercent] = useState(null);
   const [kPercent, setKPercent] = useState(null);
   const [defPercent, setDEFPercent] = useState(null);
+  const [qbTotalAmount, setQBTotalAmount] = useState(0);
+  const [rbTotalAmount, setRBTotalAmount] = useState(0);
+  const [wrTotalAmount, setWRTotalAmount] = useState(0);
+  const [teTotalAmount, setTETotalAmount] = useState(0);
+  const [totalAmountLeft, setTotalAmountLeft] = useState(0);
 
   //search
   const [searchQBQuery, setSearchQBQuery] = useState("");
@@ -118,11 +124,21 @@ const AuctionDraft = () => {
       setTEPercent(data.TEPercent);
       setKPercent(data.KPercent);
       setDEFPercent(data.DEFPercent);
+      setQBTotalAmount(data.QBTotalAmount);
+      setRBTotalAmount(data.RBTotalAmount);
+      setWRTotalAmount(data.WRTotalAmount);
+      setTETotalAmount(data.TETotalAmount);
+      setTotalAmountLeft(data.AuctionAmount-data.QBTotalAmount-data.RBTotalAmount-data.WRTotalAmount-data.TETotalAmount);
+      setAuctionSettings(data);
     } catch (e) {
       console.log(e);
       //alert("Error: " + e);
     }
   };
+
+  const setAllAuctionSettings = () => {
+    
+  }
 
   const fetchQBPlayerData = async () => {
     const docCollection = query(
@@ -355,29 +371,17 @@ const AuctionDraft = () => {
       TEPercent: tePercent,
       KPercent: kPercent,
       DEFPercent: defPercent,
+      QBTotalAmount: qbTotalAmount,
+      RBTotalAmount: rbTotalAmount,
+      WRTotalAmount: wrTotalAmount,
+      TETotalAmount: teTotalAmount,
     };
     createOrUpdateAuctionDraftSettings(auctionSettings);
     toast("Settings have been saved & updated.");
   };
 
   const handleDraftBoardReset = () => {
-    //Not working because everything doesnt equal OPEN
-    QBProspects.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
-    })
-
-    RBProspects.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
-    })
-
-    WRProspects.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
-    })
-
-    TEProspects.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
-    })
-
+    resetDraftBoard();
     toast("Draft Board has been reset.");
   };
 
@@ -392,6 +396,7 @@ const AuctionDraft = () => {
       setRBProspects([]);
       setWRProspects([]);
       setTEProspects([]);
+      setAuctionSettings({});
     };
   }, []);
 
@@ -583,6 +588,7 @@ const AuctionDraft = () => {
               <PlayerComponentQB
                 item={item}
                 icon={<TbSquareRoundedLetterQ />}
+                auctionSettings={auctionSettings}
               />
             ))}
           </Box>
@@ -615,6 +621,7 @@ const AuctionDraft = () => {
               <PlayerComponentRB
                 item={item}
                 icon={<TbSquareRoundedLetterR />}
+                auctionSettings={auctionSettings}
               />
             ))}
           </Box>
@@ -647,6 +654,7 @@ const AuctionDraft = () => {
               <PlayerComponentWR
                 item={item}
                 icon={<TbSquareRoundedLetterW />}
+                auctionSettings={auctionSettings}
               />
             ))}
           </Box>
@@ -679,6 +687,7 @@ const AuctionDraft = () => {
               <PlayerComponentTE
                 item={item}
                 icon={<TbSquareRoundedLetterT />}
+                auctionSettings={auctionSettings}
               />
             ))}
           </Box>
@@ -686,39 +695,43 @@ const AuctionDraft = () => {
       </div>
       {/* Scrollable List Section */}
       {checkedDraftResults && (
+        <> 
         <div className="flex gap-10 flex-wrap justify-center mt-12">
           <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">
             <div className="flex justify-between">
-              <p className="font-semibold text-xl">Draft Results 2</p>
-
-              <div className="flex items-center gap-4">
-                <p className="flex items-center gap-2 text-green-400 hover:drop-shadow-xl">
-                  <span>
-                    <GoPrimitiveDot />
-                  </span>
-                  <span>2023 Weekly Points Breakdown</span>
-                </p>
-              </div>
+              <p className="font-semibold text-xl">Draft Statistics</p>
             </div>
             <div className="mt-5 flex gap-10 flex-wrap justify-left">
               <div className=" border-r-1 border-color m-4 pr-10">
                 <div className="mt-1">
-                  <p className="text-green-500 text-3xl font-semibold">
-                    Passing Yards
+                  <p className="text-green-500 text-xl font-semibold">
+                    {qbTotalAmount}
                   </p>
-                  <p className="text-gray-500 mt-1">Passing Yards</p>
+                  <p className="text-gray-500 mt-1">QB Total Amount</p>
                 </div>
                 <div className="mt-1">
-                  <p className="text-green-500 text-3xl font-semibold">
-                    Passing TDS
+                  <p className="text-green-500 text-xl font-semibold">
+                    {rbTotalAmount}
                   </p>
-                  <p className="text-gray-500 mt-1">Passing TDs</p>
+                  <p className="text-gray-500 mt-1">RB Total Amount</p>
                 </div>
                 <div className="mt-1">
-                  <p className="text-red-500 text-3xl font-semibold">
-                    Passing INTs
+                  <p className="text-green-500 text-xl font-semibold">
+                    {wrTotalAmount}
                   </p>
-                  <p className="text-gray-500 mt-1">Passing Ints</p>
+                  <p className="text-gray-500 mt-1">WR Total Amount</p>
+                </div>
+                <div className="mt-1">
+                  <p className="text-green-500 text-xl font-semibold">
+                    {teTotalAmount}
+                  </p>
+                  <p className="text-gray-500 mt-1">TE Total Amount</p>
+                </div>
+                <div className="mt-1">
+                  <p className="text-red-500 text-xl font-semibold">
+                    {totalAmountLeft}
+                  </p>
+                  <p className="text-gray-500 mt-1">Amount Left</p>
                 </div>
               </div>
               <div className="mt-5">Pie Chart Component</div>
@@ -735,6 +748,7 @@ const AuctionDraft = () => {
             <div className="mt-5 w-72 md:w-400">Skilled Positions HERE</div>
           </div>
         </div>
+        </>
       )}
     </>
   );

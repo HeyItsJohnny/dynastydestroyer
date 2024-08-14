@@ -2,7 +2,7 @@ import React from "react";
 import PlayerDetailsWR from "./PlayerDetailsWR";
 import PlayerDrafted from "../Modals/PlayerDrafted";
 
-const PlayerComponentWR = ({ item, icon }) => {
+const PlayerComponentWR = ({ item, icon, auctionSettings }) => {
   const nameClick = () => {
     alert("Name Click");
   };
@@ -11,7 +11,7 @@ const PlayerComponentWR = ({ item, icon }) => {
     <>
       <div className="flex justify-between mt-4">
         <div className="flex gap-4">
-          <PlayerDrafted item={item} icon={icon} />
+          <PlayerDrafted item={item} icon={icon} auctionSettings={auctionSettings} />
           <div>
             <PlayerDetailsWR item={item} icon={icon} />
             <p className="text-sm text-gray-400">

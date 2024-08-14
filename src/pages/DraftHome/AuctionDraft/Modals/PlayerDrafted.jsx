@@ -10,26 +10,38 @@ import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 
 //Firebase
-import { updateDraftStatus } from "../../../../globalFunctions/firebaseAuctionDraft";
+import { updateDraftStatus, updateQBTotal, updateRBTotal, updateWRTotal, updateTETotal } from "../../../../globalFunctions/firebaseAuctionDraft";
 
 //Toast
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const PlayerDrafted = ({ item, icon }) => {
+const PlayerDrafted = ({ item, icon, auctionSettings }) => {
   const { currentColor } = useStateContext();
   const [show, setShow] = useState(false);
+  const [draftAmount, setDraftAmount] = useState(0);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
   const handleReset = () => {
+    setDraftAmount(0); 
     handleClose();
   };
 
   const handleDrafted = async () => {
     //Update Status to Drafted
     await updateDraftStatus(item,"Drafted");
+    if (item.Position === "QB") {
+      await updateQBTotal((auctionSettings.QBTotalAmount * 1) + (draftAmount * 1));
+    } else if (item.Position === "RB") {
+      await updateRBTotal((auctionSettings.RBTotalAmount * 1) + (draftAmount * 1));
+    } else if (item.Position === "WR") {
+      await updateWRTotal((auctionSettings.WRTotalAmount * 1) + (draftAmount * 1));
+    } else if (item.Position === "TE") {
+      await updateTETotal((auctionSettings.TETotalAmount * 1) + (draftAmount* 1));
+    }
+     
     toast("Congrats! You Drafted: " + item.FullName);
     handleReset();
   };
@@ -39,6 +51,12 @@ const PlayerDrafted = ({ item, icon }) => {
     await updateDraftStatus(item,"Taken");
     toast(item.FullName + " was drafted by someone else.");
     handleReset();
+  };
+
+  const handleDraftAmountChange = (event) => {
+    const value = event.target.value;
+    setDraftAmount(value);
+    console.log(event.target.value);
   };
 
   return (
@@ -93,6 +111,16 @@ const PlayerDrafted = ({ item, icon }) => {
             InputProps={{
               readOnly: true, // Set the readOnly property to true
             }}
+          />
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Draft Amount"
+            type="number"
+            fullWidth
+            variant="standard"
+            value={draftAmount}
+            onChange={handleDraftAmountChange}
           />
         </DialogContent>
         <DialogActions>

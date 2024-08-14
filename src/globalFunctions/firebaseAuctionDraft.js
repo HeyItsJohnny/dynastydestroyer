@@ -52,6 +52,54 @@ export async function updateAuctionDraftSettings(auctionSettings) {
       TEPercent: auctionSettings.TEPercent * 1,
       KPercent: auctionSettings.KPercent * 1,
       DEFPercent: auctionSettings.DEFPercent * 1,
+      QBTotalAmount: auctionSettings.QBTotalAmount * 1,
+      RBTotalAmount: auctionSettings.RBTotalAmount * 1,
+      WRTotalAmount: auctionSettings.WRTotalAmount * 1,
+      TETotalAmount: auctionSettings.TETotalAmount * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateQBTotal(total) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "auctiondraft", "settings"), {
+      QBTotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateRBTotal(total) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "auctiondraft", "settings"), {
+      RBTotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateWRTotal(total) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "auctiondraft", "settings"), {
+      WRTotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateTETotal(total) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "auctiondraft", "settings"), {
+      TETotalAmount: total * 1,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -69,6 +117,10 @@ export async function CreateAuctionDraftSettings(auctionSettings) {
       TEPercent: auctionSettings.TEPercent * 1,
       KPercent: auctionSettings.KPercent * 1,
       DEFPercent: auctionSettings.DEFPercent * 1,
+      QBTotalAmount: 0 * 1,
+      RBTotalAmount: 0 * 1,
+      WRTotalAmount: 0 * 1,
+      TETotalAmount: 0 * 1,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -438,16 +490,114 @@ export async function createPlayerAuctionData(playerData, auctionRank) {
   }
 }
 
-export async function updateDraftStatus(playerData, status) {
+export async function resetDraftBoard() {
+  resetQBDraftBoard();
+  resetRBDraftBoard();
+  resetWRDraftBoard();
+  resetTEDraftBoard();
+  resetDraftTotals();
+}
+
+export async function resetQBDraftBoard() {
+
+  const docCollection = query(collection(db, "auctiondraft", "players", "QB"),);
+  onSnapshot(docCollection, (querySnapshot) => {
+    const list = [];
+    querySnapshot.forEach((doc) => {
+      var data = {
+        id: doc.id,
+        Position: doc.data().Position,
+      };
+      list.push(data);
+    });
+    list.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+  });
+
+}
+
+export async function resetRBDraftBoard() {
+
+  const docCollection = query(collection(db, "auctiondraft", "players", "RB"),);
+  onSnapshot(docCollection, (querySnapshot) => {
+    const list = [];
+    querySnapshot.forEach((doc) => {
+      var data = {
+        id: doc.id,
+        Position: doc.data().Position
+      };
+      list.push(data);
+    });
+    list.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+  });
+
+}
+
+export async function resetWRDraftBoard() {
+
+  const docCollection = query(collection(db, "auctiondraft", "players", "WR"),);
+  onSnapshot(docCollection, (querySnapshot) => {
+    const list = [];
+    querySnapshot.forEach((doc) => {
+      var data = {
+        id: doc.id,
+        Position: doc.data().Position,
+      };
+      list.push(data);
+    });
+    list.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+  });
+
+}
+
+export async function resetTEDraftBoard() {
+  
+  const docCollection = query(collection(db, "auctiondraft", "players", "TE"),);
+  onSnapshot(docCollection, (querySnapshot) => {
+    const list = [];
+    querySnapshot.forEach((doc) => {
+      var data = {
+        id: doc.id,
+        Position: doc.data().Position,
+      };
+      list.push(data);
+    });
+    list.forEach((doc) => {
+      updateDraftStatus(doc,"Open");
+    })
+  });
+  
+}
+
+export async function resetDraftTotals() {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db,"auctiondraft","players",playerData.Position,playerData.KeepTradeCutIdentifier),
-      {
-        DraftStatus: status,
-      }
-    );
-    console.log("HIT: " + status);
+    await updateDoc(doc(db, "auctiondraft", "settings"), {
+      QBTotalAmount: 0 * 1,
+      RBTotalAmount: 0 * 1,
+      WRTotalAmount: 0 * 1,
+      TETotalAmount: 0 * 1,
+    });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
   }
 }
+
+export async function updateDraftStatus(playerData, status) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db,"auctiondraft","players",playerData.Position,playerData.id),
+      {
+        DraftStatus: status,
+      }
+    );
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
