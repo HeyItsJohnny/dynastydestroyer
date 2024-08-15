@@ -11,14 +11,22 @@ import PlayerComponentQB from "./QB/PlayerComponentQB";
 import PlayerComponentRB from "./RB/PlayerComponentRB";
 import PlayerComponentWR from "./WR/PlayerComponentWR";
 import PlayerComponentTE from "./TE/PlayerComponentTE";
+import DraftStatistics from "./DraftResults/DraftStatistics";
+import MyPlayers from "./DraftResults/MyPlayers";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
-import { collection, query, onSnapshot, orderBy, where } from "firebase/firestore";
+import {
+  collection,
+  query,
+  onSnapshot,
+  orderBy,
+  where,
+} from "firebase/firestore";
 import {
   getAuctionDataSettings,
   createOrUpdateAuctionDraftSettings,
-  resetDraftBoard
+  resetDraftBoard,
 } from "../../../globalFunctions/firebaseAuctionDraft";
 
 //UI
@@ -46,6 +54,7 @@ const AuctionDraft = () => {
   const [checkedWRTiers, setCheckedWRTiers] = useState(false);
   const [checkedTETiers, setCheckedTETiers] = useState(false);
 
+  const [auctionDraftStats, setAuctionDraftStats] = useState([]);
   const [auctionSettings, setAuctionSettings] = useState({});
   const [auctionAmount, setAuctionAmount] = useState(null);
   const [qbPercent, setQBPercent] = useState(null);
@@ -128,16 +137,70 @@ const AuctionDraft = () => {
       setRBTotalAmount(data.RBTotalAmount);
       setWRTotalAmount(data.WRTotalAmount);
       setTETotalAmount(data.TETotalAmount);
-      setTotalAmountLeft(data.AuctionAmount-data.QBTotalAmount-data.RBTotalAmount-data.WRTotalAmount-data.TETotalAmount);
+      setTotalAmountLeft(
+        data.AuctionAmount -
+          data.QBTotalAmount -
+          data.RBTotalAmount -
+          data.WRTotalAmount -
+          data.TETotalAmount
+      );
       setAuctionSettings(data);
+      createDraftStatsChart(data);
     } catch (e) {
       console.log(e);
       //alert("Error: " + e);
     }
   };
 
-  const setAllAuctionSettings = () => {
-    
+  const createDraftStatsChart = (settings) => {
+    const totalAmount = settings.QBTotalAmount + settings.RBTotalAmount + settings.WRTotalAmount + settings.TETotalAmount
+    const AmountSpentArray = [
+      {x: "QB", y: settings.QBTotalAmount},
+      {x: "RB", y: settings.RBTotalAmount},
+      {x: "WR", y: settings.WRTotalAmount},
+      {x: "TE", y: settings.TETotalAmount},
+      {x: "Total", y: totalAmount},
+    ];
+
+    const QBAmount = (settings.QBPercent/100) * settings.AuctionAmount;
+    const RBAmount = (settings.RBPercent/100) * settings.AuctionAmount;
+    const WRAmount = (settings.WRPercent/100) * settings.AuctionAmount;
+    const TEAmount = (settings.TEPercent/100) * settings.AuctionAmount;
+
+    const QBAmountLeft = QBAmount-settings.QBTotalAmount;
+    const RBAmountLeft = RBAmount-settings.RBTotalAmount;
+    const WRAmountLeft = WRAmount-settings.WRTotalAmount;
+    const TEAmountLeft = TEAmount-settings.TETotalAmount;
+    const AmountLeft = settings.AuctionAmount - totalAmount;
+
+    const AmountLeftArray = [
+      {x: "QB", y: QBAmountLeft},
+      {x: "RB", y: RBAmountLeft},
+      {x: "WR", y: WRAmountLeft},
+      {x: "TE", y: TEAmountLeft},
+      {x: "Total", y: AmountLeft},
+    ];
+
+    const tmpArray = [
+      {
+        dataSource: AmountSpentArray,
+        xName: "x",
+        yName: "y",
+        name: "Amount Spent",
+        type: "StackingColumn",
+        background: "blue",
+      },
+      {
+        dataSource: AmountLeftArray,
+        xName: "x",
+        yName: "y",
+        name: "Amount Left",
+        type: "StackingColumn",
+        background: "red",
+      },
+    ];
+
+    setAuctionDraftStats(tmpArray);
   }
 
   const fetchQBPlayerData = async () => {
@@ -360,7 +423,6 @@ const AuctionDraft = () => {
     });
   };
 
-
   //Handle Save
   const handleSaveSettings = async () => {
     const auctionSettings = {
@@ -397,6 +459,7 @@ const AuctionDraft = () => {
       setWRProspects([]);
       setTEProspects([]);
       setAuctionSettings({});
+      setAuctionDraftStats([]);
     };
   }, []);
 
@@ -526,8 +589,16 @@ const AuctionDraft = () => {
               variant="contained"
               color="error"
               onClick={handleDraftBoardReset}
+              sx={{ mr: 2 }} // Adds margin to the right of the button
             >
               Reset Draft Board
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={fetchAuctionSettings}
+            >
+              Reset Draft Stats
             </Button>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
@@ -695,59 +766,15 @@ const AuctionDraft = () => {
       </div>
       {/* Scrollable List Section */}
       {checkedDraftResults && (
-        <> 
-        <div className="flex gap-10 flex-wrap justify-center mt-12">
-          <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850  ">
-            <div className="flex justify-between">
-              <p className="font-semibold text-xl">Draft Statistics</p>
-            </div>
-            <div className="mt-5 flex gap-10 flex-wrap justify-left">
-              <div className=" border-r-1 border-color m-4 pr-10">
-                <div className="mt-1">
-                  <p className="text-green-500 text-xl font-semibold">
-                    {qbTotalAmount}
-                  </p>
-                  <p className="text-gray-500 mt-1">QB Total Amount</p>
-                </div>
-                <div className="mt-1">
-                  <p className="text-green-500 text-xl font-semibold">
-                    {rbTotalAmount}
-                  </p>
-                  <p className="text-gray-500 mt-1">RB Total Amount</p>
-                </div>
-                <div className="mt-1">
-                  <p className="text-green-500 text-xl font-semibold">
-                    {wrTotalAmount}
-                  </p>
-                  <p className="text-gray-500 mt-1">WR Total Amount</p>
-                </div>
-                <div className="mt-1">
-                  <p className="text-green-500 text-xl font-semibold">
-                    {teTotalAmount}
-                  </p>
-                  <p className="text-gray-500 mt-1">TE Total Amount</p>
-                </div>
-                <div className="mt-1">
-                  <p className="text-red-500 text-xl font-semibold">
-                    {totalAmountLeft}
-                  </p>
-                  <p className="text-gray-500 mt-1">Amount Left</p>
-                </div>
-              </div>
-              <div className="mt-5">Pie Chart Component</div>
-            </div>
+        <>
+          <div className="flex gap-10 flex-wrap justify-center mt-12">
+            <DraftStatistics
+              totalAmountLeft={totalAmountLeft}
+              auctionSettings={auctionSettings}
+              auctionDraftStats={auctionDraftStats}
+            />
+            <MyPlayers />
           </div>
-          <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl">
-            <div className="flex justify-between items-center gap-2">
-              <p className="text-xl font-semibold">Draft Details</p>
-            </div>
-            Draft Details
-            <div className="flex justify-between items-center gap-2 mt-5">
-              <p className="text-xl font-semibold">Drafted Players</p>
-            </div>
-            <div className="mt-5 w-72 md:w-400">Skilled Positions HERE</div>
-          </div>
-        </div>
         </>
       )}
     </>

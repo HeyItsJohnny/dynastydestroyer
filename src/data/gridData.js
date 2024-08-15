@@ -132,3 +132,15 @@ export const stackedPrimaryYAxis = {
   minorTickLines: { width: 0 },
   labelFormat: '{value}',
 };
+
+export const stackedPrimaryYAxisDraftStats = {
+  lineStyle: { width: 0 },
+  minimum: 0,
+  maximum: 500,
+  interval: 100,
+  majorTickLines: { width: 0 },
+  majorGridLines: { width: 1 },
+  minorGridLines: { width: 1 },
+  minorTickLines: { width: 0 },
+  labelFormat: '{value}',
+};
