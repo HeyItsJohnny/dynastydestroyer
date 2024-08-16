@@ -16,10 +16,7 @@ import PlayerComponentWR from "./WR/PlayerComponentWR";
 import PlayerComponentTE from "./TE/PlayerComponentTE";
 import DraftStatistics from "./DraftResults/DraftStatistics";
 import MyPlayers from "./DraftResults/MyPlayers";
-import QBTiers from "./Tiers/QBTiers";
-import RBTiers from "./Tiers/RBTiers";
-import WRTiers from "./Tiers/WRTiers";
-import TETiers from "./Tiers/TETiers";
+import AuctionTiers from "./AuctionTiers";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
@@ -265,6 +262,7 @@ const AuctionDraft = () => {
           RedZoneTouches: doc.data().RedZoneTouches,
           ReceivingTargets: doc.data().ReceivingTargets,
           TargetsReceiptions: doc.data().TargetsReceiptions,
+          Tier: doc.data().Tier,
           TotalPoints: doc.data().TotalPoints,
           TotalCarries: doc.data().TotalCarries,
           TotalTouches: doc.data().TotalTouches,
@@ -327,6 +325,7 @@ const AuctionDraft = () => {
           RedZoneTouches: doc.data().RedZoneTouches,
           ReceivingTargets: doc.data().ReceivingTargets,
           TargetsReceiptions: doc.data().TargetsReceiptions,
+          Tier: doc.data().Tier,
           TotalPoints: doc.data().TotalPoints,
           TotalCarries: doc.data().TotalCarries,
           TotalTouches: doc.data().TotalTouches,
@@ -389,6 +388,7 @@ const AuctionDraft = () => {
           RedZoneTouches: doc.data().RedZoneTouches,
           ReceivingTargets: doc.data().ReceivingTargets,
           TargetsReceiptions: doc.data().TargetsReceiptions,
+          Tier: doc.data().Tier,
           TotalPoints: doc.data().TotalPoints,
           TotalCarries: doc.data().TotalCarries,
           TotalTouches: doc.data().TotalTouches,
@@ -451,6 +451,7 @@ const AuctionDraft = () => {
           RedZoneTouches: doc.data().RedZoneTouches,
           ReceivingTargets: doc.data().ReceivingTargets,
           TargetsReceiptions: doc.data().TargetsReceiptions,
+          Tier: doc.data().Tier,
           TotalPoints: doc.data().TotalPoints,
           TotalCarries: doc.data().TotalCarries,
           TotalTouches: doc.data().TotalTouches,
@@ -804,16 +805,16 @@ const AuctionDraft = () => {
         </div>
       </div>
       {/* QB Tiers*/}
-      {checkedQBTiers && <QBTiers playerData={QBProspects}/>}
+      {checkedQBTiers && <AuctionTiers playerData={QBProspects} title="Quarterbacks"/>}
 
       {/* RB Tiers*/}
-      {checkedRBTiers && <RBTiers playerData={RBProspects}/>}
+      {checkedRBTiers && <AuctionTiers playerData={RBProspects} title="Running Backs"/>}
 
       {/* WR Tiers*/}
-      {checkedWRTiers && <WRTiers playerData={WRProspects}/>}
+      {checkedWRTiers && <AuctionTiers playerData={WRProspects} title="Wide Receivers"/>}
 
       {/* TE Tiers*/}
-      {checkedTETiers && <TETiers playerData={TEProspects}/>}
+      {checkedTETiers && <AuctionTiers playerData={TEProspects} title="Tight Ends"/>}
 
       {/* Draft Results*/}
       {checkedDraftResults && (

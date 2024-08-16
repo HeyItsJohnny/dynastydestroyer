@@ -447,7 +447,7 @@ export async function createPlayerAuctionData(playerData, auctionRank, uid) {
         playerData.KeepTradeCutIdentifier
       ),
       {
-        Tier: "",
+        Tier: "Tier 4",
         CurrentAuctionRank: auctionRank,
         AuctionRank: auctionRank,
         DraftStatus: "Open",
