@@ -3,9 +3,6 @@ import PlayerDetailsRB from "./PlayerDetailsRB";
 import PlayerDrafted from "../Modals/PlayerDrafted";
 
 const PlayerComponentRB = ({ item, icon, auctionSettings }) => {
-  const nameClick = () => {
-    alert("Name Click");
-  };
 
   return (
     <>

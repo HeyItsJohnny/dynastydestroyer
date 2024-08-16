@@ -1,8 +1,7 @@
 import React from "react";
 
 const DraftedPlayerComponent = ({
-  playerData,
-  icon,
+  playerData
 }) => {
   return (
     <div className="flex justify-between mt-4">

@@ -16,9 +16,9 @@ import {
 
 import { getPlayerWeeklyPoints } from "./firebasePlayerFunctions";
 
-export async function getAuctionDataSettings() {
+export async function getAuctionDataSettings(uid) {
   try {
-    const docRef = doc(db, "auctiondraft", "settings");
+    const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return docSnap.data();
@@ -31,20 +31,20 @@ export async function getAuctionDataSettings() {
   }
 }
 
-export async function createOrUpdateAuctionDraftSettings(auctionSettings) {
-  const docRef = doc(db, "auctiondraft", "settings");
+export async function createOrUpdateAuctionDraftSettings(auctionSettings, uid) {
+  const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    updateAuctionDraftSettings(auctionSettings);
+    updateAuctionDraftSettings(auctionSettings, uid);
   } else {
-    CreateAuctionDraftSettings(auctionSettings);
+    CreateAuctionDraftSettings(auctionSettings, uid);
   }
 }
 
-export async function updateAuctionDraftSettings(auctionSettings) {
+export async function updateAuctionDraftSettings(auctionSettings, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
       AuctionAmount: auctionSettings.AuctionAmount * 1,
       QBPercent: auctionSettings.QBPercent * 1,
       RBPercent: auctionSettings.RBPercent * 1,
@@ -62,54 +62,10 @@ export async function updateAuctionDraftSettings(auctionSettings) {
   }
 }
 
-export async function updateQBTotal(total) {
+export async function CreateAuctionDraftSettings(auctionSettings, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "auctiondraft", "settings"), {
-      QBTotalAmount: total * 1,
-    });
-  } catch (error) {
-    console.error("There was an error adding to the database: " + error);
-  }
-}
-
-export async function updateRBTotal(total) {
-  try {
-    //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "auctiondraft", "settings"), {
-      RBTotalAmount: total * 1,
-    });
-  } catch (error) {
-    console.error("There was an error adding to the database: " + error);
-  }
-}
-
-export async function updateWRTotal(total) {
-  try {
-    //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "auctiondraft", "settings"), {
-      WRTotalAmount: total * 1,
-    });
-  } catch (error) {
-    console.error("There was an error adding to the database: " + error);
-  }
-}
-
-export async function updateTETotal(total) {
-  try {
-    //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "auctiondraft", "settings"), {
-      TETotalAmount: total * 1,
-    });
-  } catch (error) {
-    console.error("There was an error adding to the database: " + error);
-  }
-}
-
-export async function CreateAuctionDraftSettings(auctionSettings) {
-  try {
-    //ID: lowercased firstnamelastname-position-team
-    await setDoc(doc(db, "auctiondraft", "settings"), {
+    await setDoc(doc(db, "userprofile",uid, "auctiondraft", "settings"), {
       AuctionAmount: auctionSettings.AuctionAmount * 1,
       QBPercent: auctionSettings.QBPercent * 1,
       RBPercent: auctionSettings.RBPercent * 1,
@@ -127,9 +83,54 @@ export async function CreateAuctionDraftSettings(auctionSettings) {
   }
 }
 
-export async function createOrUpdatePlayerAuctionData(playerData, auctionRank) {
+export async function updateQBTotal(total, uid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
+      QBTotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateRBTotal(total, uid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile",uid, "auctiondraft", "settings"), {
+      RBTotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateWRTotal(total, uid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile",uid, "auctiondraft", "settings"), {
+      WRTotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function updateTETotal(total, uid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
+      TETotalAmount: total * 1,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+export async function createOrUpdatePlayerAuctionData(playerData, auctionRank, uid) {
   const docRef = doc(
     db,
+    "userprofile",uid,
     "auctiondraft",
     "players",
     playerData.Position,
@@ -137,13 +138,13 @@ export async function createOrUpdatePlayerAuctionData(playerData, auctionRank) {
   );
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    updatePlayerAuctionData(playerData);
+    updatePlayerAuctionData(playerData, uid);
   } else {
-    createPlayerAuctionData(playerData, auctionRank);
+    createPlayerAuctionData(playerData, auctionRank, uid);
   }
 }
 
-export async function updatePlayerAuctionData(playerData) {
+export async function updatePlayerAuctionData(playerData, uid) {
   try {
     const KTCIdentifier = playerData.KeepTradeCutIdentifier;
     const WeekStatsArray = [];
@@ -266,6 +267,7 @@ export async function updatePlayerAuctionData(playerData) {
     await updateDoc(
       doc(
         db,
+        "userprofile",uid,
         "auctiondraft",
         "players",
         playerData.Position,
@@ -315,7 +317,7 @@ export async function updatePlayerAuctionData(playerData) {
   }
 }
 
-export async function createPlayerAuctionData(playerData, auctionRank) {
+export async function createPlayerAuctionData(playerData, auctionRank, uid) {
   try {
     const KTCIdentifier = playerData.KeepTradeCutIdentifier;
     const WeekStatsArray = [];
@@ -438,12 +440,14 @@ export async function createPlayerAuctionData(playerData, auctionRank) {
     await setDoc(
       doc(
         db,
+        "userprofile",uid,
         "auctiondraft",
         "players",
         playerData.Position,
         playerData.KeepTradeCutIdentifier
       ),
       {
+        Tier: "",
         CurrentAuctionRank: auctionRank,
         AuctionRank: auctionRank,
         DraftStatus: "Open",
@@ -490,17 +494,17 @@ export async function createPlayerAuctionData(playerData, auctionRank) {
   }
 }
 
-export async function resetDraftBoard() {
-  resetQBDraftBoard();
-  resetRBDraftBoard();
-  resetWRDraftBoard();
-  resetTEDraftBoard();
-  resetDraftTotals();
+export async function resetDraftBoard(uid) {
+  resetQBDraftBoard(uid);
+  resetRBDraftBoard(uid);
+  resetWRDraftBoard(uid);
+  resetTEDraftBoard(uid);
+  resetDraftTotals(uid);
 }
 
-export async function resetQBDraftBoard() {
+export async function resetQBDraftBoard(uid) {
 
-  const docCollection = query(collection(db, "auctiondraft", "players", "QB"),);
+  const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "QB"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
     querySnapshot.forEach((doc) => {
@@ -511,15 +515,15 @@ export async function resetQBDraftBoard() {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
+      updateDraftStatus(doc,"Open",uid);
     })
   });
 
 }
 
-export async function resetRBDraftBoard() {
+export async function resetRBDraftBoard(uid) {
 
-  const docCollection = query(collection(db, "auctiondraft", "players", "RB"),);
+  const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "RB"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
     querySnapshot.forEach((doc) => {
@@ -530,15 +534,15 @@ export async function resetRBDraftBoard() {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
+      updateDraftStatus(doc,"Open",uid);
     })
   });
 
 }
 
-export async function resetWRDraftBoard() {
+export async function resetWRDraftBoard(uid) {
 
-  const docCollection = query(collection(db, "auctiondraft", "players", "WR"),);
+  const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "WR"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
     querySnapshot.forEach((doc) => {
@@ -549,15 +553,15 @@ export async function resetWRDraftBoard() {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
+      updateDraftStatus(doc,"Open",uid);
     })
   });
 
 }
 
-export async function resetTEDraftBoard() {
+export async function resetTEDraftBoard(uid) {
   
-  const docCollection = query(collection(db, "auctiondraft", "players", "TE"),);
+  const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "TE"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
     querySnapshot.forEach((doc) => {
@@ -568,16 +572,16 @@ export async function resetTEDraftBoard() {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open");
+      updateDraftStatus(doc,"Open",uid);
     })
   });
   
 }
 
-export async function resetDraftTotals() {
+export async function resetDraftTotals(uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
       QBTotalAmount: 0 * 1,
       RBTotalAmount: 0 * 1,
       WRTotalAmount: 0 * 1,
@@ -588,10 +592,10 @@ export async function resetDraftTotals() {
   }
 }
 
-export async function updateDraftStatus(playerData, status) {
+export async function updateDraftStatus(playerData, status, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db,"auctiondraft","players",playerData.Position,playerData.id),
+    await updateDoc(doc(db,"userprofile",uid,"auctiondraft","players",playerData.Position,playerData.id),
       {
         DraftStatus: status,
       }

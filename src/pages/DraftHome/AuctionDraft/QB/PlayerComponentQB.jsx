@@ -3,9 +3,6 @@ import PlayerDetailsQB from "./PlayerDetailsQB";
 import PlayerDrafted from "../Modals/PlayerDrafted";
 
 const PlayerComponentQB = ({ item, icon, auctionSettings }) => {
-  const nameClick = () => {
-    alert("Name Click");
-  };
 
   return (
     <>

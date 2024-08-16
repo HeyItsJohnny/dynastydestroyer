@@ -16,6 +16,10 @@ import PlayerComponentWR from "./WR/PlayerComponentWR";
 import PlayerComponentTE from "./TE/PlayerComponentTE";
 import DraftStatistics from "./DraftResults/DraftStatistics";
 import MyPlayers from "./DraftResults/MyPlayers";
+import QBTiers from "./Tiers/QBTiers";
+import RBTiers from "./Tiers/RBTiers";
+import WRTiers from "./Tiers/WRTiers";
+import TETiers from "./Tiers/TETiers";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
@@ -39,7 +43,6 @@ import {
   Button,
   Box,
   Grid,
-  Paper,
   Typography,
   Switch,
 } from "@mui/material";
@@ -50,6 +53,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AuctionDraft = () => {
+  const { currentUser } = useAuth();
+
   const [checkedDraftResults, setCheckedDraftResults] = useState(false);
   const [checkedQBTiers, setCheckedQBTiers] = useState(false);
   const [checkedRBTiers, setCheckedRBTiers] = useState(false);
@@ -127,7 +132,7 @@ const AuctionDraft = () => {
   //Fetch Data
   const fetchAuctionSettings = async () => {
     try {
-      const data = await getAuctionDataSettings();
+      const data = await getAuctionDataSettings(currentUser.uid);
       setAuctionAmount(data.AuctionAmount);
       setQBPercent(data.QBPercent);
       setRBPercent(data.RBPercent);
@@ -155,32 +160,36 @@ const AuctionDraft = () => {
   };
 
   const createDraftStatsChart = (settings) => {
-    const totalAmount = settings.QBTotalAmount + settings.RBTotalAmount + settings.WRTotalAmount + settings.TETotalAmount
+    const totalAmount =
+      settings.QBTotalAmount +
+      settings.RBTotalAmount +
+      settings.WRTotalAmount +
+      settings.TETotalAmount;
     const AmountSpentArray = [
-      {x: "QB", y: settings.QBTotalAmount},
-      {x: "RB", y: settings.RBTotalAmount},
-      {x: "WR", y: settings.WRTotalAmount},
-      {x: "TE", y: settings.TETotalAmount},
-      {x: "Total", y: totalAmount},
+      { x: "QB", y: settings.QBTotalAmount },
+      { x: "RB", y: settings.RBTotalAmount },
+      { x: "WR", y: settings.WRTotalAmount },
+      { x: "TE", y: settings.TETotalAmount },
+      { x: "Total", y: totalAmount },
     ];
 
-    const QBAmount = (settings.QBPercent/100) * settings.AuctionAmount;
-    const RBAmount = (settings.RBPercent/100) * settings.AuctionAmount;
-    const WRAmount = (settings.WRPercent/100) * settings.AuctionAmount;
-    const TEAmount = (settings.TEPercent/100) * settings.AuctionAmount;
+    const QBAmount = (settings.QBPercent / 100) * settings.AuctionAmount;
+    const RBAmount = (settings.RBPercent / 100) * settings.AuctionAmount;
+    const WRAmount = (settings.WRPercent / 100) * settings.AuctionAmount;
+    const TEAmount = (settings.TEPercent / 100) * settings.AuctionAmount;
 
-    const QBAmountLeft = QBAmount-settings.QBTotalAmount;
-    const RBAmountLeft = RBAmount-settings.RBTotalAmount;
-    const WRAmountLeft = WRAmount-settings.WRTotalAmount;
-    const TEAmountLeft = TEAmount-settings.TETotalAmount;
+    const QBAmountLeft = QBAmount - settings.QBTotalAmount;
+    const RBAmountLeft = RBAmount - settings.RBTotalAmount;
+    const WRAmountLeft = WRAmount - settings.WRTotalAmount;
+    const TEAmountLeft = TEAmount - settings.TETotalAmount;
     const AmountLeft = settings.AuctionAmount - totalAmount;
 
     const AmountLeftArray = [
-      {x: "QB", y: QBAmountLeft},
-      {x: "RB", y: RBAmountLeft},
-      {x: "WR", y: WRAmountLeft},
-      {x: "TE", y: TEAmountLeft},
-      {x: "Total", y: AmountLeft},
+      { x: "QB", y: QBAmountLeft },
+      { x: "RB", y: RBAmountLeft },
+      { x: "WR", y: WRAmountLeft },
+      { x: "TE", y: TEAmountLeft },
+      { x: "Total", y: AmountLeft },
     ];
 
     const tmpArray = [
@@ -203,11 +212,18 @@ const AuctionDraft = () => {
     ];
 
     setAuctionDraftStats(tmpArray);
-  }
+  };
 
   const fetchQBPlayerData = async () => {
     const docCollection = query(
-      collection(db, "auctiondraft", "players", "QB"),
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "auctiondraft",
+        "players",
+        "QB"
+      ),
       where("DraftStatus", "==", "Open"),
       orderBy("CurrentAuctionRank")
     );
@@ -262,7 +278,14 @@ const AuctionDraft = () => {
 
   const fetchRBPlayerData = async () => {
     const docCollection = query(
-      collection(db, "auctiondraft", "players", "RB"),
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "auctiondraft",
+        "players",
+        "RB"
+      ),
       where("DraftStatus", "==", "Open"),
       orderBy("CurrentAuctionRank")
     );
@@ -317,7 +340,14 @@ const AuctionDraft = () => {
 
   const fetchWRPlayerData = async () => {
     const docCollection = query(
-      collection(db, "auctiondraft", "players", "WR"),
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "auctiondraft",
+        "players",
+        "WR"
+      ),
       where("DraftStatus", "==", "Open"),
       orderBy("CurrentAuctionRank")
     );
@@ -372,7 +402,14 @@ const AuctionDraft = () => {
 
   const fetchTEPlayerData = async () => {
     const docCollection = query(
-      collection(db, "auctiondraft", "players", "TE"),
+      collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "auctiondraft",
+        "players",
+        "TE"
+      ),
       where("DraftStatus", "==", "Open"),
       orderBy("CurrentAuctionRank")
     );
@@ -440,12 +477,12 @@ const AuctionDraft = () => {
       WRTotalAmount: wrTotalAmount,
       TETotalAmount: teTotalAmount,
     };
-    createOrUpdateAuctionDraftSettings(auctionSettings);
+    createOrUpdateAuctionDraftSettings(auctionSettings, currentUser.uid);
     toast("Settings have been saved & updated.");
   };
 
   const handleDraftBoardReset = () => {
-    resetDraftBoard();
+    resetDraftBoard(currentUser.uid);
     toast("Draft Board has been reset.");
   };
 
@@ -600,7 +637,7 @@ const AuctionDraft = () => {
               color="primary"
               onClick={fetchAuctionSettings}
             >
-              Reset Draft Stats
+              Refresh Draft Stats
             </Button>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
@@ -766,7 +803,19 @@ const AuctionDraft = () => {
           </Box>
         </div>
       </div>
-      {/* Scrollable List Section */}
+      {/* QB Tiers*/}
+      {checkedQBTiers && <QBTiers playerData={QBProspects}/>}
+
+      {/* RB Tiers*/}
+      {checkedRBTiers && <RBTiers playerData={RBProspects}/>}
+
+      {/* WR Tiers*/}
+      {checkedWRTiers && <WRTiers playerData={WRProspects}/>}
+
+      {/* TE Tiers*/}
+      {checkedTETiers && <TETiers playerData={TEProspects}/>}
+
+      {/* Draft Results*/}
       {checkedDraftResults && (
         <>
           <div className="flex gap-10 flex-wrap justify-center mt-12">

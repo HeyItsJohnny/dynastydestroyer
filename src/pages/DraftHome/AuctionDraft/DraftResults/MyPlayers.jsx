@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 
+//User ID
+import { useAuth } from "../../../../contexts/AuthContext";
+
 import DraftedPlayerComponent from "./DraftedPlayerComponent";
 
 //Firebase
@@ -13,6 +16,7 @@ import {
 } from "firebase/firestore";
 
 const MyPlayers = () => {
+  const { currentUser } = useAuth();
   //player data
   const [draftedPlayers, setDraftedPlayers] = useState({
     QB: [],
@@ -23,7 +27,7 @@ const MyPlayers = () => {
 
   const fetchDraftedPlayers = async (position, setter) => {
     const docCollection = query(
-      collection(db, "auctiondraft", "players", position),
+      collection(db, "userprofile",currentUser.uid,"auctiondraft", "players", position),
       where("DraftStatus", "==", "Drafted"),
       orderBy("CurrentAuctionRank")
     );

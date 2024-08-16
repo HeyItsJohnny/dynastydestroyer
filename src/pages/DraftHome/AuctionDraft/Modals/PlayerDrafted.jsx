@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useStateContext } from "../../../../contexts/ContextProvider";
 
+//User ID
+import { useAuth } from "../../../../contexts/AuthContext";
+
 //Dialog
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -17,6 +20,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const PlayerDrafted = ({ item, icon, auctionSettings }) => {
+  const { currentUser } = useAuth();
   const { currentColor } = useStateContext();
   const [show, setShow] = useState(false);
   const [draftAmount, setDraftAmount] = useState(0);
@@ -31,15 +35,15 @@ const PlayerDrafted = ({ item, icon, auctionSettings }) => {
 
   const handleDrafted = async () => {
     //Update Status to Drafted
-    await updateDraftStatus(item,"Drafted");
+    await updateDraftStatus(item,"Drafted", currentUser.uid);
     if (item.Position === "QB") {
-      await updateQBTotal((auctionSettings.QBTotalAmount * 1) + (draftAmount * 1));
+      await updateQBTotal((auctionSettings.QBTotalAmount * 1) + (draftAmount * 1),currentUser.uid);
     } else if (item.Position === "RB") {
-      await updateRBTotal((auctionSettings.RBTotalAmount * 1) + (draftAmount * 1));
+      await updateRBTotal((auctionSettings.RBTotalAmount * 1) + (draftAmount * 1),currentUser.uid);
     } else if (item.Position === "WR") {
-      await updateWRTotal((auctionSettings.WRTotalAmount * 1) + (draftAmount * 1));
+      await updateWRTotal((auctionSettings.WRTotalAmount * 1) + (draftAmount * 1),currentUser.uid);
     } else if (item.Position === "TE") {
-      await updateTETotal((auctionSettings.TETotalAmount * 1) + (draftAmount* 1));
+      await updateTETotal((auctionSettings.TETotalAmount * 1) + (draftAmount* 1),currentUser.uid);
     }
      
     toast("Congrats! You Drafted: " + item.FullName);
@@ -48,7 +52,7 @@ const PlayerDrafted = ({ item, icon, auctionSettings }) => {
 
   const handleTaken = async () => {
     //Update Status to Taken
-    await updateDraftStatus(item,"Taken");
+    await updateDraftStatus(item,"Taken",currentUser.uid);
     toast(item.FullName + " was drafted by someone else.");
     handleReset();
   };
@@ -56,7 +60,6 @@ const PlayerDrafted = ({ item, icon, auctionSettings }) => {
   const handleDraftAmountChange = (event) => {
     const value = event.target.value;
     setDraftAmount(value);
-    console.log(event.target.value);
   };
 
   return (

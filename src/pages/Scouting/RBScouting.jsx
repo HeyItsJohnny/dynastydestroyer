@@ -99,7 +99,7 @@ const RBScouting = () => {
   const addAllPlayersToAuctionDraft = () => {
     var rank = 1;
     playerData.forEach((data) => {
-      createOrUpdatePlayerAuctionData(data, rank);
+      createOrUpdatePlayerAuctionData(data, rank, currentUser.uid);
       rank += 1;
     });
     toast("Players added to Auction Draft");

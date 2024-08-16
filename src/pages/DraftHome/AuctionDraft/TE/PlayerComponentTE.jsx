@@ -3,9 +3,6 @@ import PlayerDetailsTE from "./PlayerDetailsTE";
 import PlayerDrafted from "../Modals/PlayerDrafted";
 
 const PlayerComponentTE = ({ item, icon, auctionSettings }) => {
-  const nameClick = () => {
-    alert("Name Click");
-  };
 
   return (
     <>
