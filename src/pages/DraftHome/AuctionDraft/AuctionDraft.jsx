@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 
+//User ID
+import { useAuth } from "../../../contexts/AuthContext";
+
 //Player Buttons
 import { TbSquareRoundedLetterQ } from "react-icons/tb";
 import { TbSquareRoundedLetterR } from "react-icons/tb";
@@ -41,7 +44,6 @@ import {
   Switch,
 } from "@mui/material";
 import { Header } from "../../../components";
-import { GoPrimitiveDot } from "react-icons/go";
 
 //Toast
 import { ToastContainer, toast } from "react-toastify";

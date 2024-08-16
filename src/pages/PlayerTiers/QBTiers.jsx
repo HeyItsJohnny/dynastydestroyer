@@ -96,7 +96,6 @@ const QBTiers = () => {
           { headerText: "Tier 2", keyField: "Tier 2" },
           { headerText: "Tier 3", keyField: "Tier 3" },
           { headerText: "Tier 4", keyField: "Tier 4" },
-          { headerText: "Tier 5", keyField: "Tier 5" },
         ]}
         cardSettings={{ contentField: "Team", headerField: "FullName" }}
         keyField="Tier"
