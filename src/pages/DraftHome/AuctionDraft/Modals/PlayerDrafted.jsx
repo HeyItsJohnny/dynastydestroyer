@@ -11,9 +11,19 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 
 //Firebase
-import { updateDraftStatus, updateQBTotal, updateRBTotal, updateWRTotal, updateTETotal } from "../../../../globalFunctions/firebaseAuctionDraft";
+import {
+  updateDraftStatus,
+  updateQBTotal,
+  updateRBTotal,
+  updateWRTotal,
+  updateTETotal,
+} from "../../../../globalFunctions/firebaseAuctionDraft";
 
 //Toast
 import { ToastContainer, toast } from "react-toastify";
@@ -23,36 +33,50 @@ const PlayerDrafted = ({ item, icon, auctionSettings }) => {
   const { currentUser } = useAuth();
   const { currentColor } = useStateContext();
   const [show, setShow] = useState(false);
+  const [drafter, setDrafter] = useState("");
   const [draftAmount, setDraftAmount] = useState(0);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
   const handleReset = () => {
-    setDraftAmount(0); 
+    setDraftAmount(0);
+    setDrafter("");
     handleClose();
   };
 
   const handleDrafted = async () => {
     //Update Status to Drafted
-    await updateDraftStatus(item,"Drafted", currentUser.uid);
+    await updateDraftStatus(item, "Drafted", currentUser.uid, drafter, draftAmount);
     if (item.Position === "QB") {
-      await updateQBTotal((auctionSettings.QBTotalAmount * 1) + (draftAmount * 1),currentUser.uid);
+      await updateQBTotal(
+        auctionSettings.QBTotalAmount * 1 + draftAmount * 1,
+        currentUser.uid
+      );
     } else if (item.Position === "RB") {
-      await updateRBTotal((auctionSettings.RBTotalAmount * 1) + (draftAmount * 1),currentUser.uid);
+      await updateRBTotal(
+        auctionSettings.RBTotalAmount * 1 + draftAmount * 1,
+        currentUser.uid
+      );
     } else if (item.Position === "WR") {
-      await updateWRTotal((auctionSettings.WRTotalAmount * 1) + (draftAmount * 1),currentUser.uid);
+      await updateWRTotal(
+        auctionSettings.WRTotalAmount * 1 + draftAmount * 1,
+        currentUser.uid
+      );
     } else if (item.Position === "TE") {
-      await updateTETotal((auctionSettings.TETotalAmount * 1) + (draftAmount* 1),currentUser.uid);
+      await updateTETotal(
+        auctionSettings.TETotalAmount * 1 + draftAmount * 1,
+        currentUser.uid
+      );
     }
-     
+
     toast("Congrats! You Drafted: " + item.FullName);
     handleReset();
   };
 
   const handleTaken = async () => {
     //Update Status to Taken
-    await updateDraftStatus(item,"Taken",currentUser.uid);
+    await updateDraftStatus(item, "Taken", currentUser.uid, drafter, draftAmount);
     toast(item.FullName + " was drafted by someone else.");
     handleReset();
   };
@@ -60,6 +84,10 @@ const PlayerDrafted = ({ item, icon, auctionSettings }) => {
   const handleDraftAmountChange = (event) => {
     const value = event.target.value;
     setDraftAmount(value);
+  };
+
+  const handleDrafterChange = (event) => {
+    setDrafter(event.target.value);
   };
 
   return (
@@ -115,16 +143,42 @@ const PlayerDrafted = ({ item, icon, auctionSettings }) => {
               readOnly: true, // Set the readOnly property to true
             }}
           />
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Draft Amount"
-            type="number"
-            fullWidth
-            variant="standard"
-            value={draftAmount}
-            onChange={handleDraftAmountChange}
-          />
+        </DialogContent>
+        <DialogContent>
+          <FormControl fullWidth>
+            <InputLabel id="demo-simple-select-label">Drafted By</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              id="demo-simple-select"
+              value={drafter}
+              label="Drafted By"
+              onChange={handleDrafterChange}
+              required
+            >
+              <MenuItem value="Big Nix Energy">Big Nix Energy</MenuItem>
+              <MenuItem value="Chessie the Destroyer">
+                Chessie the Destroyer
+              </MenuItem>
+              <MenuItem value="Clay Smashyouz">Clay Smashyouz</MenuItem>
+              <MenuItem value="Lil-Khat Hairbert">Lil-Khat Hairbert</MenuItem>
+              <MenuItem value="King Koopa">King Koopa</MenuItem>
+              <MenuItem value="Mr. Irrelevant">Mr. Irrelevant</MenuItem>
+              <MenuItem value="The Abrockalypse">The Abrockalypse</MenuItem>
+              <MenuItem value="The Dynasty">The Dynasty</MenuItem>
+              <MenuItem value="The Commish">The Commish</MenuItem>
+              <MenuItem value="Tyreeky Blinders">Tyreeky Blinders</MenuItem>
+            </Select>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Draft Amount"
+              type="number"
+              fullWidth
+              variant="standard"
+              value={draftAmount}
+              onChange={handleDraftAmountChange}
+            />
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Box

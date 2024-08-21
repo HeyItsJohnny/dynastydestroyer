@@ -1,15 +1,10 @@
-import React, {useEffect} from "react";
+import React from "react";
 import { Header } from "../../../components";
 
 import { useAuth } from "../../../contexts/AuthContext";
 
 import { KanbanComponent } from "@syncfusion/ej2-react-kanban";
-
-import {
-  getUserTierList,
-  updatePlayerTier,
-  deletePlayerTierData,
-} from "../../../globalFunctions/firebaseUserFunctions";
+import { updatePlayerTier } from "../../../globalFunctions/firebaseAuctionDraft";
 
 const AuctionTiers = ({ playerData, title }) => {
   const { currentUser } = useAuth();
@@ -18,11 +13,12 @@ const AuctionTiers = ({ playerData, title }) => {
     if (args.requestType === "cardChanged") {
       //Updated
       try {
-        /* updatePlayerTier(
-            currentUser.uid,
-            args.changedRecords[0].KeepTradeCutIdentifier,
-            args.changedRecords[0].Tier
-          ); */
+        updatePlayerTier(
+          args.changedRecords[0].KeepTradeCutIdentifier,
+          args.changedRecords[0].Position,
+          args.changedRecords[0].Tier,
+          currentUser.uid
+        );
       } catch (error) {
         alert("Error editing data to Database: " + error);
       }
@@ -36,12 +32,6 @@ const AuctionTiers = ({ playerData, title }) => {
     }
   };
 
-  useEffect(() => {
-    console.log("TIER: " + title);
-    console.log(playerData);
-    return () => {
-    };
-  }, []);
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
@@ -54,6 +44,7 @@ const AuctionTiers = ({ playerData, title }) => {
           { headerText: "Tier 2", keyField: "Tier 2" },
           { headerText: "Tier 3", keyField: "Tier 3" },
           { headerText: "Tier 4", keyField: "Tier 4" },
+          { headerText: "Tier 5", keyField: "Tier 5" },
         ]}
         cardSettings={{ contentField: "Team", headerField: "FullName" }}
         keyField="Tier"

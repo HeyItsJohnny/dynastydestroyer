@@ -495,15 +495,17 @@ export async function createPlayerAuctionData(playerData, auctionRank, uid) {
 }
 
 export async function resetDraftBoard(uid) {
+  /*
   resetQBDraftBoard(uid);
   resetRBDraftBoard(uid);
   resetWRDraftBoard(uid);
   resetTEDraftBoard(uid);
   resetDraftTotals(uid);
+  */
 }
 
 export async function resetQBDraftBoard(uid) {
-
+  /*
   const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "QB"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
@@ -515,14 +517,14 @@ export async function resetQBDraftBoard(uid) {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open",uid);
+      updateDraftStatus(doc,"Open",uid,"",0);
     })
   });
-
+  */
 }
 
 export async function resetRBDraftBoard(uid) {
-
+  /*
   const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "RB"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
@@ -534,14 +536,14 @@ export async function resetRBDraftBoard(uid) {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open",uid);
+      updateDraftStatus(doc,"Open",uid,"",0);
     })
   });
-
+  */
 }
 
 export async function resetWRDraftBoard(uid) {
-
+  /*
   const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "WR"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
@@ -553,14 +555,14 @@ export async function resetWRDraftBoard(uid) {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open",uid);
+      updateDraftStatus(doc,"Open",uid,"",0);
     })
   });
-
+*/
 }
 
 export async function resetTEDraftBoard(uid) {
-  
+  /*
   const docCollection = query(collection(db, "userprofile",uid,"auctiondraft", "players", "TE"));
   onSnapshot(docCollection, (querySnapshot) => {
     const list = [];
@@ -572,10 +574,10 @@ export async function resetTEDraftBoard(uid) {
       list.push(data);
     });
     list.forEach((doc) => {
-      updateDraftStatus(doc,"Open",uid);
+      updateDraftStatus(doc,"Open",uid,"",0);
     })
   });
-  
+  */
 }
 
 export async function resetDraftTotals(uid) {
@@ -592,12 +594,14 @@ export async function resetDraftTotals(uid) {
   }
 }
 
-export async function updateDraftStatus(playerData, status, uid) {
+export async function updateDraftStatus(playerData, status, uid, drafter, draftprice) {
   try {
     //ID: lowercased firstnamelastname-position-team
     await updateDoc(doc(db,"userprofile",uid,"auctiondraft","players",playerData.Position,playerData.id),
       {
         DraftStatus: status,
+        DraftedBy: drafter,
+        DraftPrice: draftprice
       }
     );
   } catch (error) {
@@ -605,3 +609,15 @@ export async function updateDraftStatus(playerData, status, uid) {
   }
 }
 
+export async function updatePlayerTier(KeepTradeCutIdentifier, position, tier, uid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db,"userprofile",uid,"auctiondraft","players",position,KeepTradeCutIdentifier),
+      {
+        Tier: tier,
+      }
+    );
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
