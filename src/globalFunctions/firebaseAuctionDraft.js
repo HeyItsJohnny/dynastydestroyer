@@ -495,6 +495,61 @@ export async function createPlayerAuctionData(playerData, auctionRank, uid) {
 }
 
 export async function resetDraftBoard(uid) {
+  //Adding Random Players
+  /*
+  await setDoc(
+    doc(
+      db,
+      "userprofile",uid,
+      "auctiondraft",
+      "players",
+      "RB",
+      "kennethwalker-RB"
+    ),
+    {
+      Tier: "Tier 4",
+      CurrentAuctionRank: 56,
+      AuctionRank: 56,
+      DraftStatus: "Open",
+      Age: 24,
+      College: "",
+      DepthChartOrder: 1,
+      FullName: "Kenneth Walker",
+      InjuryNotes: "",
+      InjuryStatus: "",
+      KeepTradeCutIdentifier: "kennethwalker-RB",
+      NonSuperFlexValue: 0,
+      Position: "RB",
+      SleeperID: "0000",
+      SearchRank: 56,
+      Status: "",
+      SuperFlexValue: 0,
+      Team: "SEA",
+      YearsExperience: 3,
+      FantasyPointsAgainst: 0,
+      Fumbles: 0,
+      PassingINT: 0,
+      PassingTD: 0,
+      PassingYDS: 0,
+      Rank: 56,
+      ReceivingRec: 0,
+      ReceivingTD: 0,
+      ReceivingYDS: 0,
+      ReceptionPercentage: 0,
+      RushingTD: 0,
+      RushingYDS: 0,
+      RedzoneGoalToGo: 0,
+      RedzoneTargets: 0,
+      RedZoneTouches: 0,
+      ReceivingTargets: 0,
+      TargetsReceiptions: 0,
+      TotalPoints: 0,
+      TotalCarries: 0,
+      TotalTouches: 0,
+      WeeklyPoints: [],
+    }
+  );
+  */
   /*
   resetQBDraftBoard(uid);
   resetRBDraftBoard(uid);
