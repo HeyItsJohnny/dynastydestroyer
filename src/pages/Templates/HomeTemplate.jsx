@@ -29,6 +29,7 @@ import {
   RBTiers,
   TETiers,
   WRTiers,
+  AuctionDraftTeams
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
@@ -52,6 +53,8 @@ const HomeTemplate = ({ page }) => {
         return <CommandCenter />;
       case "AUCTIONDRAFT":
         return <AuctionDraft />;
+      case "AUCTIONDRAFTTEAMS":
+        return <AuctionDraftTeams />;
       case "SNAKEDRAFT":
         return <SnakeDraft />;
       case "QBTIERS":

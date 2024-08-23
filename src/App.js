@@ -36,10 +36,18 @@ function App() {
             }
           />
           <Route
-            path="/auctiondraft"
+            path="/auctiondraft/commandcenter"
             element={
               <PrivateRoute>
                 <HomeTemplate page="AUCTIONDRAFT" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/auctiondraft/teams"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="AUCTIONDRAFTTEAMS" />
               </PrivateRoute>
             }
           />
