@@ -10,25 +10,19 @@ import { TfiArrowTopRight } from "react-icons/tfi";
 
 export const links = [
   {
-    title: "Home",
+    title: "Big Dawgs Draft",
     links: [
       {
         name: "Command Center",
         icon: <GoDashboard />,
-        linktoname: "commandcenter"
-      },
-      {
-        name: "Kyle's Draft",
-        icon: <GoDashboard />,
         linktoname: "auctiondraft"
       },
-      /*
       {
         name: "Snake Draft",
         icon: <GoDashboard />,
         linktoname: "snakedraft"
       },
-      */
+      
     ],
   },
   {

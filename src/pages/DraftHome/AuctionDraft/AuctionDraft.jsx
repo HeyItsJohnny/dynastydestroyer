@@ -17,6 +17,7 @@ import PlayerComponentTE from "./TE/PlayerComponentTE";
 import DraftStatistics from "./DraftResults/DraftStatistics";
 import MyPlayers from "./DraftResults/MyPlayers";
 import AuctionTiers from "./AuctionTiers";
+import AddRookie from "./Modals/AddRookie";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
@@ -628,6 +629,7 @@ const AuctionDraft = () => {
             >
               Save Settings
             </Button>
+            {/** 
             <Button
               variant="contained"
               color="error"
@@ -636,13 +638,17 @@ const AuctionDraft = () => {
             >
               Reset Draft Board
             </Button>
+            */}
+            <AddRookie />
             <Button
               variant="contained"
               color="primary"
               onClick={fetchAuctionSettings}
+              sx={{ mr: 2 }} // Adds margin to the right of the button
             >
               Refresh Draft Stats
             </Button>
+            
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Typography gutterBottom>Show Draft Results</Typography>
