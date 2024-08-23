@@ -60,6 +60,7 @@ const AuctionDraft = () => {
   const [checkedRBTiers, setCheckedRBTiers] = useState(false);
   const [checkedWRTiers, setCheckedWRTiers] = useState(false);
   const [checkedTETiers, setCheckedTETiers] = useState(false);
+  const [checkedSleepers, setCheckedSleepers] = useState(false);
 
   const [auctionDraftStats, setAuctionDraftStats] = useState([]);
   const [auctionSettings, setAuctionSettings] = useState({});
@@ -111,6 +112,10 @@ const AuctionDraft = () => {
 
   const handleTETiersCheckboxChange = (event) => {
     setCheckedTETiers(event.target.checked);
+  };
+  
+  const handleSleepersCheckboxChange = (event) => {
+    setCheckedSleepers(event.target.checked);
   };
 
   const filteredQBs = QBProspects.filter((item) =>
@@ -675,6 +680,11 @@ const AuctionDraft = () => {
             <Switch
               checked={checkedTETiers}
               onChange={handleTETiersCheckboxChange}
+            />
+            <Typography gutterBottom>Show Sleepers</Typography>
+            <Switch
+              checked={checkedSleepers}
+              onChange={handleSleepersCheckboxChange}
             />
           </Box>
         </FormControl>
