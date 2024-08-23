@@ -26,6 +26,8 @@ import {
   onSnapshot,
   orderBy,
   where,
+  getDoc,
+  doc,
 } from "firebase/firestore";
 import {
   getAuctionDataSettings,
@@ -130,6 +132,7 @@ const AuctionDraft = () => {
   const fetchAuctionSettings = async () => {
     try {
       const data = await getAuctionDataSettings(currentUser.uid);
+      
       setAuctionAmount(data.AuctionAmount);
       setQBPercent(data.QBPercent);
       setRBPercent(data.RBPercent);
@@ -805,16 +808,24 @@ const AuctionDraft = () => {
         </div>
       </div>
       {/* QB Tiers*/}
-      {checkedQBTiers && <AuctionTiers playerData={QBProspects} title="Quarterbacks"/>}
+      {checkedQBTiers && (
+        <AuctionTiers playerData={QBProspects} title="Quarterbacks" />
+      )}
 
       {/* RB Tiers*/}
-      {checkedRBTiers && <AuctionTiers playerData={RBProspects} title="Running Backs"/>}
+      {checkedRBTiers && (
+        <AuctionTiers playerData={RBProspects} title="Running Backs" />
+      )}
 
       {/* WR Tiers*/}
-      {checkedWRTiers && <AuctionTiers playerData={WRProspects} title="Wide Receivers"/>}
+      {checkedWRTiers && (
+        <AuctionTiers playerData={WRProspects} title="Wide Receivers" />
+      )}
 
       {/* TE Tiers*/}
-      {checkedTETiers && <AuctionTiers playerData={TEProspects} title="Tight Ends"/>}
+      {checkedTETiers && (
+        <AuctionTiers playerData={TEProspects} title="Tight Ends" />
+      )}
 
       {/* Draft Results*/}
       {checkedDraftResults && (
