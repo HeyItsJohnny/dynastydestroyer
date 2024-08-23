@@ -676,3 +676,60 @@ export async function updatePlayerTier(KeepTradeCutIdentifier, position, tier, u
     console.error("There was an error adding to the database: " + error);
   }
 }
+
+
+export async function createRookiePlayer(position, fullname, team, depthChart, ktc, uid) {
+  await setDoc(
+    doc(
+      db,
+      "userprofile",uid,
+      "auctiondraft",
+      "players",
+      position,
+      ktc
+    ),
+    {
+      Tier: "Tier 4",
+      CurrentAuctionRank: 100,
+      AuctionRank: 100,
+      DraftStatus: "Open",
+      Age: 20,
+      College: "",
+      DepthChartOrder: depthChart,
+      FullName: fullname,
+      InjuryNotes: "",
+      InjuryStatus: "",
+      KeepTradeCutIdentifier: ktc,
+      NonSuperFlexValue: 0,
+      Position: position,
+      SleeperID: "0000",
+      SearchRank: 100,
+      Status: "",
+      SuperFlexValue: 0,
+      Team: team,
+      YearsExperience: 3,
+      FantasyPointsAgainst: 0,
+      Fumbles: 0,
+      PassingINT: 0,
+      PassingTD: 0,
+      PassingYDS: 0,
+      Rank: 56,
+      ReceivingRec: 0,
+      ReceivingTD: 0,
+      ReceivingYDS: 0,
+      ReceptionPercentage: 0,
+      RushingTD: 0,
+      RushingYDS: 0,
+      RedzoneGoalToGo: 0,
+      RedzoneTargets: 0,
+      RedZoneTouches: 0,
+      ReceivingTargets: 0,
+      TargetsReceiptions: 0,
+      TotalPoints: 0,
+      TotalCarries: 0,
+      TotalTouches: 0,
+      WeeklyPoints: [],
+    }
+  );
+  
+}

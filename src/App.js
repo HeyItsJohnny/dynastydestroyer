@@ -15,7 +15,7 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <HomeTemplate page="AUCTIODRAFT" />
+                <HomeTemplate page="AUCTIONDRAFT" />
               </PrivateRoute>
             }
           />

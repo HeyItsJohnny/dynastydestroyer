@@ -10,12 +10,13 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
-import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Button from "@mui/material/Button";
+
+import { createRookiePlayer } from "../../../../globalFunctions/firebaseAuctionDraft";
 
 //Toast
 import { ToastContainer, toast } from "react-toastify";
@@ -64,8 +65,8 @@ const AddRookie = () => {
   };
 
   const handleSave = async () => {
-    //Add Rookie
-    toast("Congrats! You've added a new Rookie: ");
+    await createRookiePlayer(position, fullName, team, depthChartOrder, ktcID, currentUser.uid);
+    toast("Congrats! You've added a new Rookie: " + fullName);
     handleReset();
   };
 
@@ -153,7 +154,6 @@ const AddRookie = () => {
           >
             Save
           </button>
-          å{" "}
         </DialogActions>
       </Dialog>
     </>
