@@ -24,9 +24,17 @@ import { GoPrimitiveDot } from "react-icons/go";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+
+//Database
+import { createSleeperPlayer } from "../../../../globalFunctions/firebaseAuctionDraft";
+
+//User ID
+import { useAuth } from "../../../../contexts/AuthContext";
 
 const PlayerDetailsTE = ({ item }) => {
   const { currentMode } = useStateContext();
+  const { currentUser } = useAuth();
   const [show, setShow] = useState(false);
 
   const handleClose = () => setShow(false);
@@ -34,6 +42,16 @@ const PlayerDetailsTE = ({ item }) => {
 
   const handleReset = () => {
     handleClose();
+  };
+
+  const addSleeperPlayer = async () => {
+    await createSleeperPlayer(
+      item.Position,
+      item.FullName,
+      item.Team,
+      item.KeepTradeCutIdentifier,
+      currentUser.uid
+    );
   };
 
   return (
@@ -150,6 +168,21 @@ const PlayerDetailsTE = ({ item }) => {
                 </ChartComponent>
               </div>
             </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "20px",
+            }}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={addSleeperPlayer}
+            >
+              Add as Sleeper
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
