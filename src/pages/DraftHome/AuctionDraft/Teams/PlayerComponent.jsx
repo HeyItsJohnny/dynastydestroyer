@@ -20,7 +20,7 @@ const PlayerComponent = ({ playerData }) => {
           </p>
         </div>
       </div>
-      <p className={`text-green-600`}>Price: {playerData.DraftPrice}</p>
+      <p className={`text-green-600`}>Price: ${playerData.DraftPrice}</p>
     </div>
   );
 };

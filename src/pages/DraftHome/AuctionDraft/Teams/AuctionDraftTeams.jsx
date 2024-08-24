@@ -53,18 +53,11 @@ const AuctionDraftTeams = () => {
 
   const displayPlayerData = (team) => {
     const filteredQBs = originalQBData.filter((player) => player.DraftedBy === team);
-    const filteredRBs = RBData.filter((player) => player.DraftedBy === team);
-    const filteredWRs = WRData.filter((player) => player.DraftedBy === team);
-    const filteredTEs = TEData.filter((player) => player.DraftedBy === team);
+    const filteredRBs = originalRBData.filter((player) => player.DraftedBy === team);
+    const filteredWRs = originalWRData.filter((player) => player.DraftedBy === team);
+    const filteredTEs = originalTEData.filter((player) => player.DraftedBy === team);
 
-    if (filteredQBs.length > 0) {
-      // Update the QBData state with the filtered QBs
-      setQBData(filteredQBs);
-    } else {
-      // If no QBs are found, keep the previous data or handle it accordingly
-      console.log("No QBs found for this team");
-    }
-
+    setQBData(filteredQBs);
     setRBData(filteredRBs);
     setWRData(filteredWRs);
     setTEData(filteredTEs);
@@ -233,7 +226,7 @@ const AuctionDraftTeams = () => {
         };
         list.push(data);
       });
-      setQBData(list);
+      setOriginalQBData(list);
     });
   };
 
@@ -298,7 +291,7 @@ const AuctionDraftTeams = () => {
         };
         list.push(data);
       });
-      setRBData(list);
+      setOriginalRBData(list);
     });
   };
 
@@ -363,7 +356,7 @@ const AuctionDraftTeams = () => {
         };
         list.push(data);
       });
-      setWRData(list);
+      setOriginalWRData(list);
     });
   };
 
@@ -428,7 +421,7 @@ const AuctionDraftTeams = () => {
         };
         list.push(data);
       });
-      setTEData(list);
+      setOriginalTEData(list);
     });
   };
 
@@ -443,6 +436,10 @@ const AuctionDraftTeams = () => {
       setRBData([]);
       setWRData([]);
       setTEData([]);
+      setOriginalQBData([]);
+      setOriginalRBData([]);
+      setOriginalWRData([]);
+      setOriginalTEData([]);
     };
   }, []);
 
