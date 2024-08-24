@@ -731,5 +731,38 @@ export async function createRookiePlayer(position, fullname, team, depthChart, k
       WeeklyPoints: [],
     }
   );
-  
+}
+
+export async function createSleeperPlayer(position, fullname, team, ktc, uid) {
+  await setDoc(
+    doc(
+      db,
+      "userprofile",uid,
+      "auctiondraft",
+      "players",
+      "sleepers",
+      ktc
+    ),
+    {
+      Position: position,
+      Team: team,
+      FullName: fullname,
+      KeepTradeCutIdentifier: ktc
+    }
+  );
+}
+
+export async function deleteSleeperPlayer(uid, ktc) {
+  try {
+    await deleteDoc(doc(
+      db,
+      "userprofile",uid,
+      "auctiondraft",
+      "players",
+      "sleepers",
+      ktc
+    ));
+  } catch (error) {
+    alert("Error deleting data from Firestore:", error);
+  }
 }

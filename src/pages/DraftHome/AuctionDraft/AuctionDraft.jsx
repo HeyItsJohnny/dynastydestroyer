@@ -18,6 +18,7 @@ import DraftStatistics from "./DraftResults/DraftStatistics";
 import MyPlayers from "./DraftResults/MyPlayers";
 import AuctionTiers from "./AuctionTiers";
 import AddRookie from "./Modals/AddRookie";
+import Sleepers from "./Sleepers/Sleepers";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
@@ -855,6 +856,11 @@ const AuctionDraft = () => {
             <MyPlayers />
           </div>
         </>
+      )}
+
+      {/* TE Tiers*/}
+      {checkedSleepers && (
+        <Sleepers />
       )}
     </>
   );
