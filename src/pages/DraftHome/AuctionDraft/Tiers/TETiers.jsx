@@ -4,12 +4,7 @@ import { Header } from "../../../../components";
 import { useAuth } from "../../../../contexts/AuthContext";
 
 import { KanbanComponent } from "@syncfusion/ej2-react-kanban";
-
-import {
-  getUserTierList,
-  updatePlayerTier,
-  deletePlayerTierData,
-} from "../../../../globalFunctions/firebaseUserFunctions";
+import { updatePlayerTier } from "../../../../globalFunctions/firebaseAuctionDraft";
 
 const TETiers = ({ playerData }) => {
   const { currentUser } = useAuth();
@@ -18,11 +13,12 @@ const TETiers = ({ playerData }) => {
     if (args.requestType === "cardChanged") {
       //Updated
       try {
-        /* updatePlayerTier(
-              currentUser.uid,
-              args.changedRecords[0].KeepTradeCutIdentifier,
-              args.changedRecords[0].Tier
-            ); */
+        updatePlayerTier(
+          args.changedRecords[0].KeepTradeCutIdentifier,
+          args.changedRecords[0].Position,
+          args.changedRecords[0].Tier,
+          currentUser.uid
+        );
       } catch (error) {
         alert("Error editing data to Database: " + error);
       }
