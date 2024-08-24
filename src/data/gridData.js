@@ -136,7 +136,7 @@ export const stackedPrimaryYAxis = {
 export const stackedPrimaryYAxisDraftStats = {
   lineStyle: { width: 0 },
   minimum: 0,
-  maximum: 500,
+  maximum: 250,
   interval: 100,
   majorTickLines: { width: 0 },
   majorGridLines: { width: 1 },
