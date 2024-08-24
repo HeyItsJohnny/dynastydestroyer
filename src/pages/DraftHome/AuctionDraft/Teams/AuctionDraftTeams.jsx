@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Header } from "../../../../components";
 import { InputLabel, Select, MenuItem, FormControl } from "@mui/material";
 import TeamStatistics from "./TeamStatistics";
+import TeamPlayers from "./TeamPlayers";
 
 //Firebase
 import { db } from "../../../../firebase/firebase";
@@ -28,6 +29,11 @@ const AuctionDraftTeams = () => {
   const [auctionDraftStats, setAuctionDraftStats] = useState([]);
 
   //player data
+  const [originalQBData, setOriginalQBData] = useState([]);
+  const [originalRBData, setOriginalRBData] = useState([]);
+  const [originalWRData, setOriginalWRData] = useState([]);
+  const [originalTEData, setOriginalTEData] = useState([]);
+
   const [QBData, setQBData] = useState([]);
   const [RBData, setRBData] = useState([]);
   const [WRData, setWRData] = useState([]);
@@ -46,10 +52,22 @@ const AuctionDraftTeams = () => {
   };
 
   const displayPlayerData = (team) => {
-    const filteredQBs = QBData.filter((player) => player.DraftedBy === team);
+    const filteredQBs = originalQBData.filter((player) => player.DraftedBy === team);
     const filteredRBs = RBData.filter((player) => player.DraftedBy === team);
     const filteredWRs = WRData.filter((player) => player.DraftedBy === team);
     const filteredTEs = TEData.filter((player) => player.DraftedBy === team);
+
+    if (filteredQBs.length > 0) {
+      // Update the QBData state with the filtered QBs
+      setQBData(filteredQBs);
+    } else {
+      // If no QBs are found, keep the previous data or handle it accordingly
+      console.log("No QBs found for this team");
+    }
+
+    setRBData(filteredRBs);
+    setWRData(filteredWRs);
+    setTEData(filteredTEs);
 
     let qbTotal = 0;
     let rbTotal = 0;
@@ -61,15 +79,15 @@ const AuctionDraftTeams = () => {
     });
 
     filteredRBs.forEach((doc) => {
-      rbTotal += doc.DraftPrice  * 1;
+      rbTotal += doc.DraftPrice * 1;
     });
 
     filteredWRs.forEach((doc) => {
-      wrTotal += doc.DraftPrice  * 1;
+      wrTotal += doc.DraftPrice * 1;
     });
 
     filteredTEs.forEach((doc) => {
-      teTotal += doc.DraftPrice  * 1;
+      teTotal += doc.DraftPrice * 1;
     });
 
     const totalTeamLeft =
@@ -459,14 +477,22 @@ const AuctionDraftTeams = () => {
           </Select>
         </FormControl>
       </div>
-      <TeamStatistics
-        QBTotal={QBTotal}
-        RBTotal={RBTotal}
-        WRTotal={WRTotal}
-        TETotal={TETotal}
-        totalLeft={totalLeft}
-        auctionDraftStats={auctionDraftStats}
-      />
+      <div className="flex gap-10 flex-wrap justify-center mt-12">
+        <TeamStatistics
+          QBTotal={QBTotal}
+          RBTotal={RBTotal}
+          WRTotal={WRTotal}
+          TETotal={TETotal}
+          totalLeft={totalLeft}
+          auctionDraftStats={auctionDraftStats}
+        />
+        <TeamPlayers
+          qbData={QBData.length ? QBData : []}
+          rbData={RBData.length ? RBData : []}
+          wrData={WRData.length ? WRData : []}
+          teData={TEData.length ? TEData : []}
+        />
+      </div>
     </>
   );
 };
