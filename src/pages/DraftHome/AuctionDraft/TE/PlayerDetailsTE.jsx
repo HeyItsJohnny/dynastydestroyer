@@ -52,6 +52,7 @@ const PlayerDetailsTE = ({ item }) => {
       item.KeepTradeCutIdentifier,
       currentUser.uid
     );
+    handleReset();
   };
 
   return (

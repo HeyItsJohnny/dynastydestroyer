@@ -45,8 +45,15 @@ const PlayerDetailsQB = ({ item }) => {
   };
 
   const addSleeperPlayer = async () => {
-    await createSleeperPlayer(item.Position, item.FullName, item.Team, item.KeepTradeCutIdentifier, currentUser.uid);
-  }
+    await createSleeperPlayer(
+      item.Position,
+      item.FullName,
+      item.Team,
+      item.KeepTradeCutIdentifier,
+      currentUser.uid
+    );
+    handleReset();
+  };
 
   return (
     <>
@@ -157,7 +164,13 @@ const PlayerDetailsQB = ({ item }) => {
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: '20px' }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "20px",
+            }}
+          >
             <Button
               variant="contained"
               color="primary"
