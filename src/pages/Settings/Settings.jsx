@@ -92,7 +92,7 @@ const Settings = () => {
       return true;
     } else if (data.position === "WR" && depthChart < 4 && depthChart !== 0) {
       return true;
-    } else if (data.position === "TE" && depthChart === 1) {
+    } else if (data.position === "TE" && depthChart < 2) {
       return true;
     } else if (data.position === "RB" && depthChart < 3 && depthChart !== 0) {
       return true;
