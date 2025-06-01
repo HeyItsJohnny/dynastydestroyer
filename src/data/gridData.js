@@ -44,11 +44,11 @@ export const playersQBGrid = [
   { field: "FullName", headerText: "Name", width: "100",},
   { field: "Age", headerText: "Age", width: "50"},
   { field: "Team", headerText: "Team", width: "50"},
-  { field: "PassingYDS", headerText: "Pass Yds", width: "75"},
-  { field: "PassingTD", headerText: "Pass TDs", width: "75"},
+  { field: "PassingYards", headerText: "Pass Yds", width: "75"},
+  { field: "PassingTDs", headerText: "Pass TDs", width: "75"},
   { field: "PassingINT", headerText: "Pass INTs", width: "75"},
   { field: "RushingYDS", headerText: "Rush YDs", width: "75"},
-  { field: "RushingTD", headerText: "Rush TDs", width: "75"},
+  { field: "RushingTDs", headerText: "Rush TDs", width: "75"},
   { field: "TotalPoints", headerText: "Total Points", width: "75"},
 ];
 
@@ -58,7 +58,7 @@ export const playersRBGrid = [
   { field: "Age", headerText: "Age", width: "50"},
   { field: "Team", headerText: "Team", width: "75"},
   { field: "RushingYDS", headerText: "Rush YDs", width: "75"},
-  { field: "RushingTD", headerText: "Rush TDs", width: "75"},
+  { field: "RushingTDs", headerText: "Rush TDs", width: "75"},
   { field: "ReceivingYDS", headerText: "Rec YDs", width: "75"},
   { field: "ReceivingTD", headerText: "Rec TDs", width: "75"},
   { field: "TotalPoints", headerText: "Total Points", width: "75"},

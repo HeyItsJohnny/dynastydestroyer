@@ -29,6 +29,7 @@ import {
   RBTiers,
   TETiers,
   WRTiers,
+  Quarterbacks,
   AuctionDraftTeams
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
@@ -85,6 +86,8 @@ const HomeTemplate = ({ page }) => {
         return <ComparePlayers />;
       case "COMPARELINEUPS":
         return <CompareLineups />;
+      case "QUARTERBACKS":
+        return <Quarterbacks />;
       case "SETTINGS":
         return <Settings />;
       default:

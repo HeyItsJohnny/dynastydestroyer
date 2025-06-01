@@ -10,8 +10,10 @@ import {
   timestampSleeperData,
 } from "../../globalFunctions/firebaseFunctions";
 
-import ImportPlayerStatsModal from "../../modals/ImportPlayerStatsModal";
 import ImportPlayerWeeklyStatsModal from "../../modals/ImportPlayerWeeklyStatsModal";
+
+//New
+import ImportPlayerCurrentStatsModal from "../../modals/ImportPlayerCurrentStatsModal";
 
 import {
   getPlayersFromSleeper,
@@ -136,7 +138,7 @@ const Settings = () => {
       </div>
 
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Sleeper" title="(Non Dynasty) Player Data" />
+        <Header category="Sleeper" title="Add Player Data" />
         <div className="flex justify-between items-center p-4 ml-4">
           <p className="font-semibold text-md">
             Last Updated: {sleeperDataUpdateSettings}
@@ -162,7 +164,7 @@ const Settings = () => {
           </p>
         </div>
         <div className="flex-col border-t-1 border-color p-4 ml-4">
-          <ImportPlayerStatsModal />
+          <ImportPlayerCurrentStatsModal />
         </div>
       </div>
 

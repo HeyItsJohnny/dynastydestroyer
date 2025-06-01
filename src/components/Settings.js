@@ -86,6 +86,31 @@ export const links = [
     ],
   },
   {
+    title: "Players",
+    links: [
+      {
+        name: "Quarterbacks",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "players/quarterbacks"
+      },
+      {
+        name: "Running Backs",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "players/runningbacks"
+      },
+      {
+        name: "Tight Ends",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "players/tightends"
+      },
+      {
+        name: "Wide Receivers",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "players/widereceivers"
+      },
+    ],
+  },
+  {
     title: "Settings",
     links: [
       {

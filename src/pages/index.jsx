@@ -23,6 +23,9 @@ export { default as RBDetails } from './Scouting/Details/RBDetails';
 export { default as TEDetails } from './Scouting/Details/TEDetails';
 export { default as WRDetails } from './Scouting/Details/WRDetails';
 
+//Players
+export { default as Quarterbacks } from './Players/Quarterbacks';
+
 //AUTH
 export { default as Login } from './Authentication/Login';
 export { default as ForgotPassword } from './Authentication/ForgotPassword';

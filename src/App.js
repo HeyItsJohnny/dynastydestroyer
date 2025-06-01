@@ -187,6 +187,17 @@ function App() {
               </PrivateRoute>
             }
           />
+          {/* PLAYERS */}
+          <Route
+            path="/players/quarterbacks"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="QUARTERBACKS" />
+              </PrivateRoute>
+            }
+          />
+          {/* PLAYERS */}
+          
           {/* AUTH */}
           <Route path="/registration" element={<Registration />} />
           <Route path="/login" element={<Login />} />

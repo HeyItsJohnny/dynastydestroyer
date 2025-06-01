@@ -36,8 +36,6 @@ import {
   formatPlayerName,
 } from "../globalFunctions/globalFunctions";
 
-import ImportPlayerStatsModal from "../modals/ImportPlayerStatsModal";
-
 //Firebase
 import { useAuth } from "../contexts/AuthContext";
 import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
@@ -374,7 +372,7 @@ const ThemeSettings = () => {
             <p className="font-bold text-xl">GitHub Player Stats</p>
           </div>
           <div className="flex-col border-t-1 border-color p-4 ml-4">
-            <ImportPlayerStatsModal />
+            {/** <ImportPlayerStatsModal_OLD /> **/}
           </div>
           <div className="flex justify-between items-center p-4 ml-4">
             <p className="font-bold text-xl">Import Keep Trade Cut Data</p>

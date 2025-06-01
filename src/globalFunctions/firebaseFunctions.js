@@ -94,6 +94,7 @@ export async function deleteLeagueDocument(uid, leagueid) {
   }
 }
 
+//JCL - USED
 export async function createOrUpdatePlayerData(playerData) {
   const docRef = doc(db, "players", playerData.player_id);
   const docSnap = await getDoc(docRef);
@@ -104,6 +105,7 @@ export async function createOrUpdatePlayerData(playerData) {
   }
 }
 
+//JCL - USED
 export async function createPlayerData(playerData) {
   try {
     //ID: lowercased firstnamelastname-position-team
@@ -129,12 +131,28 @@ export async function createPlayerData(playerData) {
       SuperFlexValue: 0,
       Team: playerData.team ?? "",
       YearsExperience: playerData.years_exp ?? "",
+      Fumbles: 0,
+      PassingYards: 0,
+      PassingTDs: 0,
+      PassingINT: 0,
+      RushingYDS: 0,
+      RushingTDs: 0,
+      ReceivingRec: 0,
+      ReceivingYDS: 0,
+      ReceivingTDs: 0,
+      ReceivingTargets: 0,
+      ReceptionPercentage: 0,
+      RedzoneTargets: 0,
+      RedzoneTouches: 0,
+      PositionRank: 99999,    //Separate Rookies from Vets
+      TotalPoints: 0
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
   }
 }
 
+//JCL - USED
 export async function updatePlayerData(playerData) {
   try {
     //ID: lowercased firstnamelastname-position-team
@@ -153,12 +171,56 @@ export async function updatePlayerData(playerData) {
       SuperFlexValue: 0,
       Team: playerData.team ?? "",
       YearsExperience: playerData.years_exp ?? "",
+      Fumbles: 0,
+      PassingYards: 0,
+      PassingTDs: 0,
+      PassingINT: 0,
+      RushingYDS: 0,
+      RushingTDs: 0,
+      ReceivingRec: 0,
+      ReceivingYDS: 0,
+      ReceivingTDs: 0,
+      ReceivingTargets: 0,
+      ReceptionPercentage: 0,
+      RedzoneTargets: 0,
+      RedzoneTouches: 0,
+      PositionRank: 99999,    //Separate Rookies from Vets
+      TotalPoints: 0,
+      Fumbles: 0
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
   }
 }
 
+//JCL - USED
+export async function addPlayerCurrentStats(playerID, statsData) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "players", playerID), {
+      PassingYards: parseInt(statsData.PassingYDS) ?? 0,
+      PassingTDs: parseInt(statsData.PassingTD) ?? 0,
+      PassingINT: parseInt(statsData.PassingInt) ?? 0,
+      RushingYDS: parseInt(statsData.RushingYDS) ?? 0,
+      RushingTDs: parseInt(statsData.RushingTD) ?? 0,
+      ReceivingRec: parseInt(statsData.ReceivingRec) ?? 0,
+      ReceivingYDS: parseInt(statsData.ReceivingYDS) ?? 0,
+      ReceivingTDs: parseInt(statsData.ReceivingTD) ?? 0,
+      ReceivingTargets: parseInt(statsData.Targets) ?? 0,
+      ReceptionPercentage: parseFloat(statsData.ReceptionPercentage) ?? 0,
+      RedzoneTargets: parseInt(statsData.RzTarget) ?? 0,
+      RedzoneTouches: parseInt(statsData.RzTouch) ?? 0,
+      PositionRank: parseInt(statsData.Rank) ?? 0,
+      TotalPoints: parseFloat(statsData.TotalPoints) ?? 0,
+      Fumbles: parseInt(statsData.Fum) ?? 0,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+
+//OLD
 export async function createOrUpdateUserRosterData(
   uid,
   leagueid,
@@ -518,91 +580,6 @@ export async function updatePlayerValues(playerID, updatedData) {
     await updateDoc(doc(db, "players", playerID), {
       NonSuperFlexValue: parseFloat(updatedData.NonSuperFlexValue),
       SuperFlexValue: parseFloat(updatedData.SuperFlexValue),
-    });
-  } catch (error) {
-    console.error("There was an error adding to the database: " + error);
-  }
-}
-
-export async function addOrUpdatePlayerStats(KTCID, year, statsData) {
-  try {
-    const q = query(
-      collection(db, "players"),
-      where("KeepTradeCutIdentifier", "==", KTCID)
-    );
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      createOrUpdatePlayerStats(doc.id, year, statsData);
-    });
-  } catch (error) {
-    console.log("Error updating fields:", error);
-  }
-}
-
-export async function createOrUpdatePlayerStats(playerID, year, statsData) {
-  //Create Players
-  const docRef = doc(db, "players", playerID, "Stats", year);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    updatePlayerStats(playerID, year, statsData);
-  } else {
-    createPlayerStats(playerID, year, statsData);
-  }
-}
-
-export async function createPlayerStats(playerID, year, statsData) {
-  try {
-    //ID: lowercased firstnamelastname-position-team
-    await setDoc(doc(db, "players", playerID, "Stats", year), {
-      FantasyPointsAgainst: parseFloat(statsData["FanPtsAgainst-pts"]) ?? 0,
-      Fumbles: parseInt(statsData.Fum) ?? 0,
-      PassingINT: parseInt(statsData.PassingInt) ?? 0,
-      PassingTD: parseInt(statsData.PassingTD) ?? 0,
-      PassingYDS: parseInt(statsData.PassingYDS) ?? 0,
-      Rank: parseInt(statsData.Rank) ?? 0,
-      ReceivingRec: parseInt(statsData.ReceivingRec) ?? 0,
-      ReceivingTD: parseInt(statsData.ReceivingTD) ?? 0,
-      ReceivingYDS: parseInt(statsData.ReceivingYDS) ?? 0,
-      ReceptionPercentage: parseFloat(statsData.ReceptionPercentage) ?? 0,
-      RushingTD: parseInt(statsData.RushingTD) ?? 0,
-      RushingYDS: parseInt(statsData.RushingYDS) ?? 0,
-      RedzoneGoalToGo: parseFloat(statsData.RzG2G) ?? 0,
-      RedzoneTargets: parseInt(statsData.RzTarget) ?? 0,
-      RedZoneTouches: parseInt(statsData.RzTouch) ?? 0,
-      ReceivingTargets: parseInt(statsData.Targets) ?? 0,
-      TargetsReceiptions: parseInt(statsData.TargetsReceptions) ?? 0,
-      TotalPoints: parseFloat(statsData.TotalPoints) ?? 0,
-      TotalCarries: parseInt(statsData.TouchCarries) ?? 0,
-      TotalTouches: parseInt(statsData.Touches) ?? 0,
-    });
-  } catch (error) {
-    console.error("There was an error adding to the database: " + error);
-  }
-}
-
-export async function updatePlayerStats(playerID, year, statsData) {
-  try {
-    await updateDoc(doc(db, "players", playerID, "Stats", year), {
-      FantasyPointsAgainst: parseFloat(statsData["FanPtsAgainst-pts"]) ?? 0,
-      Fumbles: parseInt(statsData.Fum) ?? 0,
-      PassingINT: parseInt(statsData.PassingInt) ?? 0,
-      PassingTD: parseInt(statsData.PassingTD) ?? 0,
-      PassingYDS: parseInt(statsData.PassingYDS) ?? 0,
-      Rank: parseInt(statsData.Rank) ?? 0,
-      ReceivingRec: parseInt(statsData.ReceivingRec) ?? 0,
-      ReceivingTD: parseInt(statsData.ReceivingTD) ?? 0,
-      ReceivingYDS: parseInt(statsData.ReceivingYDS) ?? 0,
-      ReceptionPercentage: parseFloat(statsData.ReceptionPercentage) ?? 0,
-      RushingTD: parseInt(statsData.RushingTD) ?? 0,
-      RushingYDS: parseInt(statsData.RushingYDS) ?? 0,
-      RedzoneGoalToGo: parseFloat(statsData.RzG2G) ?? 0,
-      RedzoneTargets: parseInt(statsData.RzTarget) ?? 0,
-      RedZoneTouches: parseInt(statsData.RzTouch) ?? 0,
-      ReceivingTargets: parseInt(statsData.Targets) ?? 0,
-      TargetsReceiptions: parseInt(statsData.TargetsReceptions) ?? 0,
-      TotalPoints: parseFloat(statsData.TotalPoints) ?? 0,
-      TotalCarries: parseInt(statsData.TouchCarries) ?? 0,
-      TotalTouches: parseInt(statsData.Touches) ?? 0,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);

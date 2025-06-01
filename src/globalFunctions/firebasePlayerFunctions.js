@@ -40,12 +40,13 @@ export async function getPlayerDataByID(playerID) {
   }
 }
 
+//JCL - USED
 export async function getPlayerDataByPosition(positionToSearch) {
   return new Promise((resolve, reject) => {
     const docCollection = query(
       collection(db, "players"),
       where("Position", "==", positionToSearch),
-      where("Team","!=","")
+      where("Team", "!=", "")
     );
     onSnapshot(
       docCollection,
@@ -73,6 +74,22 @@ export async function getPlayerDataByPosition(positionToSearch) {
             SuperFlexValue: doc.data().SuperFlexValue,
             Team: doc.data().Team,
             YearsExperience: doc.data().YearsExperience,
+            Fumbles: doc.data().Fumbles,
+            PassingYards: doc.data().PassingYards,
+            PassingTDs: doc.data().PassingTDs,
+            PassingINT: doc.data().PassingINT,
+            RushingYDS: doc.data().RushingYDS,
+            RushingTDs: doc.data().RushingTDs,
+            ReceivingRec: doc.data().ReceivingRec,
+            ReceivingYDS: doc.data().ReceivingYDS,
+            ReceivingTDs: doc.data().ReceivingTDs,
+            ReceivingTargets: doc.data().ReceivingTargets,
+            ReceptionPercentage: doc.data().ReceptionPercentage,
+            RedzoneTargets: doc.data().RedzoneTargets,
+            RedzoneTouches: doc.data().RedZoneTouches,
+            PositionRank: doc.data().PositionRank,
+            TotalPoints: doc.data().TotalPoints,
+            Fumbles: doc.data().Fumbles,
           };
           list.push(data);
         });
@@ -86,12 +103,15 @@ export async function getPlayerDataByPosition(positionToSearch) {
   });
 }
 
-export async function getPlayerDataByPositionAndTeam(positionToSearch,teamToSearch) {
+export async function getPlayerDataByPositionAndTeam(
+  positionToSearch,
+  teamToSearch
+) {
   return new Promise((resolve, reject) => {
     const docCollection = query(
       collection(db, "players"),
       where("Position", "==", positionToSearch),
-      where("Team","==",teamToSearch)
+      where("Team", "==", teamToSearch)
     );
     onSnapshot(
       docCollection,
@@ -177,7 +197,7 @@ export async function getPlayerName() {
   return new Promise((resolve, reject) => {
     const docCollection = query(
       collection(db, "players"),
-      where("Team","!=","")
+      where("Team", "!=", "")
     );
     onSnapshot(
       docCollection,
@@ -202,27 +222,34 @@ export async function getPlayerName() {
   });
 }
 
-export async function getPlayerWeeklyPoints( playerID, year, week ) {
+export async function getPlayerWeeklyPoints(playerID, year, week) {
   try {
-    const weekNumber = week.replace(/[a-zA-Z]/g, '');
+    const weekNumber = week.replace(/[a-zA-Z]/g, "");
 
-    const docRef = doc(db, "weeklystats", year, "Week", week, "Players", playerID);
+    const docRef = doc(
+      db,
+      "weeklystats",
+      year,
+      "Week",
+      week,
+      "Players",
+      playerID
+    );
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const doc = {
         x: weekNumber,
-        y: docSnap.data().TotalPoints
-      }
+        y: docSnap.data().TotalPoints,
+      };
       return doc;
     } else {
       const doc = {
         x: weekNumber,
-        y: 0
-      }
+        y: 0,
+      };
       return doc;
     }
   } catch (error) {
     console.log("Error updating fields:", error);
   }
-  
 }
