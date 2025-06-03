@@ -196,6 +196,30 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/players/runningbacks"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="RUNNINGBACKS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/players/tightends"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="TIGHTENDS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/players/widereceivers"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="WIDERECEIVERS" />
+              </PrivateRoute>
+            }
+          />
           {/* PLAYERS */}
           
           {/* AUTH */}

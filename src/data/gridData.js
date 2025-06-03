@@ -60,7 +60,7 @@ export const playersRBGrid = [
   { field: "RushingYDS", headerText: "Rush YDs", width: "75"},
   { field: "RushingTDs", headerText: "Rush TDs", width: "75"},
   { field: "ReceivingYDS", headerText: "Rec YDs", width: "75"},
-  { field: "ReceivingTD", headerText: "Rec TDs", width: "75"},
+  { field: "ReceivingTDs", headerText: "Rec TDs", width: "75"},
   { field: "TotalPoints", headerText: "Total Points", width: "75"},
 ];
 
@@ -71,7 +71,7 @@ export const playersTEWRGrid = [
   { field: "Team", headerText: "Team", width: "75"},
   { field: "ReceivingRec", headerText: "Rcpt", width: "75"},
   { field: "ReceivingYDS", headerText: "Rec YDs", width: "75"},
-  { field: "ReceivingTD", headerText: "Rec TDs", width: "75"},
+  { field: "ReceivingTDs", headerText: "Rec TDs", width: "75"},
   { field: "ReceivingTargets", headerText: "Targets", width: "75"},
   { field: "ReceptionPercentage", headerText: "Rcpt %", width: "75"},
   { field: "TotalPoints", headerText: "Total Points", width: "75"},

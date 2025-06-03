@@ -25,6 +25,9 @@ export { default as WRDetails } from './Scouting/Details/WRDetails';
 
 //Players
 export { default as Quarterbacks } from './Players/Quarterbacks';
+export { default as Runningbacks } from './Players/Runningbacks';
+export { default as Tightends } from './Players/Tightends';
+export { default as Widereceivers } from './Players/Widereceivers';
 
 //AUTH
 export { default as Login } from './Authentication/Login';

@@ -30,7 +30,10 @@ import {
   TETiers,
   WRTiers,
   Quarterbacks,
-  AuctionDraftTeams
+  Runningbacks,
+  Tightends,
+  Widereceivers,
+  AuctionDraftTeams,
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
@@ -88,6 +91,12 @@ const HomeTemplate = ({ page }) => {
         return <CompareLineups />;
       case "QUARTERBACKS":
         return <Quarterbacks />;
+      case "RUNNINGBACKS":
+        return <Runningbacks />;
+      case "TIGHTENDS":
+        return <Tightends />;
+      case "WIDERECEIVERS":
+        return <Widereceivers />;
       case "SETTINGS":
         return <Settings />;
       default:
