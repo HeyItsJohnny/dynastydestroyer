@@ -100,38 +100,6 @@ function App() {
             }
           />
           <Route
-            path="/scouting/quarterbacks/details/:id"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="QBDETAILS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/scouting/runningbacks/details/:id"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="RBDETAILS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/scouting/tightends/details/:id"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="TEDETAILS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/scouting/widereceivers/details/:id"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="WRDETAILS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
             path="/apps/compareplayers"
             element={
               <PrivateRoute>
@@ -220,8 +188,40 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/players/quarterbacks/details/:id"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="QBDETAILS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/players/runningbacks/details/:id"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="RBDETAILS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/players/tightends/details/:id"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="TEDETAILS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/players/widereceivers/details/:id"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="WRDETAILS" />
+              </PrivateRoute>
+            }
+          />
           {/* PLAYERS */}
-          
+
           {/* AUTH */}
           <Route path="/registration" element={<Registration />} />
           <Route path="/login" element={<Login />} />

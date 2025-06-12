@@ -18,16 +18,16 @@ export { default as QBScouting } from './Scouting/QBScouting';
 export { default as RBScouting } from './Scouting/RBScouting';
 export { default as TEScouting } from './Scouting/TEScouting';
 export { default as WRScouting } from './Scouting/WRScouting';
-export { default as QBDetails } from './Scouting/Details/QBDetails';
-export { default as RBDetails } from './Scouting/Details/RBDetails';
-export { default as TEDetails } from './Scouting/Details/TEDetails';
-export { default as WRDetails } from './Scouting/Details/WRDetails';
 
 //Players
 export { default as Quarterbacks } from './Players/Quarterbacks';
 export { default as Runningbacks } from './Players/Runningbacks';
 export { default as Tightends } from './Players/Tightends';
 export { default as Widereceivers } from './Players/Widereceivers';
+export { default as QBDetails } from './Players/Details/QBDetails';
+export { default as RBDetails } from './Players/Details/RBDetails';
+export { default as TEDetails } from './Players/Details/TEDetails';
+export { default as WRDetails } from './Players/Details/WRDetails';
 
 //AUTH
 export { default as Login } from './Authentication/Login';

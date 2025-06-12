@@ -37,7 +37,6 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const Widereceivers = () => {
   let grid;
   const navigate = useNavigate();
@@ -67,8 +66,12 @@ const Widereceivers = () => {
   };
 
   function handleDoubleClick(args) {
-    //Go to Player Details
-    //navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
+    navigate(
+      "/players/widereceivers/details/" +
+        args.rowData.Position +
+        "-" +
+        args.rowData.SearchFullName
+    );
   }
 
   useEffect(() => {
@@ -117,6 +120,6 @@ const Widereceivers = () => {
       )}
     </div>
   );
-}
+};
 
-export default Widereceivers
+export default Widereceivers;

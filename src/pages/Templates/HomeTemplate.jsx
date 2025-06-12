@@ -21,10 +21,6 @@ import {
   RBScouting,
   TEScouting,
   WRScouting,
-  QBDetails,
-  RBDetails,
-  TEDetails,
-  WRDetails,
   QBTiers,
   RBTiers,
   TETiers,
@@ -33,6 +29,10 @@ import {
   Runningbacks,
   Tightends,
   Widereceivers,
+  QBDetails,
+  RBDetails,
+  TEDetails,
+  WRDetails,
   AuctionDraftTeams,
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
@@ -77,14 +77,6 @@ const HomeTemplate = ({ page }) => {
         return <TEScouting />;
       case "SCOUTINGWRS":
         return <WRScouting />;
-      case "QBDETAILS":
-        return <QBDetails />;
-      case "RBDETAILS":
-        return <RBDetails />;
-      case "TEDETAILS":
-        return <TEDetails />;
-      case "WRDETAILS":
-        return <WRDetails />;
       case "COMPAREPLAYERS":
         return <ComparePlayers />;
       case "COMPARELINEUPS":
@@ -97,6 +89,14 @@ const HomeTemplate = ({ page }) => {
         return <Tightends />;
       case "WIDERECEIVERS":
         return <Widereceivers />;
+      case "QBDETAILS":
+        return <QBDetails />;
+      case "RBDETAILS":
+        return <RBDetails />;
+      case "TEDETAILS":
+        return <TEDetails />;
+      case "WRDETAILS":
+        return <WRDetails />;
       case "SETTINGS":
         return <Settings />;
       default:

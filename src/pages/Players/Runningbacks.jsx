@@ -66,8 +66,12 @@ const Runningbacks = () => {
   };
 
   function handleDoubleClick(args) {
-    //Go to Player Details
-    //navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
+    navigate(
+      "/players/runningbacks/details/" +
+        args.rowData.Position +
+        "-" +
+        args.rowData.SearchFullName
+    );
   }
 
   useEffect(() => {

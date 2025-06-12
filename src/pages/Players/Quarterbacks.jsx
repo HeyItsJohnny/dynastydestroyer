@@ -66,8 +66,12 @@ const Quarterbacks = () => {
   };
 
   function handleDoubleClick(args) {
-    //Go to Player Details
-    //navigate("/scouting/quarterbacks/details/" + args.rowData.SleeperID);
+    navigate(
+      "/players/quarterbacks/details/" +
+        args.rowData.Position +
+        "-" +
+        args.rowData.SearchFullName
+    );
   }
 
   useEffect(() => {
@@ -77,7 +81,7 @@ const Quarterbacks = () => {
     };
   }, []);
 
-   return (
+  return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
       <Header category="Players" title="Quarterbacks" />
       <ToastContainer />
@@ -94,7 +98,7 @@ const Quarterbacks = () => {
         </div>
       ) : (
         <>
-        {/** 
+          {/** 
           <div className="mb-5">
             <button
               type="button"
