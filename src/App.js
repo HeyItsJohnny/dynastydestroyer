@@ -68,38 +68,6 @@ function App() {
             }
           />
           <Route
-            path="/scouting/quarterbacks"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="SCOUTINGQBS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/scouting/runningbacks"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="SCOUTINGRBS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/scouting/tightends"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="SCOUTINGTES" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/scouting/widereceivers"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="SCOUTINGWRS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
             path="/apps/compareplayers"
             element={
               <PrivateRoute>
@@ -136,6 +104,14 @@ function App() {
             element={
               <PrivateRoute>
                 <HomeTemplate page="WRTIERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/sleepers"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SLEEPERS" />
               </PrivateRoute>
             }
           />

@@ -57,32 +57,12 @@ export const links = [
         name: "Compare Players",
         icon: <MdOutlineCompareArrows />,
         linktoname: "apps/compareplayers"
+      },
+      {
+        name: "Sleepers",
+        icon: <MdOutlineCompareArrows />,
+        linktoname: "sleepers"
       }
-    ],
-  },
-  {
-    title: "Scouting",
-    links: [
-      {
-        name: "Quarterbacks",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "scouting/quarterbacks"
-      },
-      {
-        name: "Running Backs",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "scouting/runningbacks"
-      },
-      {
-        name: "Tight Ends",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "scouting/tightends"
-      },
-      {
-        name: "Wide Receivers",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "scouting/widereceivers"
-      },
     ],
   },
   {

@@ -12,12 +12,7 @@ export { default as QBTiers } from './PlayerTiers/QBTiers';
 export { default as RBTiers } from './PlayerTiers/RBTiers';
 export { default as TETiers } from './PlayerTiers/TETiers';
 export { default as WRTiers } from './PlayerTiers/WRTiers';
-
-//Scouting
-export { default as QBScouting } from './Scouting/QBScouting';
-export { default as RBScouting } from './Scouting/RBScouting';
-export { default as TEScouting } from './Scouting/TEScouting';
-export { default as WRScouting } from './Scouting/WRScouting';
+export { default as Sleepers } from './Sleepers/Sleepers';
 
 //Players
 export { default as Quarterbacks } from './Players/Quarterbacks';

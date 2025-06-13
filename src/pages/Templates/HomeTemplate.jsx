@@ -17,14 +17,11 @@ import {
   Settings,
   ComparePlayers,
   CompareLineups,
-  QBScouting,
-  RBScouting,
-  TEScouting,
-  WRScouting,
   QBTiers,
   RBTiers,
   TETiers,
   WRTiers,
+  Sleepers,
   Quarterbacks,
   Runningbacks,
   Tightends,
@@ -69,14 +66,8 @@ const HomeTemplate = ({ page }) => {
         return <TETiers />;
       case "WRTIERS":
         return <WRTiers />;
-      case "SCOUTINGQBS":
-        return <QBScouting />;
-      case "SCOUTINGRBS":
-        return <RBScouting />;
-      case "SCOUTINGTES":
-        return <TEScouting />;
-      case "SCOUTINGWRS":
-        return <WRScouting />;
+      case "SLEEPERS":
+        return <Sleepers />;
       case "COMPAREPLAYERS":
         return <ComparePlayers />;
       case "COMPARELINEUPS":
