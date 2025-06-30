@@ -74,6 +74,51 @@ const Runningbacks = () => {
     );
   }
 
+  const handleTier1 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 1");
+        toast(data.FullName + " has been added to Tier 1!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+  const handleTier2 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 2");
+        toast(data.FullName + " has been added to Tier 2!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+  const handleTier3 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 3");
+        toast(data.FullName + " has been added to Tier 3!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+  const handleTier4 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 4");
+        toast(data.FullName + " has been added to Tier 4!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+
   useEffect(() => {
     fetchPlayerData();
     return () => {
@@ -98,6 +143,56 @@ const Runningbacks = () => {
         </div>
       ) : (
         <>
+          <div className="mb-5">
+            <button
+              type="button"
+              style={{
+                backgroundColor: currentColor,
+                color: "White",
+                borderRadius: "10px",
+              }}
+              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
+              onClick={handleTier1}
+            >
+              Set Tier 1
+            </button>
+            <button
+              type="button"
+              style={{
+                backgroundColor: currentColor,
+                color: "White",
+                borderRadius: "10px",
+              }}
+              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
+              onClick={handleTier2}
+            >
+              Set Tier 2
+            </button>
+            <button
+              type="button"
+              style={{
+                backgroundColor: currentColor,
+                color: "White",
+                borderRadius: "10px",
+              }}
+              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
+              onClick={handleTier3}
+            >
+              Set Tier 3
+            </button>
+            <button
+              type="button"
+              style={{
+                backgroundColor: currentColor,
+                color: "White",
+                borderRadius: "10px",
+              }}
+              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
+              onClick={handleTier4}
+            >
+              Set Tier 4
+            </button>
+          </div>
           <GridComponent
             id="gridcomp"
             dataSource={playerData}

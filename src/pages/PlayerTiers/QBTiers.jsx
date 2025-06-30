@@ -25,7 +25,7 @@ const QBTiers = () => {
       try {
         updatePlayerTier(
           currentUser.uid,
-          args.changedRecords[0].KeepTradeCutIdentifier,
+          args.changedRecords[0].DatabaseID,
           args.changedRecords[0].Tier
         );
       } catch (error) {

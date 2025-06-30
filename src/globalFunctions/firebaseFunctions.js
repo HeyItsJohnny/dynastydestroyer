@@ -96,7 +96,7 @@ export async function deleteLeagueDocument(uid, leagueid) {
 
 //JCL - USED
 export async function createOrUpdatePlayerData(playerData) {
-  const docRef = doc(db, "players", playerData.player_id);
+  const docRef = doc(db, "players", playerData.position + "-" + playerData.search_full_name);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
     updatePlayerData(playerData);
@@ -192,6 +192,7 @@ export async function updatePlayerData(playerData) {
     console.error("There was an error adding to the database: " + error);
   }
 }
+
 
 //JCL - USED
 export async function addPlayerCurrentStats(playerID, statsData) {

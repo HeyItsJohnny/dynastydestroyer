@@ -25,11 +25,7 @@ import {
   Toolbar,
 } from "@syncfusion/ej2-react-grids";
 
-import {
-  getPlayerDataByPosition,
-  getPlayerStatsData,
-  createPlayerStatObject,
-} from "../../globalFunctions/firebasePlayerFunctions";
+import { getPlayerDataByPosition } from "../../globalFunctions/firebasePlayerFunctions";
 
 //Visual
 import ClipLoader from "react-spinners/ClipLoader";
@@ -74,6 +70,50 @@ const Quarterbacks = () => {
     );
   }
 
+  const handleTier1 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 1");
+        toast(data.FullName + " has been added to Tier 1!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+  const handleTier2 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 2");
+        toast(data.FullName + " has been added to Tier 2!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+  const handleTier3 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 3");
+        toast(data.FullName + " has been added to Tier 3!");
+      });
+      grid.clearSelection();
+    }
+  };
+
+  const handleTier4 = () => {
+    if (grid) {
+      const selectedrecords = grid.getSelectedRecords();
+      selectedrecords.forEach((data) => {
+        createOrUpdateTierData(currentUser.uid, data, "Tier 4");
+        toast(data.FullName + " has been added to Tier 4!");
+      });
+      grid.clearSelection();
+    }
+  };
+
   useEffect(() => {
     fetchPlayerData();
     return () => {
@@ -98,20 +138,7 @@ const Quarterbacks = () => {
         </div>
       ) : (
         <>
-          {/** 
           <div className="mb-5">
-            <button
-              type="button"
-              style={{
-                backgroundColor: currentColor,
-                color: "White",
-                borderRadius: "10px",
-              }}
-              className={`text-md p-3 hover:drop-shadow-xl`}
-              onClick={addAllPlayersToAuctionDraft}
-            >
-              Add Players to Auction Draft
-            </button>
             <button
               type="button"
               style={{
@@ -160,20 +187,7 @@ const Quarterbacks = () => {
             >
               Set Tier 4
             </button>
-            <button
-              type="button"
-              style={{
-                backgroundColor: currentColor,
-                color: "White",
-                borderRadius: "10px",
-              }}
-              className={`text-md p-3 hover:drop-shadow-xl ml-4`}
-              onClick={handleTier5}
-            >
-              Set Tier 5
-            </button>
           </div>
-          */}
           <GridComponent
             id="gridcomp"
             dataSource={playerData}

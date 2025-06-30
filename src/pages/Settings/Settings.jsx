@@ -15,9 +15,7 @@ import ImportPlayerWeeklyStatsModal from "../../modals/ImportPlayerWeeklyStatsMo
 //New
 import ImportPlayerCurrentStatsModal from "../../modals/ImportPlayerCurrentStatsModal";
 
-import {
-  getPlayersFromSleeper,
-} from "../../globalFunctions/SleeperAPIFunctions";
+import { getPlayersFromSleeper } from "../../globalFunctions/SleeperAPIFunctions";
 
 import { formatTimestamp } from "../../globalFunctions/globalFunctions";
 
@@ -26,10 +24,14 @@ import { useAuth } from "../../contexts/AuthContext";
 import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 
+//TEMP
+import { getPlayerDataByPosition } from "../../globalFunctions/firebasePlayerFunctions";
+
 const Settings = () => {
   const [sleeperUsername, setSleeperUsername] = useState("");
   const [sleeperDataUpdateSettings, setSleeperDataSettings] = useState("");
-  const [sleeperPlayerStatsSettings, setSleeperPlayerStatsSettings] = useState("");
+  const [sleeperPlayerStatsSettings, setSleeperPlayerStatsSettings] =
+    useState("");
   const { currentUser } = useAuth();
 
   const setSleeperUserName = async () => {

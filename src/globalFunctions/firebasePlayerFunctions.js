@@ -57,6 +57,7 @@ export async function getPlayerDataByPosition(positionToSearch) {
             Age: doc.data().Age,
             College: doc.data().College,
             DepthChartOrder: doc.data().DepthChartOrder,
+            DatabaseID: doc.data().DatabaseID,
             FirstName: doc.data().FirstName,
             FullName: doc.data().FullName,
             InjuryNotes: doc.data().InjuryNotes,

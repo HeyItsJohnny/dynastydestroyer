@@ -16,13 +16,14 @@ import {
   getDocs,
 } from "firebase/firestore";
 
+//JCL USED
 export async function createOrUpdateTierData(uid, playerData, tier) {
   const docRef = doc(
     db,
     "userprofile",
     uid,
     "playertiers",
-    playerData.KeepTradeCutIdentifier
+    playerData.DatabaseID
   );
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
@@ -32,6 +33,7 @@ export async function createOrUpdateTierData(uid, playerData, tier) {
   }
 }
 
+//JCL USED
 export async function createPlayerTierData(uid, playerData, tier) {
   try {
     await setDoc(
@@ -40,12 +42,12 @@ export async function createPlayerTierData(uid, playerData, tier) {
         "userprofile",
         uid,
         "playertiers",
-        playerData.KeepTradeCutIdentifier
+        playerData.DatabaseID
       ),
       {
         FullName: playerData.FullName ?? "",
         KeepTradeCutIdentifier: playerData.KeepTradeCutIdentifier ?? "",
-        DatabaseID: playerData.SleeperID ?? "",
+        DatabaseID: playerData.DatabaseID ?? "",
         Team: playerData.Team ?? "",
         Position: playerData.Position ?? "",
         Tier: tier,
@@ -56,6 +58,7 @@ export async function createPlayerTierData(uid, playerData, tier) {
   }
 }
 
+//JCL USED
 export async function updatePlayerTierData(uid, playerData, tier) {
   try {
     await updateDoc(
@@ -64,12 +67,12 @@ export async function updatePlayerTierData(uid, playerData, tier) {
         "userprofile",
         uid,
         "playertiers",
-        playerData.KeepTradeCutIdentifier
+        playerData.DatabaseID
       ),
       {
         FullName: playerData.FullName ?? "",
         KeepTradeCutIdentifier: playerData.KeepTradeCutIdentifier,
-        DatabaseID: playerData.SleeperID,
+        DatabaseID: playerData.DatabaseID,
         Team: playerData.Team ?? "",
         Position: playerData.Position ?? "",
         Tier: tier,
@@ -80,6 +83,7 @@ export async function updatePlayerTierData(uid, playerData, tier) {
   }
 }
 
+//JCL Used
 export async function updatePlayerTier(uid, id, tier) {
   try {
     await updateDoc(
@@ -99,6 +103,7 @@ export async function updatePlayerTier(uid, id, tier) {
   }
 }
 
+//JCL Used
 export async function deletePlayerTierData(uid, playerData) {
   try {
     await deleteDoc(
@@ -107,7 +112,7 @@ export async function deletePlayerTierData(uid, playerData) {
         "userprofile",
         uid,
         "playertiers",
-        playerData.KeepTradeCutIdentifier
+        playerData.DatabaseID
       )
     );
   } catch (error) {
