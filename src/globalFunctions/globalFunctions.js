@@ -18,7 +18,7 @@ export function formatTimestamp(timestamp) {
 };
 
 export function formatPlayerName(inputString) {
-  return inputString.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return inputString.toLowerCase().replace(/\s*Jr\./i, "").replace(/[^a-z0-9]/g, '');
 }
 
 export function convertDateFormat(inputDate) {
