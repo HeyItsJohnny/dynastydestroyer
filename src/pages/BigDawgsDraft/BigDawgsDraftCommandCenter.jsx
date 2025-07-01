@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+import DraftSettings from "./DraftSettings";
+
 //User ID
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -56,11 +58,36 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const BigDawgsDraftCommandCenter = () => {
+  const { currentUser } = useAuth();
+  const [checkedDraftSettings, setCheckedDraftSettings] = useState(false);
+  const inputStyles = {
+    color: "white",
+  };
+
+   //Handle Checkboxes
+  const handleDraftSettingsCheckboxChange = (event) => {
+    setCheckedDraftSettings(event.target.checked);
+  };
+
+  useEffect(() => {
+    return () => {
+    };
+  }, []);
+
   return (
     <>
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <Header category="Home" title="Command Center" />
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Typography gutterBottom>Show Draft Settings</Typography>
+          <Switch
+            checked={checkedDraftSettings}
+            onChange={handleDraftSettingsCheckboxChange}
+          />
+        </Box>
       </div>
+      {/* Settings */}
+      {checkedDraftSettings && <DraftSettings />}
     </>
   );
 };

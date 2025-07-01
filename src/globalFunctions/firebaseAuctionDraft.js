@@ -52,10 +52,10 @@ export async function updateAuctionDraftSettings(auctionSettings, uid) {
       TEPercent: auctionSettings.TEPercent * 1,
       KPercent: auctionSettings.KPercent * 1,
       DEFPercent: auctionSettings.DEFPercent * 1,
-      QBTotalAmount: auctionSettings.QBTotalAmount * 1,
-      RBTotalAmount: auctionSettings.RBTotalAmount * 1,
-      WRTotalAmount: auctionSettings.WRTotalAmount * 1,
-      TETotalAmount: auctionSettings.TETotalAmount * 1,
+      //QBTotalAmount: auctionSettings.QBTotalAmount * 1,
+      //RBTotalAmount: auctionSettings.RBTotalAmount * 1,
+      //WRTotalAmount: auctionSettings.WRTotalAmount * 1,
+      //TETotalAmount: auctionSettings.TETotalAmount * 1,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -73,10 +73,10 @@ export async function CreateAuctionDraftSettings(auctionSettings, uid) {
       TEPercent: auctionSettings.TEPercent * 1,
       KPercent: auctionSettings.KPercent * 1,
       DEFPercent: auctionSettings.DEFPercent * 1,
-      QBTotalAmount: 0 * 1,
-      RBTotalAmount: 0 * 1,
-      WRTotalAmount: 0 * 1,
-      TETotalAmount: 0 * 1,
+      //QBTotalAmount: 0 * 1,
+      //RBTotalAmount: 0 * 1,
+      //WRTotalAmount: 0 * 1,
+      //TETotalAmount: 0 * 1,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
