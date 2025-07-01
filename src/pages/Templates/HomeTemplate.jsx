@@ -11,7 +11,7 @@ import {
 } from "../../components";
 import {
   Home,
-  CommandCenter,
+  BigDawgsDraftCommandCenter,
   SnakeDraft,
   AuctionDraft,
   Settings,
@@ -50,8 +50,8 @@ const HomeTemplate = ({ page }) => {
     switch (page) {
       case "HOME":
         return <Home />;
-      case "COMMANDCENTER":
-        return <CommandCenter />;
+      case "BIGDAWGSDRAFTCOMMANDCENTER":
+        return <BigDawgsDraftCommandCenter />;
       case "AUCTIONDRAFT":
         return <AuctionDraft />;
       case "AUCTIONDRAFTTEAMS":

@@ -55,15 +55,14 @@ import { Header } from "../../components";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
-const CommandCenter = () => {
+const BigDawgsDraftCommandCenter = () => {
   return (
     <>
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <Header category="Home" title="Command Center" />
       </div>
     </>
-  )
-}
+  );
+};
 
-export default CommandCenter
+export default BigDawgsDraftCommandCenter;

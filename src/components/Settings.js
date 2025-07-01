@@ -15,6 +15,11 @@ export const links = [
       {
         name: "Command Center",
         icon: <GoDashboard />,
+        linktoname: "bigdawgsdraft/commandcenter"
+      },
+      {
+        name: "OLD - Command Center",
+        icon: <GoDashboard />,
         linktoname: "auctiondraft/commandcenter"
       },
       {

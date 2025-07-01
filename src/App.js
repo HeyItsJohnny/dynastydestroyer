@@ -28,14 +28,6 @@ function App() {
             }
           />
           <Route
-            path="/commandcenter"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="COMMANDCENTER" />
-              </PrivateRoute>
-            }
-          />
-          <Route
             path="/auctiondraft/commandcenter"
             element={
               <PrivateRoute>
@@ -131,7 +123,15 @@ function App() {
               </PrivateRoute>
             }
           />
-          {/* PLAYERS */}
+          {/* NEW */}
+          <Route
+            path="/bigdawgsdraft/commandcenter"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="BIGDAWGSDRAFTCOMMANDCENTER" />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/players/quarterbacks"
             element={
@@ -196,7 +196,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          {/* PLAYERS */}
+          {/* NEW */}
 
           {/* AUTH */}
           <Route path="/registration" element={<Registration />} />
