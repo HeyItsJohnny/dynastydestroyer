@@ -133,6 +133,14 @@ function App() {
             }
           />
           <Route
+            path="/bigdawgsdraft/teams"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="BIGDAWGSTEAMS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/players/quarterbacks"
             element={
               <PrivateRoute>

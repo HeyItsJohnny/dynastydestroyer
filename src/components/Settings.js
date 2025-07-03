@@ -18,12 +18,17 @@ export const links = [
         linktoname: "bigdawgsdraft/commandcenter"
       },
       {
+        name: "Teams",
+        icon: <GiAmericanFootballHelmet />,
+        linktoname: "bigdawgsdraft/teams"
+      },
+      {
         name: "OLD - Command Center",
         icon: <GoDashboard />,
         linktoname: "auctiondraft/commandcenter"
       },
       {
-        name: "Team Stats",
+        name: "OLD - Team Stats",
         icon: <GiAmericanFootballHelmet />,
         linktoname: "auctiondraft/teams"
       },
