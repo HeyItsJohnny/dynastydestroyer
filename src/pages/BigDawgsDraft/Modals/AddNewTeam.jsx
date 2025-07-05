@@ -20,17 +20,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 //Firebase
-import { db } from "../../../firebase/firebase";
-import {
-  collection,
-  query,
-  onSnapshot,
-  orderBy,
-  where,
-  getDoc,
-  doc,
-} from "firebase/firestore";
-import { getAuctionDataSettings } from "../../../globalFunctions/firebaseAuctionDraft";
+import { createBigDawgsTeam } from "../../../globalFunctions/firebaseUserFunctions";
 
 //User ID
 import { useAuth } from "../../../contexts/AuthContext";
@@ -44,16 +34,19 @@ const AddNewTeam = () => {
   const handleShow = () => setShow(true);
 
   const handleReset = () => {
-    
     handleClose();
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    //Create New Team Here
+    createBigDawgsTeam(currentUser.uid,e.target.TeamName.value);
     toast("New team has been added.");
     handleReset();
   };
+
+  async function addNewTeam(data) {
+    
+  }
 
   return (
     <>
@@ -76,7 +69,7 @@ const AddNewTeam = () => {
               autoFocus
               required
               margin="dense"
-              id="Team Name"
+              id="TeamName"
               label="Team Name"
               type="text"
               fullWidth
