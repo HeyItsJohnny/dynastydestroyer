@@ -11,6 +11,7 @@ import {
   Box,
 } from "@mui/material";
 import AddNewTeam from "../Modals/AddNewTeam";
+import TeamSettings from "./TeamSettings";
 
 //Toast
 import { ToastContainer, toast } from "react-toastify";
@@ -88,7 +89,9 @@ const Teams = () => {
           </Select>
         </FormControl>
         <AddNewTeam />
+        
       </div>
+      {selectedTeam !== "" && <TeamSettings teamid={selectedTeam} />}
     </>
   );
 };
