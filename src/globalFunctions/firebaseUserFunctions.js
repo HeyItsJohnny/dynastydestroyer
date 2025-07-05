@@ -33,6 +33,27 @@ export async function getTeamDataByID(uid,teamid) {
 }
 
 //JCL USED
+export async function updateTeamSettings(uid, teamid, teamname, ismyteam) {
+  try {
+    await updateDoc(
+      doc(
+        db,
+        "userprofile",
+        uid,
+        "teams",
+        teamid
+      ),
+      {
+        TeamName: teamname ?? "",
+        MyTeam: ismyteam ?? false
+      }
+    );
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+//JCL USED
 export async function createBigDawgsTeam(uid, teamname) {
   try {
     await addDoc(collection(db, "userprofile", uid, "teams"), {
