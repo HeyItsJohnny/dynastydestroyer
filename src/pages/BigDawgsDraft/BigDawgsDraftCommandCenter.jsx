@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 import DraftSettings from "./DraftSettings";
-import Draft from "./Draft";
+import Draft from "./DraftComponent/Draft";
 
 //User ID
 import { useAuth } from "../../contexts/AuthContext";
@@ -11,36 +11,6 @@ import { TbSquareRoundedLetterQ } from "react-icons/tb";
 import { TbSquareRoundedLetterR } from "react-icons/tb";
 import { TbSquareRoundedLetterW } from "react-icons/tb";
 import { TbSquareRoundedLetterT } from "react-icons/tb";
-
-//Components
-/*
-import PlayerComponentQB from "./QB/PlayerComponentQB";
-import PlayerComponentRB from "./RB/PlayerComponentRB";
-import PlayerComponentWR from "./WR/PlayerComponentWR";
-import PlayerComponentTE from "./TE/PlayerComponentTE";
-import DraftStatistics from "./DraftResults/DraftStatistics";
-import MyPlayers from "./DraftResults/MyPlayers";
-import AuctionTiers from "./AuctionTiers";
-import AddRookie from "./Modals/AddRookie";
-import Sleepers from "./Sleepers/Sleepers";
-*/
-
-//Firebase
-import { db } from "../../firebase/firebase";
-import {
-  collection,
-  query,
-  onSnapshot,
-  orderBy,
-  where,
-  getDoc,
-  doc,
-} from "firebase/firestore";
-import {
-  getAuctionDataSettings,
-  createOrUpdateAuctionDraftSettings,
-  resetDraftBoard,
-} from "../../globalFunctions/firebaseAuctionDraft";
 
 //UI
 import {

@@ -15,7 +15,7 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <HomeTemplate page="AUCTIONDRAFT" />
+                <HomeTemplate page="BIGDAWGSDRAFTCOMMANDCENTER" />
               </PrivateRoute>
             }
           />
@@ -40,14 +40,6 @@ function App() {
             element={
               <PrivateRoute>
                 <HomeTemplate page="AUCTIONDRAFTTEAMS" />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/snakedraft"
-            element={
-              <PrivateRoute>
-                <HomeTemplate page="SNAKEDRAFT" />
               </PrivateRoute>
             }
           />

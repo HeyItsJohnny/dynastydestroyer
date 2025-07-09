@@ -117,6 +117,7 @@ export async function createPlayerData(playerData) {
       FullName: playerData.full_name ?? "",
       InjuryNotes: playerData.injury_notes ?? "",
       InjuryStatus: playerData.injury_status ?? "",
+      DatabaseID: playerData.position + "-" + playerData.search_full_name ?? "",
       KeepTradeCutIdentifier:
         playerData.search_full_name + "-" + playerData.position,
       LastName: playerData.last_name ?? "",
@@ -161,6 +162,7 @@ export async function updatePlayerData(playerData) {
       DepthChartOrder: playerData.depth_chart_order ?? 0,
       InjuryNotes: playerData.injury_notes ?? "",
       InjuryStatus: playerData.injury_status ?? "",
+      DatabaseID: playerData.position + "-" + playerData.search_full_name ?? "",
       KeepTradeCutIdentifier:
         playerData.search_full_name + "-" + playerData.position,
       NonSuperFlexValue: 0,

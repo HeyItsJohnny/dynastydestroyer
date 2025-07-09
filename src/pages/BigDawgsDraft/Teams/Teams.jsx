@@ -13,9 +13,6 @@ import {
 import AddNewTeam from "../Modals/AddNewTeam";
 import TeamSettings from "./TeamSettings";
 
-//Toast
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 //Firebase
 import { db } from "../../../firebase/firebase";
@@ -26,7 +23,6 @@ import {
   orderBy,
   where,
 } from "firebase/firestore";
-import { getAuctionDataSettings } from "../../../globalFunctions/firebaseAuctionDraft";
 
 //User ID
 import { useAuth } from "../../../contexts/AuthContext";
