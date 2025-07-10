@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+import DraftPlayerComponent from "./DraftPlayerComponent";
+
 //Firebase
 import { db } from "../../../firebase/firebase";
 import {
@@ -25,11 +27,7 @@ const DraftPlayers = () => {
     color: "white",
   };
 
-  const selectPlayer = (player) => {
-    //Move Draft Status to "Pending"
-    //Move Player to Current "Auction Draft"
-    alert("Button Pressed. " + player.FullName);
-  };
+
 
   const filteredPlayers = players
     .filter((item) =>
@@ -125,19 +123,7 @@ const DraftPlayers = () => {
         className="mt-5 w-72 md:w-200"
       >
         {filteredPlayers.map((player) => (
-          <div className="flex justify-between mt-4">
-            <div className="flex gap-4">
-              <div>
-                <button type="button" onClick={selectPlayer(player)}>
-                  <p className="text-sm font-semibold">{player.FullName} ({player.Position})</p>
-                </button>
-                <p className="text-sm text-gray-400">{player.Position} Rank: {player.PositionRank}</p>
-                <p className="text-sm text-gray-400">{player.Team}</p>
-              </div>
-            </div>
-
-            <p className={`text-green-600`}>{player.TotalPoints} pts</p>
-          </div>
+          <DraftPlayerComponent player={player} />
         ))}
       </Box>
     </div>
