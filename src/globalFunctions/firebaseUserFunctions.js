@@ -33,7 +33,7 @@ export async function getTeamDataByID(uid,teamid) {
 }
 
 //JCL USED
-export async function updateTeamSettings(uid, teamid, teamname, ismyteam) {
+export async function updateTeamSettings(uid, teamid, teamname, ismyteam, teamamount) {
   try {
     await updateDoc(
       doc(
@@ -45,7 +45,8 @@ export async function updateTeamSettings(uid, teamid, teamname, ismyteam) {
       ),
       {
         TeamName: teamname ?? "",
-        MyTeam: ismyteam ?? false
+        MyTeam: ismyteam ?? false,
+        TeamAmount: teamamount ?? 0
       }
     );
   } catch (error) {

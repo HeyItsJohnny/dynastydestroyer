@@ -23,6 +23,7 @@ const TeamSettings = ({ teamid }) => {
   const { currentUser } = useAuth();
   const [teamData, setTeamData] = useState({});
   const [teamName, setTeamName] = useState();
+  const [teamAmount, setTeamAmount] = useState(0);
   const [myTeam, setMyTeam] = useState(false);
 
   const inputStyles = {
@@ -35,6 +36,7 @@ const TeamSettings = ({ teamid }) => {
       setTeamData(data);
       setTeamName(data.TeamName);
       setMyTeam(data.MyTeam);
+      setTeamAmount(data.TeamAmount);
     } catch (e) {
       alert("Error: " + e);
     }
@@ -45,7 +47,7 @@ const TeamSettings = ({ teamid }) => {
   };
 
   const handleSave = () => {
-    updateTeamSettings(currentUser.uid, teamid, teamName, myTeam); 
+    updateTeamSettings(currentUser.uid, teamid, teamName, myTeam, teamAmount); 
     toast("Team has been saved.");
   };
 
@@ -73,9 +75,27 @@ const TeamSettings = ({ teamid }) => {
                 InputLabelProps={{ style: inputStyles }}
                 variant="outlined"
                 fullWidth
-                placeholder="Search TE Prospects"
+                placeholder="Team Name"
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
+                sx={{ marginBottom: 1 }} // Add some margin at the bottom
+              />
+            </div>
+          </div>
+          <div className="flex justify-between items-center gap-2">
+            <p className="text-md font-semibold">Starting Amount: </p>
+          </div>
+          <div className="flex justify-between mt-4">
+            <div className="flex gap-4">
+              <TextField
+                InputProps={{ style: inputStyles }}
+                InputLabelProps={{ style: inputStyles }}
+                variant="outlined"
+                fullWidth
+                placeholder=""
+                type="number"
+                value={teamAmount}
+                onChange={(e) => setTeamAmount(e.target.value)}
                 sx={{ marginBottom: 1 }} // Add some margin at the bottom
               />
             </div>
