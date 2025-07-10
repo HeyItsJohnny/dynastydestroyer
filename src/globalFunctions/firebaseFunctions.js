@@ -113,6 +113,7 @@ export async function createPlayerData(playerData) {
       Age: playerData.age ?? 0,
       College: playerData.college ?? "",
       DepthChartOrder: playerData.depth_chart_order ?? 0,
+      DraftStatus: "N/A",
       FirstName: playerData.first_name ?? "",
       FullName: playerData.full_name ?? "",
       InjuryNotes: playerData.injury_notes ?? "",
@@ -160,6 +161,7 @@ export async function updatePlayerData(playerData) {
     await updateDoc(doc(db, "players", playerData.position + "-" + playerData.search_full_name), {
       Age: playerData.age ?? "",
       DepthChartOrder: playerData.depth_chart_order ?? 0,
+      DraftStatus: "N/A",
       InjuryNotes: playerData.injury_notes ?? "",
       InjuryStatus: playerData.injury_status ?? "",
       DatabaseID: playerData.position + "-" + playerData.search_full_name ?? "",

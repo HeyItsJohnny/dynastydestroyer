@@ -25,8 +25,10 @@ const DraftPlayers = () => {
     color: "white",
   };
 
-  const handleButton = () => {
-    alert("Button Pressed.");
+  const selectPlayer = (player) => {
+    //Move Draft Status to "Pending"
+    //Move Player to Current "Auction Draft"
+    alert("Button Pressed. " + player.FullName);
   };
 
   const filteredPlayers = players
@@ -38,7 +40,7 @@ const DraftPlayers = () => {
   const fetchPlayerData = async () => {
     const docCollection = query(
       collection(db, "players"),
-      //where("DraftStatus", "==", "Open"),
+      where("DraftStatus", "==", "N/A"),
       orderBy("PositionRank")
     );
     onSnapshot(docCollection, (querySnapshot) => {
@@ -49,6 +51,7 @@ const DraftPlayers = () => {
           Age: doc.data().Age,
           College: doc.data().College,
           DepthChartOrder: doc.data().DepthChartOrder,
+          DraftStatus: doc.data().DraftStatus,
           FirstName: doc.data().FirstName,
           FullName: doc.data().FullName,
           InjuryNotes: doc.data().InjuryNotes,
@@ -125,7 +128,7 @@ const DraftPlayers = () => {
           <div className="flex justify-between mt-4">
             <div className="flex gap-4">
               <div>
-                <button type="button" onClick={handleButton}>
+                <button type="button" onClick={selectPlayer(player)}>
                   <p className="text-sm font-semibold">{player.FullName} ({player.Position})</p>
                 </button>
                 <p className="text-sm text-gray-400">{player.Position} Rank: {player.PositionRank}</p>

@@ -56,15 +56,15 @@ const Draft = () => {
       <div className="flex gap-10 flex-wrap justify-center">
         <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-850">
           <div className="flex justify-between">
-            <p className="font-semibold text-xl">NAME's Fantasy Stats</p>
-
+            <p className="font-semibold text-xl">AUCTION DRAFT</p>
+            <p className="font-semibold text-xl">*Player Name*</p>
             <div className="flex items-center gap-4">
               <p className="flex items-center gap-2 text-green-400 hover:drop-shadow-xl">
                 <span>
                   <GoPrimitiveDot />
                 </span>
                 <span>
-                  Players Projection or Current Team's Spending Habits
+                  Teams
                 </span>
               </p>
             </div>
