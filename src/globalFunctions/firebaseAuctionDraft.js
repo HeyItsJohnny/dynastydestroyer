@@ -16,6 +16,114 @@ import {
 
 import { getPlayerWeeklyPoints } from "./firebasePlayerFunctions";
 
+//JCL USED
+export async function CreateOrUpdateCurrentDraftPlayer(uid, player) {
+  const docRef = doc(db, "userprofile",uid,"auctiondraft", "currentdraft");
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    UpdateCurrentDraftPlayer(uid, player);
+  } else {
+    CreateCurrentDraftPlayer(uid, player);
+  }
+}
+
+//JCL USED
+export async function CreateCurrentDraftPlayer(uid, player) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await setDoc(doc(db, "userprofile",uid, "auctiondraft", "currentplayer"), {
+      Age: player.Age,
+      College: player.College,
+      DepthChartOrder: player.DepthChartOrder,
+      DraftStatus: player.DraftStatus,
+      FirstName: player.FirstName,
+      FullName: player.FullName,
+      InjuryNotes: player.InjuryNotes,
+      InjuryStatus: player.InjuryStatus,
+      DatabaseID: player.DatabaseID,
+      KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
+      LastName: player.LastName,
+      NonSuperFlexValue: player.NonSuperFlexValue,
+      Position: player.Position,
+      SleeperID: player.SleeperID,
+      SearchFirstName: player.SearchFirstName,
+      SearchFullName: player.SearchFullName,
+      SearchLastName: player.SearchLastName,
+      SearchRank: player.SearchRank,
+      Status: player.Status,
+      SuperFlexValue: player.SuperFlexValue,
+      Team: player.Team,
+      YearsExperience: player.YearsExperience,
+      Fumbles: player.Fumbles,
+      PassingYards: player.PassingYards,
+      PassingTDs: player.PassingTDs,
+      PassingINT: player.PassingINT,
+      RushingYDS: player.RushingYDS,
+      RushingTDs: player.RushingTDs,
+      ReceivingRec: player.ReceivingRec,
+      ReceivingYDS: player.ReceivingYDS,
+      ReceivingTDs: player.ReceivingTDs,
+      ReceivingTargets: player.ReceivingTargets,
+      ReceptionPercentage: player.ReceptionPercentage,
+      RedzoneTargets: player.RedzoneTargets,
+      RedzoneTouches: player.RedzoneTouches,
+      PositionRank: player.PositionRank,    
+      TotalPoints: player.TotalPoints
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+//JCL USED
+export async function UpdateCurrentDraftPlayer(uid, player) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "currentplayer"), {
+      Age: player.Age,
+      College: player.College,
+      DepthChartOrder: player.DepthChartOrder,
+      DraftStatus: player.DraftStatus,
+      FirstName: player.FirstName,
+      FullName: player.FullName,
+      InjuryNotes: player.InjuryNotes,
+      InjuryStatus: player.InjuryStatus,
+      DatabaseID: player.DatabaseID,
+      KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
+      LastName: player.LastName,
+      NonSuperFlexValue: player.NonSuperFlexValue,
+      Position: player.Position,
+      SleeperID: player.SleeperID,
+      SearchFirstName: player.SearchFirstName,
+      SearchFullName: player.SearchFullName,
+      SearchLastName: player.SearchLastName,
+      SearchRank: player.SearchRank,
+      Status: player.Status,
+      SuperFlexValue: player.SuperFlexValue,
+      Team: player.Team,
+      YearsExperience: player.YearsExperience,
+      Fumbles: player.Fumbles,
+      PassingYards: player.PassingYards,
+      PassingTDs: player.PassingTDs,
+      PassingINT: player.PassingINT,
+      RushingYDS: player.RushingYDS,
+      RushingTDs: player.RushingTDs,
+      ReceivingRec: player.ReceivingRec,
+      ReceivingYDS: player.ReceivingYDS,
+      ReceivingTDs: player.ReceivingTDs,
+      ReceivingTargets: player.ReceivingTargets,
+      ReceptionPercentage: player.ReceptionPercentage,
+      RedzoneTargets: player.RedzoneTargets,
+      RedzoneTouches: player.RedzoneTouches,
+      PositionRank: player.PositionRank,    
+      TotalPoints: player.TotalPoints
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+//JCL USED
 export async function getAuctionDataSettings(uid) {
   try {
     const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
@@ -31,17 +139,19 @@ export async function getAuctionDataSettings(uid) {
   }
 }
 
+//JCL USED
 export async function createOrUpdateAuctionDraftSettings(auctionSettings, uid) {
   const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    updateAuctionDraftSettings(auctionSettings, uid);
+    UpdateAuctionDraftSettings(auctionSettings, uid);
   } else {
     CreateAuctionDraftSettings(auctionSettings, uid);
   }
 }
 
-export async function updateAuctionDraftSettings(auctionSettings, uid) {
+//JCL USED
+export async function UpdateAuctionDraftSettings(auctionSettings, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
     await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
@@ -62,6 +172,7 @@ export async function updateAuctionDraftSettings(auctionSettings, uid) {
   }
 }
 
+//JCL USED
 export async function CreateAuctionDraftSettings(auctionSettings, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team

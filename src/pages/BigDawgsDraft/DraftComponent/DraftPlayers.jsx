@@ -27,8 +27,6 @@ const DraftPlayers = () => {
     color: "white",
   };
 
-
-
   const filteredPlayers = players
     .filter((item) =>
       item.FullName.toLowerCase().includes(searchPlayerQuery.toLowerCase())
