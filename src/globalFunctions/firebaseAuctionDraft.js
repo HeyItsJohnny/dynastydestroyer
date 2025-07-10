@@ -124,6 +124,54 @@ export async function UpdateCurrentDraftPlayer(uid, player) {
 }
 
 //JCL USED
+export async function ClearCurrentDraftPlayer(uid) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "currentplayer"), {
+      Age: "",
+      College: "",
+      DepthChartOrder: "",
+      DraftStatus: "",
+      FirstName: "",
+      FullName: "",
+      InjuryNotes: "",
+      InjuryStatus: "",
+      DatabaseID: "",
+      KeepTradeCutIdentifier: "",
+      LastName: "",
+      NonSuperFlexValue: "",
+      Position: "",
+      SleeperID: "",
+      SearchFirstName: "",
+      SearchFullName: "",
+      SearchLastName: "",
+      SearchRank: "",
+      Status: "",
+      SuperFlexValue: "",
+      Team: "",
+      YearsExperience: "",
+      Fumbles: "",
+      PassingYards: "",
+      PassingTDs: "",
+      PassingINT: "",
+      RushingYDS: "",
+      RushingTDs: "",
+      ReceivingRec: "",
+      ReceivingYDS: "",
+      ReceivingTDs: "",
+      ReceivingTargets: "",
+      ReceptionPercentage: "",
+      RedzoneTargets: "",
+      RedzoneTouches: "",
+      PositionRank: "",   
+      TotalPoints: "",
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+//JCL USED
 export async function getAuctionDataSettings(uid) {
   try {
     const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
