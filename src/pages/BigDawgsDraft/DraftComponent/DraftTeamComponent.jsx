@@ -1,4 +1,5 @@
 import React from "react";
+import DraftModal from "../Modals/DraftModal";
 const DraftTeamComponent = ({ team }) => {
 
   const handleButton = () => {
@@ -10,12 +11,7 @@ const DraftTeamComponent = ({ team }) => {
       <div className="flex justify-between mt-4">
         <div className="flex gap-4">
           <div>
-            <button
-              type="button"
-              onClick={handleButton}
-            >
-              <p className="text-sm font-semibold">{team.TeamName}</p>
-            </button>
+            <DraftModal team={team} />
             <p className="text-sm text-gray-400">Remaining $:</p>
           </div>
         </div>

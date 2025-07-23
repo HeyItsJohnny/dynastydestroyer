@@ -63,7 +63,13 @@ const DraftComponent = () => {
     setLine5Value("");
     setLine6("");
     setLine6Value("");
-    toast("Draft has been cleared.");
+    //toast("Draft has been cleared.");
+  };
+
+  const handleReset = async () => {
+    handleClear();
+    //Delete all players from teams
+    //Set all players draft status back to "N/A"
   };
 
   useEffect(() => {
@@ -154,7 +160,7 @@ const DraftComponent = () => {
         <div className="flex justify-between">
           <p className="font-semibold text-xl">Auction Draft</p>
           <p className="font-semibold text-xl">
-            {player.FullName} ({player.Position})
+            {player.FullName} ({player.Position}) - {player.DraftStatus}
           </p>
           <div className="flex items-center gap-4">
             <p className="flex items-center gap-2 text-green-400 hover:drop-shadow-xl">
@@ -217,6 +223,14 @@ const DraftComponent = () => {
                 sx={{ mr: 2 }} // Adds margin to the right of the button
               >
                 Clear Draft
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleReset}
+                sx={{ mr: 2 }} // Adds margin to the right of the button
+              >
+                Reset Draft
               </Button>
             </Box>
           </div>

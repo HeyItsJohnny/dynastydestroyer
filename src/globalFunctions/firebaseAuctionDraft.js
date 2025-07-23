@@ -172,6 +172,56 @@ export async function ClearCurrentDraftPlayer(uid) {
 }
 
 //JCL USED
+export async function AddPlayerToTeam(uid, teamid, player, Amount) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await setDoc(doc(db, "userprofile",uid, "teams", teamid, "players",player.DatabaseID), {
+      Age: player.Age,
+      College: player.College,
+      DepthChartOrder: player.DepthChartOrder,
+      DraftStatus: player.DraftStatus,
+      FirstName: player.FirstName,
+      FullName: player.FullName,
+      InjuryNotes: player.InjuryNotes,
+      InjuryStatus: player.InjuryStatus,
+      DatabaseID: player.DatabaseID,
+      KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
+      LastName: player.LastName,
+      NonSuperFlexValue: player.NonSuperFlexValue,
+      Position: player.Position,
+      SleeperID: player.SleeperID,
+      SearchFirstName: player.SearchFirstName,
+      SearchFullName: player.SearchFullName,
+      SearchLastName: player.SearchLastName,
+      SearchRank: player.SearchRank,
+      Status: player.Status,
+      SuperFlexValue: player.SuperFlexValue,
+      Team: player.Team,
+      YearsExperience: player.YearsExperience,
+      Fumbles: player.Fumbles,
+      PassingYards: player.PassingYards,
+      PassingTDs: player.PassingTDs,
+      PassingINT: player.PassingINT,
+      RushingYDS: player.RushingYDS,
+      RushingTDs: player.RushingTDs,
+      ReceivingRec: player.ReceivingRec,
+      ReceivingYDS: player.ReceivingYDS,
+      ReceivingTDs: player.ReceivingTDs,
+      ReceivingTargets: player.ReceivingTargets,
+      ReceptionPercentage: player.ReceptionPercentage,
+      RedzoneTargets: player.RedzoneTargets,
+      RedzoneTouches: player.RedzoneTouches,
+      PositionRank: player.PositionRank,    
+      TotalPoints: player.TotalPoints,
+      DraftAmount: Amount
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+
+//JCL USED
 export async function getAuctionDataSettings(uid) {
   try {
     const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
