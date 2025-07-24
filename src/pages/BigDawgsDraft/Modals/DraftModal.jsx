@@ -17,7 +17,10 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 //Firebase
-import { ClearCurrentDraftPlayer, AddPlayerToTeam } from "../../../globalFunctions/firebaseAuctionDraft";
+import {
+  ClearCurrentDraftPlayer,
+  AddPlayerToTeam,
+} from "../../../globalFunctions/firebaseAuctionDraft";
 import { setPlayerDraftStatus } from "../../../globalFunctions/firebaseFunctions";
 
 //User ID
@@ -37,20 +40,29 @@ const DraftModal = ({ team }) => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    ClearCurrentDraftPlayer(currentUser.uid);
-    AddPlayerToTeam(currentUser.uid, team.id, player, e.target.Amount.value * 1);
-    setPlayerDraftStatus(player.DatabaseID,"Drafted");
-    toast(
-      team.TeamName +
-        " added (" +
-        player.Position +
-        ") " +
-        player.FullName +
-        ": $" +
-        e.target.Amount.value
-    );
-    handleReset();
+    if (player.FullName !== "") {
+      e.preventDefault();
+      AddPlayerToTeam(
+        currentUser.uid,
+        team.id,
+        player,
+        e.target.Amount.value * 1
+      );
+      setPlayerDraftStatus(player.DatabaseID, "Drafted");
+      ClearCurrentDraftPlayer(currentUser.uid);
+      toast(
+        team.TeamName +
+          " added (" +
+          player.Position +
+          ") " +
+          player.FullName +
+          ": $" +
+          e.target.Amount.value
+      );
+      handleReset();
+    } else {
+      alert("Player is blank");
+    }
   };
 
   useEffect(() => {

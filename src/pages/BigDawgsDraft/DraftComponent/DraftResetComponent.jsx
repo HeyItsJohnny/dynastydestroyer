@@ -35,11 +35,12 @@ const DraftResetComponent = () => {
       collection(db, "players"),
       where("DraftStatus", "!=", "N/A")
     );
-    onSnapshot(docCollection, (querySnapshot) => {
-      querySnapshot.forEach((doc) => {
-        resetPlayerDraftStatus(doc.data().DatabaseID);
-      });
-    });
+
+    const snapshot = await getDocs(docCollection);
+
+    for (const doc of snapshot.docs) {
+      await resetPlayerDraftStatus(doc.data().DatabaseID);
+    }
   };
 
   const ResetTeamPlayers = async () => {
