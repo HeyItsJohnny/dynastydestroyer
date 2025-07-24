@@ -179,7 +179,6 @@ export async function AddPlayerToTeam(uid, teamid, player, Amount) {
       Age: player.Age,
       College: player.College,
       DepthChartOrder: player.DepthChartOrder,
-      DraftStatus: player.DraftStatus,
       FirstName: player.FirstName,
       FullName: player.FullName,
       InjuryNotes: player.InjuryNotes,

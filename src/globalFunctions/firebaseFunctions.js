@@ -197,6 +197,30 @@ export async function updatePlayerData(playerData) {
   }
 }
 
+//JCL - USED
+export async function setPlayerDraftStatus(playerDataID, draftStatus) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "players", playerDataID), {
+      DraftStatus: draftStatus,
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
+//JCL - USED
+export async function resetPlayerDraftStatus(playerDataID) {
+  try {
+    //ID: lowercased firstnamelastname-position-team
+    await updateDoc(doc(db, "players", playerDataID), {
+      DraftStatus: "N/A",
+    });
+  } catch (error) {
+    console.error("There was an error adding to the database: " + error);
+  }
+}
+
 
 //JCL - USED
 export async function addPlayerCurrentStats(playerID, statsData) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { GoPrimitiveDot } from "react-icons/go";
 import { useStateContext } from "../../../contexts/ContextProvider";
+import DraftResetComponent from "./DraftResetComponent";
 
 //User ID
 import { useAuth } from "../../../contexts/AuthContext";
@@ -35,6 +36,8 @@ const DraftComponent = () => {
   const { currentUser } = useAuth();
   const [player, setPlayer] = useState({});
 
+  const [playerTitle, setPlayerTitle] = useState("*Select Player*")
+  const [rankTitle, setRankTitle] = useState("");
   const [line1, setLine1] = useState("");
   const [line1Value, setLine1Value] = useState("");
   const [line2, setLine2] = useState("");
@@ -66,11 +69,7 @@ const DraftComponent = () => {
     //toast("Draft has been cleared.");
   };
 
-  const handleReset = async () => {
-    handleClear();
-    //Delete all players from teams
-    //Set all players draft status back to "N/A"
-  };
+  
 
   useEffect(() => {
     const playerRef = doc(
@@ -86,6 +85,8 @@ const DraftComponent = () => {
         setPlayer(snapshot.data());
         switch (snapshot.data().Position) {
           case "QB":
+            setPlayerTitle(snapshot.data().FullName + "(" + snapshot.data().Position + ") - " + snapshot.data().DraftStatus);
+            setRankTitle("Rank");
             setLine1("Passing Yards");
             setLine1Value(snapshot.data().PassingYards);
             setLine2("Passing TDs");
@@ -100,6 +101,8 @@ const DraftComponent = () => {
             setLine6Value(snapshot.data().Team);
             break;
           case "RB":
+            setPlayerTitle(snapshot.data().FullName + "(" + snapshot.data().Position + ") - " + snapshot.data().DraftStatus);
+            setRankTitle("Rank");
             setLine1("Rushing Yards");
             setLine1Value(snapshot.data().RushingYDS);
             setLine2("Rushing TDs");
@@ -114,6 +117,8 @@ const DraftComponent = () => {
             setLine6Value(snapshot.data().Team);
             break;
           case "WR":
+            setPlayerTitle(snapshot.data().FullName + "(" + snapshot.data().Position + ") - " + snapshot.data().DraftStatus);
+            setRankTitle("Rank");
             setLine1("Receiving Yards");
             setLine1Value(snapshot.data().ReceivingYDS);
             setLine2("Receiving TDs");
@@ -128,6 +133,8 @@ const DraftComponent = () => {
             setLine6Value(snapshot.data().Team);
             break;
           case "TE":
+            setPlayerTitle(snapshot.data().FullName + " (" + snapshot.data().Position + ") - " + snapshot.data().DraftStatus);
+            setRankTitle("Rank");
             setLine1("Receiving Yards");
             setLine1Value(snapshot.data().ReceivingYDS);
             setLine2("Receiving TDs");
@@ -142,7 +149,20 @@ const DraftComponent = () => {
             setLine6Value(snapshot.data().Team);
             break;
           default:
-            console.log("No player selected");
+            setPlayerTitle("*Select Player*");
+            setRankTitle("");
+            setLine1("");
+            setLine1Value("");
+            setLine2("");
+            setLine2Value("");
+            setLine3("");
+            setLine3Value("");
+            setLine4("");
+            setLine4Value("");
+            setLine5("");
+            setLine5Value("");
+            setLine6("");
+            setLine6Value("");
         }
       } else {
         console.log("No current player found");
@@ -160,7 +180,7 @@ const DraftComponent = () => {
         <div className="flex justify-between">
           <p className="font-semibold text-xl">Auction Draft</p>
           <p className="font-semibold text-xl">
-            {player.FullName} ({player.Position}) - {player.DraftStatus}
+            {playerTitle}
           </p>
           <div className="flex items-center gap-4">
             <p className="flex items-center gap-2 text-green-400 hover:drop-shadow-xl">
@@ -174,7 +194,7 @@ const DraftComponent = () => {
         <div className="mt-5 flex gap-10 flex-wrap justify-left">
           <div className=" border-r-1 border-color m-4 pr-10">
             <div className="mt-1">
-              <p className="text-gray-500 mt-1">Rank</p>
+              <p className="text-gray-500 mt-1">{rankTitle}</p>
               <p className="text-grey-500 text-3xl font-semibold">
                 {player.PositionRank}
               </p>
@@ -224,14 +244,7 @@ const DraftComponent = () => {
               >
                 Clear Draft
               </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={handleReset}
-                sx={{ mr: 2 }} // Adds margin to the right of the button
-              >
-                Reset Draft
-              </Button>
+              <DraftResetComponent />
             </Box>
           </div>
           <div className="mt-5">

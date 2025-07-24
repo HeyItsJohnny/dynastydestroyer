@@ -18,6 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 //Firebase
 import { ClearCurrentDraftPlayer, AddPlayerToTeam } from "../../../globalFunctions/firebaseAuctionDraft";
+import { setPlayerDraftStatus } from "../../../globalFunctions/firebaseFunctions";
 
 //User ID
 import { useAuth } from "../../../contexts/AuthContext";
@@ -39,6 +40,7 @@ const DraftModal = ({ team }) => {
     e.preventDefault();
     ClearCurrentDraftPlayer(currentUser.uid);
     AddPlayerToTeam(currentUser.uid, team.id, player, e.target.Amount.value * 1);
+    setPlayerDraftStatus(player.DatabaseID,"Drafted");
     toast(
       team.TeamName +
         " added (" +
