@@ -18,7 +18,7 @@ import { getPlayerWeeklyPoints } from "./firebasePlayerFunctions";
 
 //JCL USED
 export async function CreateOrUpdateCurrentDraftPlayer(uid, player) {
-  const docRef = doc(db, "userprofile",uid,"auctiondraft", "currentdraft");
+  const docRef = doc(db, "userprofile", uid, "auctiondraft", "currentdraft");
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
     UpdateCurrentDraftPlayer(uid, player);
@@ -31,7 +31,7 @@ export async function CreateOrUpdateCurrentDraftPlayer(uid, player) {
 export async function CreateCurrentDraftPlayer(uid, player) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await setDoc(doc(db, "userprofile",uid, "auctiondraft", "currentplayer"), {
+    await setDoc(doc(db, "userprofile", uid, "auctiondraft", "currentplayer"), {
       Age: player.Age,
       College: player.College,
       DepthChartOrder: player.DepthChartOrder,
@@ -67,8 +67,8 @@ export async function CreateCurrentDraftPlayer(uid, player) {
       ReceptionPercentage: player.ReceptionPercentage,
       RedzoneTargets: player.RedzoneTargets,
       RedzoneTouches: player.RedzoneTouches,
-      PositionRank: player.PositionRank,    
-      TotalPoints: player.TotalPoints
+      PositionRank: player.PositionRank,
+      TotalPoints: player.TotalPoints,
     });
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
@@ -79,45 +79,48 @@ export async function CreateCurrentDraftPlayer(uid, player) {
 export async function UpdateCurrentDraftPlayer(uid, player) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "currentplayer"), {
-      Age: player.Age,
-      College: player.College,
-      DepthChartOrder: player.DepthChartOrder,
-      DraftStatus: player.DraftStatus,
-      FirstName: player.FirstName,
-      FullName: player.FullName,
-      InjuryNotes: player.InjuryNotes,
-      InjuryStatus: player.InjuryStatus,
-      DatabaseID: player.DatabaseID,
-      KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
-      LastName: player.LastName,
-      NonSuperFlexValue: player.NonSuperFlexValue,
-      Position: player.Position,
-      SleeperID: player.SleeperID,
-      SearchFirstName: player.SearchFirstName,
-      SearchFullName: player.SearchFullName,
-      SearchLastName: player.SearchLastName,
-      SearchRank: player.SearchRank,
-      Status: player.Status,
-      SuperFlexValue: player.SuperFlexValue,
-      Team: player.Team,
-      YearsExperience: player.YearsExperience,
-      Fumbles: player.Fumbles,
-      PassingYards: player.PassingYards,
-      PassingTDs: player.PassingTDs,
-      PassingINT: player.PassingINT,
-      RushingYDS: player.RushingYDS,
-      RushingTDs: player.RushingTDs,
-      ReceivingRec: player.ReceivingRec,
-      ReceivingYDS: player.ReceivingYDS,
-      ReceivingTDs: player.ReceivingTDs,
-      ReceivingTargets: player.ReceivingTargets,
-      ReceptionPercentage: player.ReceptionPercentage,
-      RedzoneTargets: player.RedzoneTargets,
-      RedzoneTouches: player.RedzoneTouches,
-      PositionRank: player.PositionRank,    
-      TotalPoints: player.TotalPoints
-    });
+    await updateDoc(
+      doc(db, "userprofile", uid, "auctiondraft", "currentplayer"),
+      {
+        Age: player.Age,
+        College: player.College,
+        DepthChartOrder: player.DepthChartOrder,
+        DraftStatus: player.DraftStatus,
+        FirstName: player.FirstName,
+        FullName: player.FullName,
+        InjuryNotes: player.InjuryNotes,
+        InjuryStatus: player.InjuryStatus,
+        DatabaseID: player.DatabaseID,
+        KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
+        LastName: player.LastName,
+        NonSuperFlexValue: player.NonSuperFlexValue,
+        Position: player.Position,
+        SleeperID: player.SleeperID,
+        SearchFirstName: player.SearchFirstName,
+        SearchFullName: player.SearchFullName,
+        SearchLastName: player.SearchLastName,
+        SearchRank: player.SearchRank,
+        Status: player.Status,
+        SuperFlexValue: player.SuperFlexValue,
+        Team: player.Team,
+        YearsExperience: player.YearsExperience,
+        Fumbles: player.Fumbles,
+        PassingYards: player.PassingYards,
+        PassingTDs: player.PassingTDs,
+        PassingINT: player.PassingINT,
+        RushingYDS: player.RushingYDS,
+        RushingTDs: player.RushingTDs,
+        ReceivingRec: player.ReceivingRec,
+        ReceivingYDS: player.ReceivingYDS,
+        ReceivingTDs: player.ReceivingTDs,
+        ReceivingTargets: player.ReceivingTargets,
+        ReceptionPercentage: player.ReceptionPercentage,
+        RedzoneTargets: player.RedzoneTargets,
+        RedzoneTouches: player.RedzoneTouches,
+        PositionRank: player.PositionRank,
+        TotalPoints: player.TotalPoints,
+      }
+    );
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
   }
@@ -127,45 +130,48 @@ export async function UpdateCurrentDraftPlayer(uid, player) {
 export async function ClearCurrentDraftPlayer(uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "currentplayer"), {
-      Age: "",
-      College: "",
-      DepthChartOrder: "",
-      DraftStatus: "",
-      FirstName: "",
-      FullName: "",
-      InjuryNotes: "",
-      InjuryStatus: "",
-      DatabaseID: "",
-      KeepTradeCutIdentifier: "",
-      LastName: "",
-      NonSuperFlexValue: "",
-      Position: "",
-      SleeperID: "",
-      SearchFirstName: "",
-      SearchFullName: "",
-      SearchLastName: "",
-      SearchRank: "",
-      Status: "",
-      SuperFlexValue: "",
-      Team: "",
-      YearsExperience: "",
-      Fumbles: "",
-      PassingYards: "",
-      PassingTDs: "",
-      PassingINT: "",
-      RushingYDS: "",
-      RushingTDs: "",
-      ReceivingRec: "",
-      ReceivingYDS: "",
-      ReceivingTDs: "",
-      ReceivingTargets: "",
-      ReceptionPercentage: "",
-      RedzoneTargets: "",
-      RedzoneTouches: "",
-      PositionRank: "",   
-      TotalPoints: "",
-    });
+    await updateDoc(
+      doc(db, "userprofile", uid, "auctiondraft", "currentplayer"),
+      {
+        Age: "",
+        College: "",
+        DepthChartOrder: "",
+        DraftStatus: "",
+        FirstName: "",
+        FullName: "",
+        InjuryNotes: "",
+        InjuryStatus: "",
+        DatabaseID: "",
+        KeepTradeCutIdentifier: "",
+        LastName: "",
+        NonSuperFlexValue: "",
+        Position: "",
+        SleeperID: "",
+        SearchFirstName: "",
+        SearchFullName: "",
+        SearchLastName: "",
+        SearchRank: "",
+        Status: "",
+        SuperFlexValue: "",
+        Team: "",
+        YearsExperience: "",
+        Fumbles: "",
+        PassingYards: "",
+        PassingTDs: "",
+        PassingINT: "",
+        RushingYDS: "",
+        RushingTDs: "",
+        ReceivingRec: "",
+        ReceivingYDS: "",
+        ReceivingTDs: "",
+        ReceivingTargets: "",
+        ReceptionPercentage: "",
+        RedzoneTargets: "",
+        RedzoneTouches: "",
+        PositionRank: "",
+        TotalPoints: "",
+      }
+    );
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
   }
@@ -175,55 +181,65 @@ export async function ClearCurrentDraftPlayer(uid) {
 export async function AddPlayerToTeam(uid, teamid, player, Amount) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await setDoc(doc(db, "userprofile",uid, "teams", teamid, "players",player.DatabaseID), {
-      Age: player.Age,
-      College: player.College,
-      DepthChartOrder: player.DepthChartOrder,
-      FirstName: player.FirstName,
-      FullName: player.FullName,
-      InjuryNotes: player.InjuryNotes,
-      InjuryStatus: player.InjuryStatus,
-      DatabaseID: player.DatabaseID,
-      KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
-      LastName: player.LastName,
-      NonSuperFlexValue: player.NonSuperFlexValue,
-      Position: player.Position,
-      SleeperID: player.SleeperID,
-      SearchFirstName: player.SearchFirstName,
-      SearchFullName: player.SearchFullName,
-      SearchLastName: player.SearchLastName,
-      SearchRank: player.SearchRank,
-      Status: player.Status,
-      SuperFlexValue: player.SuperFlexValue,
-      Team: player.Team,
-      YearsExperience: player.YearsExperience,
-      Fumbles: player.Fumbles,
-      PassingYards: player.PassingYards,
-      PassingTDs: player.PassingTDs,
-      PassingINT: player.PassingINT,
-      RushingYDS: player.RushingYDS,
-      RushingTDs: player.RushingTDs,
-      ReceivingRec: player.ReceivingRec,
-      ReceivingYDS: player.ReceivingYDS,
-      ReceivingTDs: player.ReceivingTDs,
-      ReceivingTargets: player.ReceivingTargets,
-      ReceptionPercentage: player.ReceptionPercentage,
-      RedzoneTargets: player.RedzoneTargets,
-      RedzoneTouches: player.RedzoneTouches,
-      PositionRank: player.PositionRank,    
-      TotalPoints: player.TotalPoints,
-      DraftAmount: Amount
-    });
+    await setDoc(
+      doc(
+        db,
+        "userprofile",
+        uid,
+        "teams",
+        teamid,
+        "players",
+        player.DatabaseID
+      ),
+      {
+        Age: player.Age,
+        College: player.College,
+        DepthChartOrder: player.DepthChartOrder,
+        FirstName: player.FirstName,
+        FullName: player.FullName,
+        InjuryNotes: player.InjuryNotes,
+        InjuryStatus: player.InjuryStatus,
+        DatabaseID: player.DatabaseID,
+        KeepTradeCutIdentifier: player.KeepTradeCutIdentifier,
+        LastName: player.LastName,
+        NonSuperFlexValue: player.NonSuperFlexValue,
+        Position: player.Position,
+        SleeperID: player.SleeperID,
+        SearchFirstName: player.SearchFirstName,
+        SearchFullName: player.SearchFullName,
+        SearchLastName: player.SearchLastName,
+        SearchRank: player.SearchRank,
+        Status: player.Status,
+        SuperFlexValue: player.SuperFlexValue,
+        Team: player.Team,
+        YearsExperience: player.YearsExperience,
+        Fumbles: player.Fumbles,
+        PassingYards: player.PassingYards,
+        PassingTDs: player.PassingTDs,
+        PassingINT: player.PassingINT,
+        RushingYDS: player.RushingYDS,
+        RushingTDs: player.RushingTDs,
+        ReceivingRec: player.ReceivingRec,
+        ReceivingYDS: player.ReceivingYDS,
+        ReceivingTDs: player.ReceivingTDs,
+        ReceivingTargets: player.ReceivingTargets,
+        ReceptionPercentage: player.ReceptionPercentage,
+        RedzoneTargets: player.RedzoneTargets,
+        RedzoneTouches: player.RedzoneTouches,
+        PositionRank: player.PositionRank,
+        TotalPoints: player.TotalPoints,
+        DraftAmount: Amount,
+      }
+    );
   } catch (error) {
     console.error("There was an error adding to the database: " + error);
   }
 }
 
-
 //JCL USED
 export async function getAuctionDataSettings(uid) {
   try {
-    const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
+    const docRef = doc(db, "userprofile", uid, "auctiondraft", "settings");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return docSnap.data();
@@ -238,7 +254,7 @@ export async function getAuctionDataSettings(uid) {
 
 //JCL USED
 export async function createOrUpdateAuctionDraftSettings(auctionSettings, uid) {
-  const docRef = doc(db, "userprofile",uid,"auctiondraft", "settings");
+  const docRef = doc(db, "userprofile", uid, "auctiondraft", "settings");
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
     UpdateAuctionDraftSettings(auctionSettings, uid);
@@ -251,7 +267,7 @@ export async function createOrUpdateAuctionDraftSettings(auctionSettings, uid) {
 export async function UpdateAuctionDraftSettings(auctionSettings, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       AuctionAmount: auctionSettings.AuctionAmount * 1,
       QBPercent: auctionSettings.QBPercent * 1,
       RBPercent: auctionSettings.RBPercent * 1,
@@ -273,7 +289,7 @@ export async function UpdateAuctionDraftSettings(auctionSettings, uid) {
 export async function CreateAuctionDraftSettings(auctionSettings, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await setDoc(doc(db, "userprofile",uid, "auctiondraft", "settings"), {
+    await setDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       AuctionAmount: auctionSettings.AuctionAmount * 1,
       QBPercent: auctionSettings.QBPercent * 1,
       RBPercent: auctionSettings.RBPercent * 1,
@@ -291,10 +307,32 @@ export async function CreateAuctionDraftSettings(auctionSettings, uid) {
   }
 }
 
+//JCL USED
+export const listenToTeamSpending = (uid, teamid, callback) => {
+  const playersRef = collection(
+    db,
+    "userprofile",
+    uid,
+    "teams",
+    teamid,
+    "players"
+  );
+
+  return onSnapshot(playersRef, (snapshot) => {
+    let total = 0;
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      total += data?.DraftAmount || 0;
+    });
+    callback(total);
+  });
+};
+
+
 export async function updateQBTotal(total, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       QBTotalAmount: total * 1,
     });
   } catch (error) {
@@ -305,7 +343,7 @@ export async function updateQBTotal(total, uid) {
 export async function updateRBTotal(total, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid, "auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       RBTotalAmount: total * 1,
     });
   } catch (error) {
@@ -316,7 +354,7 @@ export async function updateRBTotal(total, uid) {
 export async function updateWRTotal(total, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid, "auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       WRTotalAmount: total * 1,
     });
   } catch (error) {
@@ -327,7 +365,7 @@ export async function updateWRTotal(total, uid) {
 export async function updateTETotal(total, uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       TETotalAmount: total * 1,
     });
   } catch (error) {
@@ -335,10 +373,15 @@ export async function updateTETotal(total, uid) {
   }
 }
 
-export async function createOrUpdatePlayerAuctionData(playerData, auctionRank, uid) {
+export async function createOrUpdatePlayerAuctionData(
+  playerData,
+  auctionRank,
+  uid
+) {
   const docRef = doc(
     db,
-    "userprofile",uid,
+    "userprofile",
+    uid,
     "auctiondraft",
     "players",
     playerData.Position,
@@ -475,7 +518,8 @@ export async function updatePlayerAuctionData(playerData, uid) {
     await updateDoc(
       doc(
         db,
-        "userprofile",uid,
+        "userprofile",
+        uid,
         "auctiondraft",
         "players",
         playerData.Position,
@@ -648,7 +692,8 @@ export async function createPlayerAuctionData(playerData, auctionRank, uid) {
     await setDoc(
       doc(
         db,
-        "userprofile",uid,
+        "userprofile",
+        uid,
         "auctiondraft",
         "players",
         playerData.Position,
@@ -846,7 +891,7 @@ export async function resetTEDraftBoard(uid) {
 export async function resetDraftTotals(uid) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db, "userprofile",uid,"auctiondraft", "settings"), {
+    await updateDoc(doc(db, "userprofile", uid, "auctiondraft", "settings"), {
       QBTotalAmount: 0 * 1,
       RBTotalAmount: 0 * 1,
       WRTotalAmount: 0 * 1,
@@ -857,14 +902,29 @@ export async function resetDraftTotals(uid) {
   }
 }
 
-export async function updateDraftStatus(playerData, status, uid, drafter, draftprice) {
+export async function updateDraftStatus(
+  playerData,
+  status,
+  uid,
+  drafter,
+  draftprice
+) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db,"userprofile",uid,"auctiondraft","players",playerData.Position,playerData.id),
+    await updateDoc(
+      doc(
+        db,
+        "userprofile",
+        uid,
+        "auctiondraft",
+        "players",
+        playerData.Position,
+        playerData.id
+      ),
       {
         DraftStatus: status,
         DraftedBy: drafter,
-        DraftPrice: draftprice
+        DraftPrice: draftprice,
       }
     );
   } catch (error) {
@@ -872,10 +932,24 @@ export async function updateDraftStatus(playerData, status, uid, drafter, draftp
   }
 }
 
-export async function updatePlayerTier(KeepTradeCutIdentifier, position, tier, uid) {
+export async function updatePlayerTier(
+  KeepTradeCutIdentifier,
+  position,
+  tier,
+  uid
+) {
   try {
     //ID: lowercased firstnamelastname-position-team
-    await updateDoc(doc(db,"userprofile",uid,"auctiondraft","players",position,KeepTradeCutIdentifier),
+    await updateDoc(
+      doc(
+        db,
+        "userprofile",
+        uid,
+        "auctiondraft",
+        "players",
+        position,
+        KeepTradeCutIdentifier
+      ),
       {
         Tier: tier,
       }
@@ -885,17 +959,16 @@ export async function updatePlayerTier(KeepTradeCutIdentifier, position, tier, u
   }
 }
 
-
-export async function createRookiePlayer(position, fullname, team, depthChart, ktc, uid) {
+export async function createRookiePlayer(
+  position,
+  fullname,
+  team,
+  depthChart,
+  ktc,
+  uid
+) {
   await setDoc(
-    doc(
-      db,
-      "userprofile",uid,
-      "auctiondraft",
-      "players",
-      position,
-      ktc
-    ),
+    doc(db, "userprofile", uid, "auctiondraft", "players", position, ktc),
     {
       Tier: "Tier 4",
       CurrentAuctionRank: 100,
@@ -943,33 +1016,21 @@ export async function createRookiePlayer(position, fullname, team, depthChart, k
 
 export async function createSleeperPlayer(position, fullname, team, ktc, uid) {
   await setDoc(
-    doc(
-      db,
-      "userprofile",uid,
-      "auctiondraft",
-      "players",
-      "sleepers",
-      ktc
-    ),
+    doc(db, "userprofile", uid, "auctiondraft", "players", "sleepers", ktc),
     {
       Position: position,
       Team: team,
       FullName: fullname,
-      KeepTradeCutIdentifier: ktc
+      KeepTradeCutIdentifier: ktc,
     }
   );
 }
 
 export async function deleteSleeperPlayer(uid, ktc) {
   try {
-    await deleteDoc(doc(
-      db,
-      "userprofile",uid,
-      "auctiondraft",
-      "players",
-      "sleepers",
-      ktc
-    ));
+    await deleteDoc(
+      doc(db, "userprofile", uid, "auctiondraft", "players", "sleepers", ktc)
+    );
   } catch (error) {
     alert("Error deleting data from Firestore:", error);
   }
