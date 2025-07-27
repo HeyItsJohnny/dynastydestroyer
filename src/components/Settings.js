@@ -23,11 +23,6 @@ export const links = [
         linktoname: "bigdawgsdraft/teams"
       },
       {
-        name: "OLD - Command Center",
-        icon: <GoDashboard />,
-        linktoname: "auctiondraft/commandcenter"
-      },
-      {
         name: "OLD - Team Stats",
         icon: <GiAmericanFootballHelmet />,
         linktoname: "auctiondraft/teams"

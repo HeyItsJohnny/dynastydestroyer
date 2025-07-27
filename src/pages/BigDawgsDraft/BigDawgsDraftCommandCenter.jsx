@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 
 import DraftSettings from "./DraftSettings";
-import Draft from "./DraftComponent/Draft";
-import DraftTeamStatsSummary from "./DraftComponent/DraftTeamStatsSummary";
+import Draft from "./DraftComponent/Draft/Draft";
+import DraftTeamStatsSummary from "./DraftComponent/DraftTeamSummary/DraftTeamStatsSummary";
 
 //User ID
 import { useAuth } from "../../contexts/AuthContext";

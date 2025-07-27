@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 
 //Firebase
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../../firebase/firebase";
 import { onSnapshot, doc, collection } from "firebase/firestore";
 
 //User ID
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../../contexts/AuthContext";
 
 import {
   AccumulationChartComponent,
@@ -18,7 +18,7 @@ import {
   AccumulationLegend,
 } from "@syncfusion/ej2-react-charts";
 
-import { useStateContext } from "../../../contexts/ContextProvider";
+import { useStateContext } from "../../../../contexts/ContextProvider";
 
 const DraftTeamStatsSummaryComponent = ({ team }) => {
   const { currentUser } = useAuth();

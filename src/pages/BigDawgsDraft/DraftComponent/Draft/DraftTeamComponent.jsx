@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import DraftModal from "../Modals/DraftModal";
+import DraftModal from "../../Modals/DraftModal";
 
 //User ID
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../../contexts/AuthContext";
 
 import {
   getAuctionDataSettings,
   listenToTeamSpending
-} from "../../../globalFunctions/firebaseAuctionDraft";
+} from "../../../../globalFunctions/firebaseAuctionDraft";
 
 const DraftTeamComponent = ({ team }) => {
   const { currentUser } = useAuth();

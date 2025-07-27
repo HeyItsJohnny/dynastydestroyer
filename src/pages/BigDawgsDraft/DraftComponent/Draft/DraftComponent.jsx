@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { GoPrimitiveDot } from "react-icons/go";
-import { useStateContext } from "../../../contexts/ContextProvider";
+import { useStateContext } from "../../../../contexts/ContextProvider";
 import DraftResetComponent from "./DraftResetComponent";
 
 //User ID
-import { useAuth } from "../../../contexts/AuthContext";
-import { ClearCurrentDraftPlayer } from "../../../globalFunctions/firebaseAuctionDraft";
+import { useAuth } from "../../../../contexts/AuthContext";
+import { ClearCurrentDraftPlayer } from "../../../../globalFunctions/firebaseAuctionDraft";
 import { Button, Box } from "@mui/material";
 
 //Firebase
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../../firebase/firebase";
 import { onSnapshot, doc } from "firebase/firestore";
 
 import {
   stackedPrimaryXAxis,
   stackedPrimaryYAxis,
-} from "../../../data/gridData";
+} from "../../../../data/gridData";
 import {
   ChartComponent,
   SeriesCollectionDirective,

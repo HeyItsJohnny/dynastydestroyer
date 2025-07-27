@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 //Firebase
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../../firebase/firebase";
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 //User ID
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../../contexts/AuthContext";
 import DraftTeamStatsSummaryComponent from "./DraftTeamStatsSummaryComponent";
 
 const DraftTeamStatsSummary = () => {

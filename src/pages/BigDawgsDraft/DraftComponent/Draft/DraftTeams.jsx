@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import DraftTeamComponent from "./DraftTeamComponent";
 
 //Firebase
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../../firebase/firebase";
 import {
   collection,
   query,
@@ -11,7 +11,7 @@ import {
 } from "firebase/firestore";
 
 //User ID
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../../contexts/AuthContext";
 
 const DraftTeams = () => {
   const { currentUser } = useAuth();

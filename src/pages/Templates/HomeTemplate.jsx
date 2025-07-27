@@ -14,7 +14,6 @@ import {
   BigDawgsDraftCommandCenter,
   Teams,
   SnakeDraft,
-  AuctionDraft,
   Settings,
   ComparePlayers,
   CompareLineups,
@@ -55,8 +54,6 @@ const HomeTemplate = ({ page }) => {
         return <BigDawgsDraftCommandCenter />;
       case "BIGDAWGSTEAMS":
         return <Teams />;
-      case "AUCTIONDRAFT":
-        return <AuctionDraft />;
       case "AUCTIONDRAFTTEAMS":
         return <AuctionDraftTeams />;
       case "SNAKEDRAFT":

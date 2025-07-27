@@ -1,6 +1,6 @@
 import React from "react";
-import { CreateOrUpdateCurrentDraftPlayer } from "../../../globalFunctions/firebaseAuctionDraft";
-import { useAuth } from "../../../contexts/AuthContext";
+import { CreateOrUpdateCurrentDraftPlayer } from "../../../../globalFunctions/firebaseAuctionDraft";
+import { useAuth } from "../../../../contexts/AuthContext";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Button, Box } from "@mui/material";
-import { ClearCurrentDraftPlayer } from "../../../globalFunctions/firebaseAuctionDraft";
-import { useAuth } from "../../../contexts/AuthContext";
+import { ClearCurrentDraftPlayer } from "../../../../globalFunctions/firebaseAuctionDraft";
+import { useAuth } from "../../../../contexts/AuthContext";
 
-import { resetPlayerDraftStatus } from "../../../globalFunctions/firebaseFunctions";
+import { resetPlayerDraftStatus } from "../../../../globalFunctions/firebaseFunctions";
 
 //Firebase
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../../firebase/firebase";
 import {
   collection,
   query,

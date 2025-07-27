@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import DraftPlayerComponent from "./DraftPlayerComponent";
 
 //Firebase
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../../firebase/firebase";
 import {
   collection,
   query,
