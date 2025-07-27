@@ -2,36 +2,27 @@ import React, { useState, useEffect } from "react";
 
 import DraftSettings from "./DraftSettings";
 import Draft from "./DraftComponent/Draft";
+import DraftTeamStatsSummary from "./DraftComponent/DraftTeamStatsSummary";
 
 //User ID
 import { useAuth } from "../../contexts/AuthContext";
 
-//Player Buttons
-import { TbSquareRoundedLetterQ } from "react-icons/tb";
-import { TbSquareRoundedLetterR } from "react-icons/tb";
-import { TbSquareRoundedLetterW } from "react-icons/tb";
-import { TbSquareRoundedLetterT } from "react-icons/tb";
-
 //UI
 import {
-  FormControl,
-  TextField,
-  Button,
   Box,
-  Grid,
   Typography,
   Switch,
 } from "@mui/material";
 import { Header } from "../../components";
 
-//Toast
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
 
 const BigDawgsDraftCommandCenter = () => {
   const { currentUser } = useAuth();
   const [checkedDraftSettings, setCheckedDraftSettings] = useState(false);
   const [checkedDraft, setCheckedDraft] = useState(false);
+  const [checkedTeamStatsSummary, setCheckedTeamStatsSummary] = useState(false);
+  const [checkedTeamStatsDetail, setCheckedTeamStatsDetail] = useState(false);
 
   const inputStyles = {
     color: "white",
@@ -43,6 +34,12 @@ const BigDawgsDraftCommandCenter = () => {
   };
   const handleDraftCheckboxChange = (event) => {
     setCheckedDraft(event.target.checked);
+  };
+  const handleDraftTeamStatsSummaryCheckboxChange = (event) => {
+    setCheckedTeamStatsSummary(event.target.checked);
+  };
+  const handleDraftTeamStatsDetailCheckboxChange = (event) => {
+    setCheckedTeamStatsDetail(event.target.checked);
   };
 
   useEffect(() => {
@@ -64,12 +61,26 @@ const BigDawgsDraftCommandCenter = () => {
             checked={checkedDraftSettings}
             onChange={handleDraftSettingsCheckboxChange}
           />
+          <Typography gutterBottom>Show Team Stats Summary</Typography>
+          <Switch
+            checked={checkedTeamStatsSummary}
+            onChange={handleDraftTeamStatsSummaryCheckboxChange}
+          />
+          <Typography gutterBottom>Show Team Stats Detail</Typography>
+          <Switch
+            checked={checkedTeamStatsDetail}
+            onChange={handleDraftTeamStatsDetailCheckboxChange}
+          />
         </Box>
       </div>
       {/* Settings */}
       {checkedDraftSettings && <DraftSettings />}
       {/* Draft */}
       {checkedDraft && <Draft />}
+      {/* Draft Team Stats Summary*/}
+      {checkedTeamStatsSummary && <DraftTeamStatsSummary/> }
+      {/* Draft Team Stats Detail*/}
+      {checkedTeamStatsDetail && <DraftTeamStatsSummary/> }
     </>
   );
 };

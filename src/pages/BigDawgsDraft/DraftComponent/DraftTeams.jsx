@@ -1,16 +1,4 @@
 import React, { useState, useEffect } from "react";
-
-//Visuals
-import { Header } from "../../../components";
-import {
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControl,
-  Button,
-  Box,
-} from "@mui/material";
-import { TbSquareRoundedLetterW } from "react-icons/tb";
 import DraftTeamComponent from "./DraftTeamComponent";
 
 //Firebase
@@ -20,7 +8,6 @@ import {
   query,
   onSnapshot,
   orderBy,
-  where,
 } from "firebase/firestore";
 
 //User ID
