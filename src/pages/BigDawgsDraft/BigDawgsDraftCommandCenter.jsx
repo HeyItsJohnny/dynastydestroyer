@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import DraftSettings from "./DraftSettings";
 import Draft from "./DraftComponent/Draft/Draft";
 import DraftTeamStatsSummary from "./DraftComponent/DraftTeamSummary/DraftTeamStatsSummary";
+import DraftTeamDetails from "./DraftComponent/DraftTeamDetails/DraftTeamDetails";
 
 //User ID
 import { useAuth } from "../../contexts/AuthContext";
@@ -80,7 +81,7 @@ const BigDawgsDraftCommandCenter = () => {
       {/* Draft Team Stats Summary*/}
       {checkedTeamStatsSummary && <DraftTeamStatsSummary/> }
       {/* Draft Team Stats Detail*/}
-      {checkedTeamStatsDetail && <DraftTeamStatsSummary/> }
+      {checkedTeamStatsDetail && <DraftTeamDetails/> }
     </>
   );
 };
