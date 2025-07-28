@@ -1,8 +1,6 @@
 export { default as Home } from './Home/Home';
 export { default as BigDawgsDraftCommandCenter } from './BigDawgsDraft/BigDawgsDraftCommandCenter';
 export { default as Teams } from './BigDawgsDraft/Teams/Teams';
-export { default as SnakeDraft } from './DraftHome/SnakeDraft/SnakeDraft';
-export { default as AuctionDraftTeams } from './DraftHome/AuctionDraft/Teams/AuctionDraftTeams';
 export { default as HomeTemplate } from './Templates/HomeTemplate';
 export { default as ComparePlayers } from './Apps/ComparePlayers/ComparePlayers';
 export { default as CompareLineups } from './Apps/CompareLineups/CompareLineups';

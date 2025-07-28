@@ -21,17 +21,11 @@ export const links = [
         name: "Teams",
         icon: <GiAmericanFootballHelmet />,
         linktoname: "bigdawgsdraft/teams"
-      },
-      {
-        name: "OLD - Team Stats",
-        icon: <GiAmericanFootballHelmet />,
-        linktoname: "auctiondraft/teams"
-      },
-      
+      },    
     ],
   },
   {
-    title: "Tiers",
+    title: "Tiers/Sleepers",
     links: [
       {
         name: "QB Tier List",
@@ -53,6 +47,11 @@ export const links = [
         icon: <TfiArrowTopRight />,
         linktoname: "tiers/wr"
       },
+      {
+        name: "Sleepers",
+        icon: <MdOutlineCompareArrows />,
+        linktoname: "sleepers"
+      }
     ],
   },
   {
@@ -62,11 +61,6 @@ export const links = [
         name: "Compare Players",
         icon: <MdOutlineCompareArrows />,
         linktoname: "apps/compareplayers"
-      },
-      {
-        name: "Sleepers",
-        icon: <MdOutlineCompareArrows />,
-        linktoname: "sleepers"
       }
     ],
   },

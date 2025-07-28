@@ -13,7 +13,6 @@ import {
   Home,
   BigDawgsDraftCommandCenter,
   Teams,
-  SnakeDraft,
   Settings,
   ComparePlayers,
   CompareLineups,
@@ -30,7 +29,6 @@ import {
   RBDetails,
   TEDetails,
   WRDetails,
-  AuctionDraftTeams,
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
@@ -54,10 +52,6 @@ const HomeTemplate = ({ page }) => {
         return <BigDawgsDraftCommandCenter />;
       case "BIGDAWGSTEAMS":
         return <Teams />;
-      case "AUCTIONDRAFTTEAMS":
-        return <AuctionDraftTeams />;
-      case "SNAKEDRAFT":
-        return <SnakeDraft />;
       case "QBTIERS":
         return <QBTiers />;
       case "RBTIERS":
