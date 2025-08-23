@@ -12,8 +12,8 @@ import {
 } from "../../globalFunctions/firebaseUserFunctions";
 
 //Toast
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const WRTiers = () => {
   const [tierList, setTierList] = useState([]);
@@ -41,16 +41,6 @@ const WRTiers = () => {
     }
   };
 
-  const fetchPlayerTierData = async () => {
-    try {
-      const data = await getUserTierList(currentUser.uid, "WR");
-      setTierList(data);
-    } catch (e) {
-      console.log(e);
-      alert("Error: " + e);
-    }
-  };
-
   const clearPlayerData = async () => {
     for (const player of tierList) {
       try {
@@ -59,16 +49,25 @@ const WRTiers = () => {
         alert("Error deleting data from Database: " + error);
       }
     }
-    toast('Board Cleared!');
-    fetchPlayerTierData();
+    toast("Board Cleared!");
   };
 
   useEffect(() => {
-    fetchPlayerTierData();
+    if (!currentUser) return;
+
+    // Start listening for real-time updates
+    const unsubscribe = getUserTierList(
+      currentUser.uid,
+      "WR", // or pass dynamically
+      (data) => setTierList(data),
+      (error) => console.error("Error fetching tiers:", error)
+    );
+
+    // Cleanup listener when component unmounts
     return () => {
-      setTierList([]);
+      unsubscribe();
     };
-  }, []);
+  }, [currentUser]); // Re-run if currentUser changes
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">

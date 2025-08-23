@@ -189,35 +189,30 @@ export async function deletePlayerTierData(uid, playerData) {
   }
 }
 
+export function getUserTierList(uid, positionToSearch, callback, errorCallback) {
+  const docCollection = query(
+    collection(db, "userprofile", uid, "playertiers"),
+    where("Position", "==", positionToSearch)
+  );
 
-export async function getUserTierList(uid, positionToSearch) {
-    return new Promise((resolve, reject) => {
-      const docCollection = query(
-        collection(db, "userprofile", uid, "playertiers"),
-        where("Position", "==", positionToSearch),
-      );
-      onSnapshot(
-        docCollection,
-        (querySnapshot) => {
-          const list = [];
-          querySnapshot.forEach((doc) => {
-            var data = {
-              Id: doc.id,
-              FullName: doc.data().FullName,
-              KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
-              DatabaseID: doc.data().DatabaseID,
-              Position: doc.data().Position,
-              Team: doc.data().Team,
-              Tier: doc.data().Tier
-            };
-            list.push(data);
-          });
-  
-          resolve(list); // Resolve the promise with the list when the data is ready
-        },
-        (error) => {
-          reject(error); // Reject the promise if there's an error
-        }
-      );
-    });
-  }
+  const unsubscribe = onSnapshot(
+    docCollection,
+    (querySnapshot) => {
+      const list = querySnapshot.docs.map(doc => ({
+        Id: doc.id,
+        FullName: doc.data().FullName,
+        KeepTradeCutIdentifier: doc.data().KeepTradeCutIdentifier,
+        DatabaseID: doc.data().DatabaseID,
+        Position: doc.data().Position,
+        Team: doc.data().Team,
+        Tier: doc.data().Tier
+      }));
+      callback(list); // Pass updated data to your component
+    },
+    (error) => {
+      if (errorCallback) errorCallback(error);
+    }
+  );
+
+  return unsubscribe; // Return so we can clean it up later
+}
