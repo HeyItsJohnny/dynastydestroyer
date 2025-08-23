@@ -192,7 +192,7 @@ export async function deletePlayerTierData(uid, playerData) {
 export function getUserTierList(uid, positionToSearch, callback, errorCallback) {
   const docCollection = query(
     collection(db, "userprofile", uid, "playertiers"),
-    where("Position", "==", positionToSearch)
+    where("Position", "==", positionToSearch),
   );
 
   const unsubscribe = onSnapshot(
@@ -216,3 +216,5 @@ export function getUserTierList(uid, positionToSearch, callback, errorCallback) 
 
   return unsubscribe; // Return so we can clean it up later
 }
+
+
