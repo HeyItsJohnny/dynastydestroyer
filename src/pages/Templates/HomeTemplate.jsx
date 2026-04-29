@@ -52,36 +52,6 @@ const HomeTemplate = ({ page }) => {
         return <BigDawgsDraftCommandCenter />;
       case "BIGDAWGSTEAMS":
         return <Teams />;
-      case "QBTIERS":
-        return <QBTiers />;
-      case "RBTIERS":
-        return <RBTiers />;
-      case "TETIERS":
-        return <TETiers />;
-      case "WRTIERS":
-        return <WRTiers />;
-      case "SLEEPERS":
-        return <Sleepers />;
-      case "COMPAREPLAYERS":
-        return <ComparePlayers />;
-      case "COMPARELINEUPS":
-        return <CompareLineups />;
-      case "QUARTERBACKS":
-        return <Quarterbacks />;
-      case "RUNNINGBACKS":
-        return <Runningbacks />;
-      case "TIGHTENDS":
-        return <Tightends />;
-      case "WIDERECEIVERS":
-        return <Widereceivers />;
-      case "QBDETAILS":
-        return <QBDetails />;
-      case "RBDETAILS":
-        return <RBDetails />;
-      case "TEDETAILS":
-        return <TEDetails />;
-      case "WRDETAILS":
-        return <WRDetails />;
       case "SETTINGS":
         return <Settings />;
       default:
