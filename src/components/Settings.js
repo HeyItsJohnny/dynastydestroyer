@@ -1,5 +1,6 @@
 import React from "react";
 import { AiOutlinePieChart, AiFillSetting } from "react-icons/ai";
+import { MdSportsFootball } from "react-icons/md";
 import { FaCarSide } from "react-icons/fa";
 import { FcTodoList } from "react-icons/fc";
 import { MdOutlineCompareArrows } from "react-icons/md";
@@ -31,6 +32,16 @@ export const links = [
         name: "User Settings",
         icon: <AiFillSetting />,
         linktoname: "settings"
+      },
+      {
+        name: "League Settings",
+        icon: <MdSportsFootball />,
+        linktoname: "leaguesettings"
+      },
+      {
+        name: "Import",
+        icon: <TbReportMoney />,
+        linktoname: "import"
       }
     ],
   }

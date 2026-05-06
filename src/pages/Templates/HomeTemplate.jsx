@@ -29,6 +29,8 @@ import {
   RBDetails,
   TEDetails,
   WRDetails,
+  LeagueSettings,
+  Import,
 } from "../../pages";
 import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
@@ -54,6 +56,10 @@ const HomeTemplate = ({ page }) => {
         return <Teams />;
       case "SETTINGS":
         return <Settings />;
+      case "LEAGUESETTINGS":
+        return <LeagueSettings />;
+      case "IMPORT":
+        return <Import />;
       default:
         return (
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">

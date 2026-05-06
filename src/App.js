@@ -99,6 +99,22 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/leaguesettings"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="LEAGUESETTINGS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/import"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="IMPORT" />
+              </PrivateRoute>
+            }
+          />
           {/* NEW */}
           <Route
             path="/bigdawgsdraft/commandcenter"

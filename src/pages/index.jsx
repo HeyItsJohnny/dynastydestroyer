@@ -10,3 +10,5 @@ export { default as Registration } from './Authentication/Registration';
 
 //SETTINGS
 export { default as Settings } from './Settings/Settings';
+export { default as LeagueSettings } from './Settings/LeagueSettings';
+export { default as Import } from './Settings/Import';
