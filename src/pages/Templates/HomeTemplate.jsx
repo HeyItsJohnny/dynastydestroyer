@@ -1,11 +1,9 @@
-import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
 import { FiSettings } from "react-icons/fi";
 import { TooltipComponent } from "@syncfusion/ej2-react-popups";
 
 import {
   Navbar,
-  NavigationBar,
   Sidebar,
   ThemeSettings,
 } from "../../components";
@@ -14,25 +12,10 @@ import {
   BigDawgsDraftCommandCenter,
   Teams,
   Settings,
-  ComparePlayers,
-  CompareLineups,
-  QBTiers,
-  RBTiers,
-  TETiers,
-  WRTiers,
-  Sleepers,
-  Quarterbacks,
-  Runningbacks,
-  Tightends,
-  Widereceivers,
-  QBDetails,
-  RBDetails,
-  TEDetails,
-  WRDetails,
   LeagueSettings,
   Import,
+  Players,
 } from "../../pages";
-import { AuthProvider } from "../../contexts/AuthContext";
 import "../../App.css";
 
 import { useStateContext } from "../../contexts/ContextProvider";
@@ -60,6 +43,8 @@ const HomeTemplate = ({ page }) => {
         return <LeagueSettings />;
       case "IMPORT":
         return <Import />;
+      case "PLAYERS":
+        return <Players />;
       default:
         return (
           <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">

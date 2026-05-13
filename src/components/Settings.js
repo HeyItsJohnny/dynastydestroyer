@@ -1,13 +1,9 @@
 import React from "react";
-import { AiOutlinePieChart, AiFillSetting } from "react-icons/ai";
+import { AiFillSetting } from "react-icons/ai";
 import { MdSportsFootball } from "react-icons/md";
-import { FaCarSide } from "react-icons/fa";
-import { FcTodoList } from "react-icons/fc";
-import { MdOutlineCompareArrows } from "react-icons/md";
 import { GoDashboard } from "react-icons/go";
 import { GiAmericanFootballHelmet } from "react-icons/gi";
 import { TbReportMoney } from "react-icons/tb";
-import { TfiArrowTopRight } from "react-icons/tfi";
 
 export const links = [
   {
@@ -23,6 +19,16 @@ export const links = [
         icon: <GiAmericanFootballHelmet />,
         linktoname: "bigdawgsdraft/teams"
       },    
+    ],
+  },
+  {
+    title: "Players",
+    links: [
+      {
+        name: "Player List",
+        icon: <MdSportsFootball />,
+        linktoname: "players"
+      },
     ],
   },
   {

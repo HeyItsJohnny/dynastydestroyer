@@ -117,6 +117,14 @@ function App() {
           />
           {/* NEW */}
           <Route
+            path="/players"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="PLAYERS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/bigdawgsdraft/commandcenter"
             element={
               <PrivateRoute>

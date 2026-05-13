@@ -77,6 +77,45 @@ export const playersTEWRGrid = [
   { field: "TotalPoints", headerText: "Total Points", width: "75"},
 ];
 
+export const allPlayersGrid = [
+  { field: "FullName", headerText: "Name", width: "150" },
+  { field: "Position", headerText: "Position", width: "90", textAlign: "Center" },
+  { field: "Team", headerText: "Team", width: "90", textAlign: "Center" },
+  { field: "Age", headerText: "Age", width: "80", textAlign: "Center" },
+  {
+    field: "DepthChartOrder",
+    headerText: "Depth",
+    width: "90",
+    textAlign: "Center",
+  },
+  {
+    field: "YearsExperience",
+    headerText: "Exp",
+    width: "80",
+    textAlign: "Center",
+  },
+  { field: "Status", headerText: "Status", width: "110", textAlign: "Center" },
+  {
+    field: "InjuryStatus",
+    headerText: "Injury",
+    width: "110",
+    textAlign: "Center",
+  },
+  {
+    field: "AuctionValue",
+    headerText: "Auction",
+    width: "100",
+    textAlign: "Center",
+  },
+  {
+    field: "ProjectedPoints",
+    headerText: "Proj Pts",
+    width: "100",
+    textAlign: "Center",
+  },
+  { field: "Rank", headerText: "Rank", width: "90", textAlign: "Center" },
+];
+
 export const stackedChartData = [
   [
     { x: '1', y: 24 },

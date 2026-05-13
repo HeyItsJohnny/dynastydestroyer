@@ -82,7 +82,7 @@ const Import = () => {
       const results = await importSleeperPlayers();
       await Promise.all([loadPlayersAndMappings(), loadImportStatus()]);
       setStatusMessage(
-        `Imported / refreshed ${results.totalImported} Sleeper players. Added ${results.totalAdded}. Updated ${results.totalUpdated}. Skipped ${results.totalSkipped}.`
+        `Refreshed ${results.totalUpdated} Sleeper players. Added ${results.totalAdded}. Skipped new players ${results.totalSkippedNewPlayers}. Skipped total ${results.totalSkipped}.`
       );
     } catch (error) {
       setStatusMessage(`Sleeper import failed: ${error.message}`);
@@ -217,7 +217,7 @@ const Import = () => {
             disabled={isWorking}
             onClick={handleSleeperImport}
           >
-            {isWorking ? "Importing..." : "Import / Refresh Sleeper Players"}
+            {isWorking ? "Refreshing..." : "Refresh Sleeper Players"}
           </Button>
 
           <p className="text-sm">
@@ -225,7 +225,7 @@ const Import = () => {
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 text-sm">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 text-sm">
           <div>
             <p className="font-semibold">Last Imported Date</p>
             <p>{formatImportDate(importStatus?.lastImportedAt)}</p>
@@ -247,6 +247,11 @@ const Import = () => {
           </div>
 
           <div>
+            <p className="font-semibold">New Players Skipped</p>
+            <p>{(importStatus?.totalSkippedNewPlayers ?? 0).toLocaleString()}</p>
+          </div>
+
+          <div>
             <p className="font-semibold">Total Skipped</p>
             <p>
               {(importStatus?.totalSkipped ?? importStatus?.skippedCount ?? 0)
@@ -258,7 +263,7 @@ const Import = () => {
             <p className="font-semibold">Active Filter</p>
             <p>
               {importStatus?.filterDescription ??
-                "Active team players only: QB1, RB1-2, WR1-5, TE1"}
+                "Refresh existing active team players only: QB1, RB1-2, WR1-5, TE1, plus rookies"}
             </p>
           </div>
         </div>

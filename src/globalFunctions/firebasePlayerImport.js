@@ -10,13 +10,26 @@ import {
 } from "firebase/firestore";
 
 const SLEEPER_IMPORT_FILTER_DESCRIPTION =
-  "Active team players only: QB1, RB1-2, WR1-5, TE1";
+  "Refresh existing active team players only: QB1, RB1-2, WR1-5, TE1, plus rookies";
+const ALLOW_NEW_SLEEPER_PLAYER_IMPORTS = false;
 const SLEEPER_IMPORT_POSITIONS = ["QB", "RB", "WR", "TE"];
 const SLEEPER_DEPTH_CHART_LIMITS = {
   QB: { min: 1, max: 1 },
   RB: { min: 1, max: 2 },
   WR: { min: 1, max: 5 },
   TE: { min: 1, max: 1 },
+};
+
+const isSleeperRookie = (player) => {
+  const currentYear = new Date().getFullYear();
+  const rookieYear = Number(player.metadata?.rookie_year ?? player.rookie_year);
+  const draftYear = Number(player.metadata?.draft_year ?? player.draft_year);
+
+  return (
+    player.years_exp === 0 ||
+    rookieYear === currentYear ||
+    draftYear === currentYear
+  );
 };
 
 const SOURCE_ID_FIELDS = {
@@ -273,6 +286,10 @@ export const shouldImportSleeperPlayer = (player) => {
     return false;
   }
 
+  if (isSleeperRookie(player)) {
+    return true;
+  }
+
   if (typeof depthChartOrder !== "number") {
     return false;
   }
@@ -305,10 +322,17 @@ export async function importOrRefreshSleeperPlayers() {
   );
   let totalAdded = 0;
   let totalUpdated = 0;
+  let totalSkippedNewPlayers = 0;
 
   for (const [sleeperId, sleeperPlayer] of importablePlayers) {
     const playerRef = doc(db, "players", sleeperId);
     const existingSnap = await getDoc(playerRef);
+
+    if (!existingSnap.exists() && !ALLOW_NEW_SLEEPER_PLAYER_IMPORTS) {
+      totalSkippedNewPlayers += 1;
+      continue;
+    }
+
     const payload = existingSnap.exists()
       ? buildExistingPlayerUpdate(sleeperPlayer, existingSnap.data(), sleeperId)
       : buildNewPlayerDoc(sleeperPlayer, sleeperId);
@@ -322,7 +346,8 @@ export async function importOrRefreshSleeperPlayers() {
     }
   }
 
-  const totalSkipped = playerEntries.length - importablePlayers.length;
+  const totalSkipped =
+    playerEntries.length - importablePlayers.length + totalSkippedNewPlayers;
 
   await setDoc(
     doc(db, "settings", "importStatus"),
@@ -333,6 +358,7 @@ export async function importOrRefreshSleeperPlayers() {
         totalAdded,
         totalUpdated,
         totalSkipped,
+        totalSkippedNewPlayers,
         skippedCount: totalSkipped,
         filterDescription: SLEEPER_IMPORT_FILTER_DESCRIPTION,
         updatedAt: serverTimestamp(),
@@ -346,6 +372,7 @@ export async function importOrRefreshSleeperPlayers() {
     totalAdded,
     totalUpdated,
     totalSkipped,
+    totalSkippedNewPlayers,
     skippedCount: totalSkipped,
     filterDescription: SLEEPER_IMPORT_FILTER_DESCRIPTION,
   };
