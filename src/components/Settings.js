@@ -1,5 +1,4 @@
 import React from "react";
-import { AiFillSetting } from "react-icons/ai";
 import { MdSportsFootball } from "react-icons/md";
 import { GoDashboard } from "react-icons/go";
 import { GiAmericanFootballHelmet } from "react-icons/gi";
@@ -34,11 +33,6 @@ export const links = [
   {
     title: "Settings",
     links: [
-      {
-        name: "User Settings",
-        icon: <AiFillSetting />,
-        linktoname: "settings"
-      },
       {
         name: "League Settings",
         icon: <MdSportsFootball />,

@@ -1,0 +1,152 @@
+.stats-import .stats-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.stats-import .btn {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 9px 14px;
+}
+
+.stats-import .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.stats-import .btn-primary {
+  background-color: #1a97f5;
+  border-color: #1a97f5;
+  color: #fff;
+}
+
+.stats-import .btn-secondary {
+  background-color: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.stats-import .form-control {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #1f2937;
+  padding: 9px 12px;
+}
+
+.stats-import .stats-year-select {
+  flex: 0 0 120px;
+}
+
+.stats-import .card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stats-import .card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.stats-import .card-title {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.stats-import .card-value {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.stats-import .table-responsive {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.stats-import .table {
+  border-collapse: collapse;
+  color: #1f2937;
+  min-width: 720px;
+  width: 100%;
+}
+
+.stats-import .table th,
+.stats-import .table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.stats-import .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #f9fafb;
+}
+
+.stats-import .table-hover tbody tr:hover {
+  background-color: #eef6ff;
+}
+
+.stats-import .alert {
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.stats-import .alert-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.stats-import .alert-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.stats-import .alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.dark .stats-import .form-control,
+.dark .stats-import .btn-secondary,
+.dark .stats-import .card,
+.dark .stats-import .table {
+  background-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.dark .stats-import .card,
+.dark .stats-import .form-control,
+.dark .stats-import .btn-secondary,
+.dark .stats-import .table th,
+.dark .stats-import .table td {
+  border-color: #374151;
+}
+
+.dark .stats-import .card-title {
+  color: #9ca3af;
+}
+
+.dark .stats-import .card-value {
+  color: #f9fafb;
+}
+
+.dark .stats-import .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #111827;
+}
+
+.dark .stats-import .table-hover tbody tr:hover {
+  background-color: #243244;
+}
