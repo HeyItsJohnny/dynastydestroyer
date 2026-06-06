@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { Header } from "../../components";
 import PlayerStatsCsvImport from "./PlayerStatsCsvImport";
+import ProjectedStatsCsvImport from "./ProjectedStatsCsvImport";
 import WeeklyStatsCsvImport from "./WeeklyStatsCsvImport";
 
 // Firebase
@@ -273,6 +274,12 @@ const Import = () => {
         {statusMessage && <p className="mt-6 text-sm">{statusMessage}</p>}
       </div>
 
+      <PlayerStatsCsvImport />
+
+      <WeeklyStatsCsvImport />
+
+      <ProjectedStatsCsvImport />
+
       <div className="m-2 md:m-10 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <Header category="Import" title="CSV Upload" />
 
@@ -328,10 +335,6 @@ const Import = () => {
           </div>
         )}
       </div>
-
-      <PlayerStatsCsvImport />
-
-      <WeeklyStatsCsvImport />
 
       <div className="m-2 md:m-10 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <Header category="Import" title="Matched Players" />

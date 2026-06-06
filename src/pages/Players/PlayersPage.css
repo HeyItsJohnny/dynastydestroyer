@@ -95,6 +95,10 @@
   background-color: #eef6ff;
 }
 
+.players-page .players-clickable-row {
+  cursor: pointer;
+}
+
 .players-page .fw-semibold {
   font-weight: 600;
 }

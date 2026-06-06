@@ -8,6 +8,36 @@ import {
 } from "../../globalFunctions/firebasePlayerStatsImport";
 import "./PlayerStatsCsvImport.css";
 
+const YEARS = [
+  "2020",
+  "2021",
+  "2022",
+  "2023",
+  "2024",
+  "2025",
+  "2026",
+  "2027",
+  "2028",
+  "2029",
+  "2030",
+];
+
+const normalizeHeader = (header) =>
+  `${header ?? ""}`.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const getCsvValue = (row, possibleColumnNames) => {
+  const lookup = Object.entries(row).reduce((values, [key, value]) => {
+    values[normalizeHeader(key)] = value;
+    return values;
+  }, {});
+
+  const matchingColumn = possibleColumnNames.find(
+    (columnName) => lookup[normalizeHeader(columnName)] != null
+  );
+
+  return matchingColumn ? lookup[normalizeHeader(matchingColumn)] : "";
+};
+
 const formatImportDate = (timestamp) => {
   if (!timestamp) {
     return "Never";
@@ -129,6 +159,7 @@ const UnmatchedPlayersTable = ({ players, manualReview }) => {
 };
 
 const PlayerStatsCsvImport = () => {
+  const [selectedYear, setSelectedYear] = useState("2025");
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvRows, setCsvRows] = useState([]);
   const [importStatus, setImportStatus] = useState(null);
@@ -136,7 +167,16 @@ const PlayerStatsCsvImport = () => {
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
 
-  const previewRows = useMemo(() => csvRows.slice(0, 25), [csvRows]);
+  const previewRows = useMemo(
+    () =>
+      csvRows
+        .filter((row) => {
+          const rowYear = `${getCsvValue(row, ["season", "year"])}`.trim();
+          return !rowYear || rowYear === selectedYear;
+        })
+        .slice(0, 25),
+    [csvRows, selectedYear]
+  );
   const isLoading = status === "loading" || status === "processing";
 
   const loadStatsImportStatus = async () => {
@@ -199,7 +239,8 @@ const PlayerStatsCsvImport = () => {
       const importResults = await processPlayerStatsCsv(
         csvRows,
         selectedFile.name,
-        setMessage
+        setMessage,
+        selectedYear
       );
 
       setResults(importResults);
@@ -222,6 +263,19 @@ const PlayerStatsCsvImport = () => {
       <Header category="Import" title="Import Player Stats CSV" />
 
       <div className="stats-import-actions">
+        <select
+          className="form-control stats-year-select"
+          disabled={isLoading}
+          onChange={(event) => setSelectedYear(event.target.value)}
+          value={selectedYear}
+        >
+          {YEARS.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+
         <input
           accept=".csv"
           className="form-control"
@@ -254,11 +308,8 @@ const PlayerStatsCsvImport = () => {
       </div>
 
       <div className="card-grid mt-6">
-        <StatCard
-          label="Last Imported Date"
-          value={formatImportDate(displayStatus.lastImportedAt)}
-        />
         <StatCard label="File Name" value={displayStatus.fileName ?? "-"} />
+        <StatCard label="Season" value={displayStatus.season ?? selectedYear} />
         <StatCard
           label="Total Rows Processed"
           value={(displayStatus.totalRowsProcessed ?? 0).toLocaleString()}
@@ -274,6 +325,10 @@ const PlayerStatsCsvImport = () => {
         <StatCard
           label="Total Unmatched Players"
           value={(displayStatus.totalUnmatched ?? 0).toLocaleString()}
+        />
+        <StatCard
+          label="Last Imported Date"
+          value={formatImportDate(displayStatus.lastImportedAt)}
         />
       </div>
 

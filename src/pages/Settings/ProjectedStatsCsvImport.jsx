@@ -3,10 +3,10 @@ import Papa from "papaparse";
 
 import { Header } from "../../components";
 import {
-  getCsvValue,
-  getWeeklyStatsImportStatus,
-  importWeeklyStatsCsv,
-} from "../../globalFunctions/firebaseWeeklyStatsImport";
+  getProjectedStatsImportStatus,
+  importProjectedStatsCsv,
+} from "../../globalFunctions/firebaseProjectedStatsImport";
+import { getCsvValue } from "../../globalFunctions/firebaseWeeklyStatsImport";
 import "./PlayerStatsCsvImport.css";
 
 const YEARS = [
@@ -76,7 +76,7 @@ const PreviewTable = ({ rows }) => {
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={`weekly-preview-${rowIndex}`}>
+            <tr key={`projected-preview-${rowIndex}`}>
               {headers.map((header) => (
                 <td key={header}>{row[header]}</td>
               ))}
@@ -88,35 +88,27 @@ const PreviewTable = ({ rows }) => {
   );
 };
 
-const UnmatchedRowsTable = ({ unmatched }) => {
-  if (unmatched.length === 0) {
+const SkippedPlayersTable = ({ skipped }) => {
+  if (skipped.length === 0) {
     return null;
   }
 
   return (
     <div className="mt-8">
-      <h3 className="text-xl font-semibold mb-4">Unmatched Weekly Rows</h3>
+      <h3 className="text-xl font-semibold mb-4">Skipped Players</h3>
       <div className="table-responsive">
         <table className="table table-striped table-hover">
           <thead>
             <tr>
-              <th>Player ID</th>
               <th>Player</th>
-              <th>Pos</th>
-              <th>Team</th>
-              <th>Season</th>
-              <th>Week</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {unmatched.map((item, index) => (
-              <tr key={`weekly-unmatched-${index}`}>
-                <td>{item.csvPlayer.playerId}</td>
+            {skipped.map((item, index) => (
+              <tr key={`projected-skipped-${index}`}>
                 <td>{item.csvPlayer.playerName}</td>
-                <td>{item.csvPlayer.position}</td>
-                <td>{item.csvPlayer.team}</td>
-                <td>{item.csvPlayer.season}</td>
-                <td>{item.csvPlayer.week}</td>
+                <td>{item.matchType ?? "unmatched"}</td>
               </tr>
             ))}
           </tbody>
@@ -126,8 +118,8 @@ const UnmatchedRowsTable = ({ unmatched }) => {
   );
 };
 
-const WeeklyStatsCsvImport = () => {
-  const [selectedYear, setSelectedYear] = useState("2025");
+const ProjectedStatsCsvImport = () => {
+  const [selectedYear, setSelectedYear] = useState("2026");
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvRows, setCsvRows] = useState([]);
   const [importStatus, setImportStatus] = useState(null);
@@ -138,23 +130,20 @@ const WeeklyStatsCsvImport = () => {
   const previewRows = useMemo(
     () =>
       csvRows
-        .filter(
-          (row) =>
-            `${getCsvValue(row, ["season", "year"])}`.trim() === selectedYear
-        )
+        .filter((row) => `${getCsvValue(row, ["Player Name", "player name"])}`.trim())
         .slice(0, 25),
-    [csvRows, selectedYear]
+    [csvRows]
   );
   const isLoading = status === "loading" || status === "processing";
 
-  const loadWeeklyImportStatus = async () => {
-    const weeklyStatsStatus = await getWeeklyStatsImportStatus();
-    setImportStatus(weeklyStatsStatus);
+  const loadProjectedImportStatus = async () => {
+    const projectedStatsStatus = await getProjectedStatsImportStatus();
+    setImportStatus(projectedStatsStatus);
   };
 
   useEffect(() => {
-    loadWeeklyImportStatus().catch((error) => {
-      setMessage(`Loading weekly import status failed: ${error.message}`);
+    loadProjectedImportStatus().catch((error) => {
+      setMessage(`Loading projected stats import status failed: ${error.message}`);
       setStatus("failed");
     });
   }, []);
@@ -172,7 +161,7 @@ const WeeklyStatsCsvImport = () => {
   const handleUploadCsv = () => {
     if (!selectedFile) {
       setStatus("failed");
-      setMessage("Choose a weekly stats CSV file first.");
+      setMessage("Choose a projected stats CSV file first.");
       return;
     }
 
@@ -187,7 +176,7 @@ const WeeklyStatsCsvImport = () => {
 
         setCsvRows(rows);
         setStatus("idle");
-        setMessage(`Loaded ${rows.length.toLocaleString()} weekly rows.`);
+        setMessage(`Loaded ${rows.length.toLocaleString()} projected stat rows.`);
       },
       error: (error) => {
         setStatus("failed");
@@ -199,23 +188,25 @@ const WeeklyStatsCsvImport = () => {
   const handleProcessCsv = async () => {
     if (!selectedFile) {
       setStatus("failed");
-      setMessage("Choose a weekly stats CSV file first.");
+      setMessage("Choose a projected stats CSV file first.");
       return;
     }
 
     try {
       setStatus("processing");
       setMessage("Loading...");
-      const importResults = await importWeeklyStatsCsv(
+      const importResults = await importProjectedStatsCsv(
         selectedFile,
         selectedYear,
         setMessage
       );
 
       setResults(importResults);
-      await loadWeeklyImportStatus();
+      await loadProjectedImportStatus();
       setStatus("complete");
-      setMessage("Import Complete");
+      setMessage(
+        `Import Complete. Imported: ${importResults.totalImported.toLocaleString()} players. Skipped: ${importResults.totalSkipped.toLocaleString()} players.`
+      );
     } catch (error) {
       setStatus("failed");
       setMessage(`Import Failed: ${error.message}`);
@@ -229,7 +220,7 @@ const WeeklyStatsCsvImport = () => {
 
   return (
     <div className="stats-import m-2 md:m-10 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-      <Header category="Import" title="Import Weekly Stats CSV" />
+      <Header category="Import" title="Import Projected Stats CSV" />
 
       <div className="stats-import-actions">
         <select
@@ -268,7 +259,7 @@ const WeeklyStatsCsvImport = () => {
           onClick={handleProcessCsv}
           type="button"
         >
-          Process Weekly Stats
+          Process Projected Stats
         </button>
       </div>
 
@@ -284,16 +275,12 @@ const WeeklyStatsCsvImport = () => {
           value={(displayStatus.totalRowsProcessed ?? 0).toLocaleString()}
         />
         <StatCard
-          label="Total Matched"
-          value={(displayStatus.totalMatched ?? 0).toLocaleString()}
+          label="Imported"
+          value={(displayStatus.totalImported ?? 0).toLocaleString()}
         />
         <StatCard
-          label="Total Updated"
-          value={(displayStatus.totalUpdated ?? 0).toLocaleString()}
-        />
-        <StatCard
-          label="Total Unmatched"
-          value={(displayStatus.totalUnmatched ?? 0).toLocaleString()}
+          label="Skipped"
+          value={(displayStatus.totalSkipped ?? 0).toLocaleString()}
         />
         <StatCard
           label="Last Imported Date"
@@ -303,9 +290,9 @@ const WeeklyStatsCsvImport = () => {
 
       <PreviewTable rows={previewRows} />
 
-      {results && <UnmatchedRowsTable unmatched={results.unmatched} />}
+      {results && <SkippedPlayersTable skipped={results.skipped} />}
     </div>
   );
 };
 
-export default WeeklyStatsCsvImport;
+export default ProjectedStatsCsvImport;

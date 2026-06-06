@@ -77,13 +77,17 @@ const getPlayerName = (row) =>
 const getPlayerId = (row) =>
   `${getCsvValue(row, ["player_id", "gsis_id", "nflverse_id", "id"])}`.trim();
 
+export const getHeadshotUrl = (row) => {
+  return `${row.headshot_url || row.headshotUrl || row.headshot || ""}`.trim();
+};
+
 const getSeason = (row) => parseNumber(getCsvValue(row, ["season", "year"]));
 
 const getWeek = (row) => parseNumber(getCsvValue(row, ["week", "game_week"]));
 
-const getYearId = (season) => `${season}`;
-
 const getWeekId = (week) => String(week).padStart(2, "0");
+
+const getSeasonWeekId = (season, week) => `${season}_${getWeekId(week)}`;
 
 const getPlayerSearchName = (player) =>
   player.searchName || normalizePlayerName(player.fullName);
@@ -247,26 +251,39 @@ const parseCsvFile = (file) =>
   });
 
 const commitBatchChunks = async (writes) => {
-  for (let index = 0; index < writes.length; index += 450) {
+  for (let index = 0; index < writes.length; index += 225) {
     const batch = writeBatch(db);
-    writes.slice(index, index + 450).forEach((write) => write(batch));
+    writes.slice(index, index + 225).forEach((write) => write(batch));
     await batch.commit();
   }
 };
 
-const writeWeeklyStats = (player, statsDoc) => (batch) => {
+export const updatePlayerHeadshotIfPresent = (playerRef, row) => (batch) => {
+  const headshotUrl = getHeadshotUrl(row);
+
+  if (!headshotUrl) {
+    return;
+  }
+
+  batch.update(playerRef, {
+    "media.headshotUrl": headshotUrl,
+  });
+};
+
+const writeWeeklyStats = (player, statsDoc, row) => (batch) => {
+  const playerRef = doc(db, "players", player.id);
+
   batch.set(
     doc(
-      db,
-      "players",
-      player.id,
-      getYearId(statsDoc.season),
+      playerRef,
       "weeklyStats",
-      getWeekId(statsDoc.week)
+      getSeasonWeekId(statsDoc.season, statsDoc.week)
     ),
     statsDoc,
     { merge: true }
   );
+
+  updatePlayerHeadshotIfPresent(playerRef, row)(batch);
 };
 
 const writeUnmatchedWeeklyStats = (csvPlayer) => (batch) => {
@@ -353,6 +370,7 @@ export async function importWeeklyStatsCsv(file, selectedYear, onProgress) {
         player: matchedPlayer,
         csvPlayer,
         statsDoc: buildWeeklyStatsDoc(row),
+        rawRow: row,
       });
     } else {
       unmatched.push({ csvPlayer });
@@ -362,7 +380,9 @@ export async function importWeeklyStatsCsv(file, selectedYear, onProgress) {
   onProgress?.(`Writing ${matched.length.toLocaleString()} weekly stat docs...`);
 
   const writes = [
-    ...matched.map((match) => writeWeeklyStats(match.player, match.statsDoc)),
+    ...matched.map((match) =>
+      writeWeeklyStats(match.player, match.statsDoc, match.rawRow)
+    ),
     ...unmatched.map((item) => writeUnmatchedWeeklyStats(item.csvPlayer)),
   ];
 

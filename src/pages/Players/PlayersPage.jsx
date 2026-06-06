@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 
 import { Header } from "../../components";
 import { db } from "../../firebase/firebase";
@@ -10,10 +17,33 @@ const POSITIONS = ["All", "QB", "RB", "WR", "TE"];
 
 const normalizeText = (value) => `${value ?? ""}`.toLowerCase().trim();
 
-const sortPlayersByName = (playerList) =>
-  [...playerList].sort((firstPlayer, secondPlayer) =>
-    firstPlayer.fullName.localeCompare(secondPlayer.fullName)
-  );
+const getProjectedSeasonYear = (date = new Date()) => date.getFullYear();
+
+const getSortableNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) || value === "" || value == null
+    ? Number.MAX_SAFE_INTEGER
+    : parsed;
+};
+
+const sortPlayersByRankThenTier = (playerList) =>
+  [...playerList].sort((firstPlayer, secondPlayer) => {
+    const rankDifference =
+      getSortableNumber(firstPlayer.rank) - getSortableNumber(secondPlayer.rank);
+
+    if (rankDifference !== 0) {
+      return rankDifference;
+    }
+
+    const tierDifference =
+      getSortableNumber(firstPlayer.tier) - getSortableNumber(secondPlayer.tier);
+
+    if (tierDifference !== 0) {
+      return tierDifference;
+    }
+
+    return firstPlayer.fullName.localeCompare(secondPlayer.fullName);
+  });
 
 const normalizePlayer = (playerDoc) => {
   const data = playerDoc.data();
@@ -25,6 +55,19 @@ const normalizePlayer = (playerDoc) => {
     position: data.position ?? "",
     depthChartOrder: data.depthChartOrder ?? data.depth_chart_order ?? "",
     age: data.age ?? "",
+  };
+};
+
+const addProjectedStatsToPlayer = async (player) => {
+  const projectedStatsSnap = await getDoc(
+    doc(db, "players", player.id, "projectedStats", `${getProjectedSeasonYear()}`)
+  );
+  const projectedStats = projectedStatsSnap.exists() ? projectedStatsSnap.data() : {};
+
+  return {
+    ...player,
+    rank: projectedStats.rank ?? "",
+    tier: projectedStats.tier ?? "",
   };
 };
 
@@ -42,9 +85,9 @@ const PlayersPage = () => {
 
     const unsubscribe = onSnapshot(
       playersQuery,
-      (querySnapshot) => {
-        const playerList = sortPlayersByName(
-          querySnapshot.docs.map(normalizePlayer)
+      async (querySnapshot) => {
+        const playerList = sortPlayersByRankThenTier(
+          await Promise.all(querySnapshot.docs.map(normalizePlayer).map(addProjectedStatsToPlayer))
         );
 
         setPlayers(playerList);

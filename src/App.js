@@ -125,6 +125,14 @@ function App() {
             }
           />
           <Route
+            path="/player/:sleeperId"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="PLAYERDETAIL" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/bigdawgsdraft/commandcenter"
             element={
               <PrivateRoute>

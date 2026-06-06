@@ -3,6 +3,7 @@ export { default as BigDawgsDraftCommandCenter } from './BigDawgsDraft/BigDawgsD
 export { default as Teams } from './BigDawgsDraft/Teams/Teams';
 export { default as HomeTemplate } from './Templates/HomeTemplate';
 export { default as Players } from './Players/Players';
+export { default as PlayerDetailPage } from './Players/PlayerDetail/PlayerDetailPage';
 
 //AUTH
 export { default as Login } from './Authentication/Login';

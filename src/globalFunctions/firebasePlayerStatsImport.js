@@ -86,7 +86,11 @@ const getCsvPlayerName = (row) =>
     "fullName",
   ]);
 
-const normalizeStatsRow = (row) => {
+export const getHeadshotUrl = (row) => {
+  return `${row.headshot_url || row.headshotUrl || row.headshot || ""}`.trim();
+};
+
+const normalizeStatsRow = (row, fallbackSeason = null) => {
   const playerName = `${getCsvPlayerName(row)}`.trim();
   const position = cleanPosition(
     findRowValue(row, ["position", "pos", "fantasy position"])
@@ -94,6 +98,7 @@ const normalizeStatsRow = (row) => {
   const team = normalizeTeam(
     findRowValue(row, ["recent_team", "team", "tm", "nfl team", "nflTeam"])
   );
+  const season = toNumberOrNull(findRowValue(row, ["season", "year"])) ?? fallbackSeason;
 
   return {
     source: STATS_SOURCE,
@@ -108,9 +113,9 @@ const normalizeStatsRow = (row) => {
     lastName: getLastName(playerName),
     position,
     team,
-    season: toNumberOrNull(findRowValue(row, ["season", "year"])),
+    season,
     stats: {
-      season: toNumberOrNull(findRowValue(row, ["season", "year"])),
+      season,
       games: toNumberOrNull(findRowValue(row, ["games", "g", "gp"])),
       passingYards: toNumberOrNull(
         findRowValue(row, ["passing_yards", "passing yards", "pass_yds", "pass yds"])
@@ -149,6 +154,18 @@ const normalizeStatsRow = (row) => {
     },
     rawRow: row,
   };
+};
+
+export const updatePlayerHeadshotIfPresent = (playerRef, row) => (batch) => {
+  const headshotUrl = getHeadshotUrl(row);
+
+  if (!headshotUrl) {
+    return;
+  }
+
+  batch.update(playerRef, {
+    "media.headshotUrl": headshotUrl,
+  });
 };
 
 const getPlayerSearchName = (player) =>
@@ -240,24 +257,32 @@ export function findMatchingPlayer(csvPlayer, allPlayers) {
 }
 
 const commitBatchChunks = async (writes) => {
-  for (let index = 0; index < writes.length; index += 450) {
+  for (let index = 0; index < writes.length; index += 225) {
     const batch = writeBatch(db);
-    writes.slice(index, index + 450).forEach((write) => write(batch));
+    writes.slice(index, index + 225).forEach((write) => write(batch));
     await batch.commit();
   }
 };
 
 export const updatePlayerStats = (match) => (batch) => {
+  const playerRef = doc(db, "players", match.player.id);
+
   batch.set(
-    doc(db, "players", match.player.id),
+    doc(playerRef, "seasonStats", `${match.csvPlayer.season}`),
     {
+      season: match.csvPlayer.season,
       stats: {
         ...match.csvPlayer.stats,
         updatedAt: serverTimestamp(),
       },
+      source: match.csvPlayer.source,
+      sourceId: match.csvPlayer.sourceId,
+      rawRow: match.csvPlayer.rawRow,
     },
     { merge: true }
   );
+
+  updatePlayerHeadshotIfPresent(playerRef, match.csvPlayer.rawRow)(batch);
 };
 
 const saveUnmatchedStatsImport = (csvPlayer, reason) => (batch) => {
@@ -280,6 +305,7 @@ export async function saveImportStatus(fileName, results) {
       playerStats: {
         lastImportedAt: serverTimestamp(),
         fileName,
+        season: results.season,
         totalRowsProcessed: results.totalRowsProcessed,
         totalMatched: results.totalMatched,
         totalUpdated: results.totalUpdated,
@@ -301,7 +327,14 @@ export async function getPlayerStatsImportStatus() {
   return importStatusSnap.data().playerStats ?? null;
 }
 
-export async function processPlayerStatsCsv(csvRows, fileName, onProgress) {
+export async function processPlayerStatsCsv(
+  csvRows,
+  fileName,
+  onProgress,
+  selectedYear = null
+) {
+  const importYear = toNumberOrNull(selectedYear);
+
   onProgress?.("Loading players...");
   const playersSnapshot = await getDocs(collection(db, "players"));
   const allPlayers = playersSnapshot.docs.map((playerDoc) => ({
@@ -309,7 +342,14 @@ export async function processPlayerStatsCsv(csvRows, fileName, onProgress) {
     ...playerDoc.data(),
   }));
 
-  const rowsToProcess = csvRows.filter((row) => getCsvPlayerName(row));
+  const rowsToProcess = csvRows.filter((row) => {
+    const rowSeason = toNumberOrNull(findRowValue(row, ["season", "year"]));
+
+    return (
+      getCsvPlayerName(row) &&
+      (importYear == null || rowSeason == null || rowSeason === importYear)
+    );
+  });
   const matched = [];
   const unmatched = [];
   const manualReview = [];
@@ -317,7 +357,7 @@ export async function processPlayerStatsCsv(csvRows, fileName, onProgress) {
   onProgress?.(`Matching ${rowsToProcess.length} rows...`);
 
   rowsToProcess.forEach((row) => {
-    const csvPlayer = normalizeStatsRow(row);
+    const csvPlayer = normalizeStatsRow(row, importYear);
     const match = findMatchingPlayer(csvPlayer, allPlayers);
 
     if (match.status === "matched") {
@@ -356,6 +396,7 @@ export async function processPlayerStatsCsv(csvRows, fileName, onProgress) {
     matched,
     unmatched,
     manualReview,
+    season: importYear,
     totalRowsProcessed: rowsToProcess.length,
     totalMatched: matched.length,
     totalUpdated: matched.length,
