@@ -512,7 +512,7 @@ const WeeklyStatsCard = ({ player }) => {
     <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-6 rounded-2xl md:w-1000">
       <div className="flex justify-between items-center gap-2">
         <p className="text-xl font-semibold mb-0">Weekly Stats</p>
-        <p className="text-gray-500 mb-0">{player.selectedSeason}</p>
+        <p className="text-xl font-semibold mb-0">{player.selectedSeason}</p>
       </div>
       <div className="table-responsive mt-4" style={{ maxHeight: "520px", overflowY: "auto" }}>
         <table
@@ -522,7 +522,7 @@ const WeeklyStatsCard = ({ player }) => {
           <thead>
             <tr>
               {columns.map((column) => (
-                <th className="text-center" key={column.label} scope="col">
+                <th className="text-center text-gray-500" key={column.label} scope="col">
                   {column.label}
                 </th>
               ))}
@@ -551,12 +551,42 @@ const WeeklyStatsCard = ({ player }) => {
   );
 };
 
+const NotesCard = ({ notes, onNotesChange, onSave, season }) => (
+  <div
+    className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-6 rounded-2xl"
+    style={{ maxWidth: "1400px", width: "90%" }}
+  >
+    <div className="flex flex-wrap justify-between items-center gap-3">
+      <p className="text-xl font-semibold mb-0">{season} Notes</p>
+      <button className="btn btn-primary rounded-pill px-4" onClick={onSave} type="button">
+        Save
+      </button>
+    </div>
+    <textarea
+      className="mt-4 p-3 rounded"
+      onChange={(event) => onNotesChange(event.target.value)}
+      style={{
+        backgroundColor: "transparent",
+        border: "1px solid rgba(148, 163, 184, 0.45)",
+        boxSizing: "border-box",
+        color: "inherit",
+        display: "block",
+        minHeight: "260px",
+        resize: "vertical",
+        width: "100%",
+      }}
+      value={notes}
+    />
+  </div>
+);
+
 const PlayerDetailPage = () => {
   const { sleeperId } = useParams();
   const navigate = useNavigate();
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [notesText, setNotesText] = useState("");
 
   const loadPlayerDetail = useCallback(async () => {
     setLoading(true);
@@ -605,6 +635,7 @@ const PlayerDetailPage = () => {
           })),
         })
       );
+      setNotesText(seasonNotesSnap.exists() ? seasonNotesSnap.data().notes ?? "" : "");
     } catch (error) {
       setMessage(`Loading player failed: ${error.message}`);
     } finally {
@@ -642,6 +673,35 @@ const PlayerDetailPage = () => {
       }));
     } catch (error) {
       setMessage(`Updating draft flag failed: ${error.message}`);
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    try {
+      const notesYear = player?.seasonNotesYear ?? getProjectedSeasonYear();
+
+      await setDoc(
+        doc(db, "players", sleeperId, "seasonNotes", `${notesYear}`),
+        {
+          season: notesYear,
+          notes: notesText,
+          timestamps: {
+            updatedAt: serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+
+      setPlayer((currentPlayer) => ({
+        ...(currentPlayer ?? {}),
+        seasonNotes: {
+          ...(currentPlayer?.seasonNotes ?? {}),
+          notes: notesText,
+        },
+      }));
+      setMessage("Notes saved.");
+    } catch (error) {
+      setMessage(`Saving notes failed: ${error.message}`);
     }
   };
 
@@ -786,6 +846,15 @@ const PlayerDetailPage = () => {
       <div className="flex gap-4 flex-wrap justify-center mt-4">
         <SeasonSummaryCard player={player} />
         <WeeklyStatsCard player={player} />
+      </div>
+
+      <div className="flex gap-4 flex-wrap justify-center mt-4">
+        <NotesCard
+          notes={notesText}
+          onNotesChange={setNotesText}
+          onSave={handleSaveNotes}
+          season={player.seasonNotesYear}
+        />
       </div>
     </>
   );

@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { Header } from "../../components";
 import PlayerAuctionValuesImport from "./PlayerAuctionValuesImport";
+import PlayerNotesImport from "./PlayerNotesImport";
 import PlayerStatsCsvImport from "./PlayerStatsCsvImport";
 import ProjectedStatsCsvImport from "./ProjectedStatsCsvImport";
 import WeeklyStatsCsvImport from "./WeeklyStatsCsvImport";
@@ -282,6 +283,8 @@ const Import = () => {
       <ProjectedStatsCsvImport />
 
       <PlayerAuctionValuesImport />
+
+      <PlayerNotesImport />
 
       <div className="m-2 md:m-10 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <Header category="Import" title="CSV Upload" />
