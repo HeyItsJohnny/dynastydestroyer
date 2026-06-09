@@ -221,7 +221,10 @@ const getStatValue = (source, paths) => {
   return isMissingValue(value) ? "-" : value;
 };
 
-const getSeasonStats = (player) => player?.seasonStats?.stats ?? player?.seasonStats ?? {};
+const getSeasonStats = (player) => ({
+  ...(player?.seasonStats ?? {}),
+  ...(player?.seasonStats?.stats ?? {}),
+});
 
 const getWeeklyStatsRows = (player) =>
   [...(player?.weeklyStats ?? [])]
@@ -239,7 +242,13 @@ const getSeasonSummaryFields = (positionValue) => {
       { label: "Pass TD", paths: ["passingTDs"] },
       {
         label: "INT",
-        paths: ["interceptions", "passing_interceptions", "passing_intercentions"],
+        paths: [
+          "interceptions",
+          "passing_interceptions",
+          "rawRow.passing_interceptions",
+          "passing_intercentions",
+          "rawRow.passing_intercentions",
+        ],
       },
       { label: "Rush Yds", paths: ["rushingYards"] },
       { label: "Rush TD", paths: ["rushingTDs"] },
@@ -324,23 +333,173 @@ const getWeeklyStatsColumns = (positionValue) => {
   ];
 };
 
+const getStatGridColumnsClass = (columns) => {
+  if (columns === 1) {
+    return "grid-cols-1";
+  }
+
+  if (columns === 2) {
+    return "grid-cols-1 md:grid-cols-2";
+  }
+
+  return "grid-cols-1 md:grid-cols-3";
+};
+
+const SeasonStatGrid = ({ columns = 3, fields, seasonStats }) => (
+  <div className={`mt-3 grid ${getStatGridColumnsClass(columns)} gap-x-6 gap-y-2`}>
+    {fields.map((field) => (
+      <div className="border-b border-color py-2" key={field.label}>
+        <p className="text-gray-500 mb-1">{field.label}</p>
+        <p className="font-semibold mb-0">
+          {getStatValue(seasonStats, field.paths)}
+        </p>
+      </div>
+    ))}
+  </div>
+);
+
+const CompactSeasonSections = ({ seasonStats, sections }) => (
+  <div className="md:w-400">
+    {sections.map((section) => (
+      <div
+        className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-2 p-4 rounded-2xl"
+        key={section.title}
+      >
+        <p className="text-xl font-semibold mb-0">{section.title}</p>
+        <SeasonStatGrid
+          columns={section.columns}
+          fields={section.fields}
+          seasonStats={seasonStats}
+        />
+      </div>
+    ))}
+  </div>
+);
+
 const SeasonSummaryCard = ({ player }) => {
   const seasonStats = getSeasonStats(player);
   const fields = getSeasonSummaryFields(player.position);
 
+  if (player.position === "QB") {
+    const qbSections = [
+      {
+        title: `${player.selectedSeason} Passing`,
+        columns: 3,
+        fields: [
+          { label: "Pass Yds", paths: ["passingYards"] },
+          { label: "Pass TD", paths: ["passingTDs"] },
+          {
+            label: "INT",
+            paths: [
+              "interceptions",
+              "passing_interceptions",
+              "rawRow.passing_interceptions",
+              "passing_intercentions",
+              "rawRow.passing_intercentions",
+            ],
+          },
+        ],
+      },
+      {
+        title: `${player.selectedSeason} Rushing`,
+        columns: 2,
+        fields: [
+          { label: "Rush Yds", paths: ["rushingYards"] },
+          { label: "Rush TD", paths: ["rushingTDs"] },
+        ],
+      },
+      {
+        title: `${player.selectedSeason} Fantasy Summary`,
+        columns: 3,
+        fields: [
+          { label: "Games", paths: ["games"] },
+          { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+          { label: "PPR Pts", paths: ["fantasyPointsPpr"] },
+        ],
+      },
+    ];
+
+    return <CompactSeasonSections seasonStats={seasonStats} sections={qbSections} />;
+  }
+
+  if (player.position === "RB") {
+    const rbSections = [
+      {
+        title: `${player.selectedSeason} Rushing`,
+        columns: 3,
+        fields: [
+          { label: "Carries", paths: ["rushingAttempts"] },
+          { label: "Rush Yds", paths: ["rushingYards"] },
+          { label: "Rush TD", paths: ["rushingTDs"] },
+        ],
+      },
+      {
+        title: `${player.selectedSeason} Receiving`,
+        columns: 2,
+        fields: [
+          { label: "Targets", paths: ["targets"] },
+          { label: "Rec", paths: ["receptions"] },
+          { label: "Rec Yds", paths: ["receivingYards"] },
+          { label: "Rec TD", paths: ["receivingTDs"] },
+        ],
+      },
+      {
+        title: `${player.selectedSeason} Fantasy Summary`,
+        columns: 3,
+        fields: [
+          { label: "Games", paths: ["games"] },
+          { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+          { label: "PPR", paths: ["fantasyPointsPpr"] },
+        ],
+      },
+    ];
+
+    return <CompactSeasonSections seasonStats={seasonStats} sections={rbSections} />;
+  }
+
+  if (["WR", "TE"].includes(player.position)) {
+    const receivingSections = [
+      {
+        title: `${player.selectedSeason} Receiving`,
+        columns: 2,
+        fields: [
+          { label: "Targets", paths: ["targets"] },
+          { label: "Rec", paths: ["receptions"] },
+          { label: "Rec Yds", paths: ["receivingYards"] },
+          { label: "Rec TD", paths: ["receivingTDs"] },
+        ],
+      },
+      {
+        title: `${player.selectedSeason} Rushing`,
+        columns: 2,
+        fields: [
+          { label: "Rush Yds", paths: ["rushingYards"] },
+          { label: "Rush TD", paths: ["rushingTDs"] },
+        ],
+      },
+      {
+        title: `${player.selectedSeason} Fantasy Summary`,
+        columns: 3,
+        fields: [
+          { label: "Games", paths: ["games"] },
+          { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+          { label: "PPR Pts", paths: ["fantasyPointsPpr"] },
+        ],
+      },
+    ];
+
+    return (
+      <CompactSeasonSections
+        seasonStats={seasonStats}
+        sections={receivingSections}
+      />
+    );
+  }
+
   return (
     <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-6 rounded-2xl md:w-400">
       <p className="text-xl font-semibold">{player.selectedSeason} Season Summary</p>
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        {fields.map((field) => (
-          <div className="border-b border-color pb-3" key={field.label}>
-            <p className="text-green-500 text-3xl font-semibold mb-0">
-              {getStatValue(seasonStats, field.paths)}
-            </p>
-            <p className="text-gray-500 mt-1 mb-0">{field.label}</p>
-          </div>
-        ))}
-      </div>
+      <SeasonStatGrid fields={fields} seasonStats={seasonStats} />
     </div>
   );
 };
@@ -624,7 +783,7 @@ const PlayerDetailPage = () => {
         </div>
       </div>
 
-      <div className="flex gap-10 flex-wrap justify-center mt-4">
+      <div className="flex gap-4 flex-wrap justify-center mt-4">
         <SeasonSummaryCard player={player} />
         <WeeklyStatsCard player={player} />
       </div>
