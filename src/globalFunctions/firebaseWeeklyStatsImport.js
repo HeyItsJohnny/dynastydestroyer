@@ -132,7 +132,12 @@ export const buildWeeklyStatsDoc = (row) => {
       yards: parseNumber(getCsvValue(row, ["passing_yards", "pass_yards"])),
       touchdowns: parseNumber(getCsvValue(row, ["passing_tds", "pass_tds"])),
       interceptions: parseNumber(
-        getCsvValue(row, ["interceptions", "passing_interceptions", "passing_ints"])
+        getCsvValue(row, [
+          "interceptions",
+          "passing_interceptions",
+          "passing_intercentions",
+          "passing_ints",
+        ])
       ),
     },
     rushing: {

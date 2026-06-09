@@ -20,6 +20,8 @@ import {
 
 const getCurrentSeasonYear = (date = new Date()) => date.getFullYear();
 
+const getLastSeasonYear = (date = new Date()) => getCurrentSeasonYear(date) - 1;
+
 const getProjectedSeasonYear = (date = new Date()) => getCurrentSeasonYear(date);
 
 const normalizePlayerDoc = (playerId, data) => ({
@@ -73,7 +75,11 @@ const FIELD_DEFINITIONS = {
   },
   auctionValue: {
     label: "Auction Value",
-    paths: ["projectedStats.auction_value", "rankings.auctionValue"],
+    paths: [
+      "projectedStats.auction_value",
+      "projectedStats.Auction Value",
+      "rankings.auctionValue",
+    ],
     placeholder: "$42",
     formatter: (value) =>
       typeof value === "string" && value.startsWith("$") ? value : `$${value}`,
@@ -106,14 +112,22 @@ const FIELD_DEFINITIONS = {
   },
   maxBid: {
     label: "Max Bid",
-    paths: ["auction.recommendedMaxBid"],
+    paths: [
+      "projectedStats.max_bid",
+      "projectedStats.Max Bid",
+      "auction.recommendedMaxBid",
+    ],
     placeholder: "$48",
     formatter: (value) =>
       typeof value === "string" && value.startsWith("$") ? value : `$${value}`,
   },
   hardMax: {
     label: "Hard Max",
-    paths: ["auction.hardMaxBid"],
+    paths: [
+      "projectedStats.hard_max_bid",
+      "projectedStats.Hard Max Bid",
+      "auction.hardMaxBid",
+    ],
     placeholder: "$52",
     formatter: (value) =>
       typeof value === "string" && value.startsWith("$") ? value : `$${value}`,
@@ -173,6 +187,211 @@ const DetailRow = ({ field, emphasize = false }) => (
   </div>
 );
 
+const DraftFlagButton = ({ active, color, label, onClick }) => {
+  const colors = {
+    success: "#198754",
+    danger: "#dc3545",
+    purple: "#7c3aed",
+  };
+  const buttonColor = colors[color] ?? colors.success;
+  const buttonStyle = {
+    backgroundColor: active ? buttonColor : "transparent",
+    borderColor: buttonColor,
+    color: "#fff",
+  };
+
+  return (
+    <button
+      className="btn rounded-pill px-4 shadow-sm"
+      onClick={onClick}
+      style={buttonStyle}
+      type="button"
+    >
+      <span className="me-2">{active ? "★" : "☆"}</span>
+      {label}
+    </button>
+  );
+};
+
+const getStatValue = (source, paths) => {
+  const value = paths
+    .map((path) => getNestedValue(source, path))
+    .find((item) => !isMissingValue(item));
+
+  return isMissingValue(value) ? "-" : value;
+};
+
+const getSeasonStats = (player) => player?.seasonStats?.stats ?? player?.seasonStats ?? {};
+
+const getWeeklyStatsRows = (player) =>
+  [...(player?.weeklyStats ?? [])]
+    .filter((week) => {
+      const weekNumber = Number(week.week);
+      return weekNumber >= 1 && weekNumber <= 18;
+    })
+    .sort((firstWeek, secondWeek) => Number(firstWeek.week ?? 0) - Number(secondWeek.week ?? 0));
+
+const getSeasonSummaryFields = (positionValue) => {
+  if (positionValue === "QB") {
+    return [
+      { label: "Games", paths: ["games"] },
+      { label: "Pass Yds", paths: ["passingYards"] },
+      { label: "Pass TD", paths: ["passingTDs"] },
+      {
+        label: "INT",
+        paths: ["interceptions", "passing_interceptions", "passing_intercentions"],
+      },
+      { label: "Rush Yds", paths: ["rushingYards"] },
+      { label: "Rush TD", paths: ["rushingTDs"] },
+      { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+      { label: "PPR", paths: ["fantasyPointsPpr"] },
+    ];
+  }
+
+  if (positionValue === "RB") {
+    return [
+      { label: "Games", paths: ["games"] },
+      { label: "Carries", paths: ["rushingAttempts"] },
+      { label: "Rush Yds", paths: ["rushingYards"] },
+      { label: "Rush TD", paths: ["rushingTDs"] },
+      { label: "Targets", paths: ["targets"] },
+      { label: "Rec", paths: ["receptions"] },
+      { label: "Rec Yds", paths: ["receivingYards"] },
+      { label: "Rec TD", paths: ["receivingTDs"] },
+      { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+      { label: "PPR", paths: ["fantasyPointsPpr"] },
+    ];
+  }
+
+  return [
+    { label: "Games", paths: ["games"] },
+    { label: "Targets", paths: ["targets"] },
+    { label: "Rec", paths: ["receptions"] },
+    { label: "Rec Yds", paths: ["receivingYards"] },
+    { label: "Rec TD", paths: ["receivingTDs"] },
+    { label: "Rush Yds", paths: ["rushingYards"] },
+    { label: "Rush TD", paths: ["rushingTDs"] },
+    { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+    { label: "PPR", paths: ["fantasyPointsPpr"] },
+  ];
+};
+
+const getWeeklyStatsColumns = (positionValue) => {
+  if (positionValue === "QB") {
+    return [
+      { label: "Week", paths: ["week"] },
+      { label: "Opp", paths: ["opponent"] },
+      { label: "Pass Yds", paths: ["passing.yards"] },
+      { label: "Pass TD", paths: ["passing.touchdowns"] },
+      {
+        label: "INT",
+        paths: [
+          "passing.interceptions",
+          "passing_interceptions",
+          "passing_intercentions",
+        ],
+      },
+      { label: "Rush Yds", paths: ["rushing.yards"] },
+      { label: "Rush TD", paths: ["rushing.touchdowns"] },
+      { label: "PPR", paths: ["fantasy.pointsPpr"] },
+    ];
+  }
+
+  if (positionValue === "RB") {
+    return [
+      { label: "Week", paths: ["week"] },
+      { label: "Opp", paths: ["opponent"] },
+      { label: "Rush Att", paths: ["rushing.attempts"] },
+      { label: "Rush Yds", paths: ["rushing.yards"] },
+      { label: "Rush TD", paths: ["rushing.touchdowns"] },
+      { label: "Rec", paths: ["receiving.receptions"] },
+      { label: "Rec Yds", paths: ["receiving.yards"] },
+      { label: "Rec TD", paths: ["receiving.touchdowns"] },
+      { label: "PPR", paths: ["fantasy.pointsPpr"] },
+    ];
+  }
+
+  return [
+    { label: "Week", paths: ["week"] },
+    { label: "Opp", paths: ["opponent"] },
+    { label: "Targets", paths: ["receiving.targets"] },
+    { label: "Rec", paths: ["receiving.receptions"] },
+    { label: "Rec Yds", paths: ["receiving.yards"] },
+    { label: "Rec TD", paths: ["receiving.touchdowns"] },
+    { label: "Rush Yds", paths: ["rushing.yards"] },
+    { label: "Rush TD", paths: ["rushing.touchdowns"] },
+    { label: "PPR", paths: ["fantasy.pointsPpr"] },
+  ];
+};
+
+const SeasonSummaryCard = ({ player }) => {
+  const seasonStats = getSeasonStats(player);
+  const fields = getSeasonSummaryFields(player.position);
+
+  return (
+    <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-6 rounded-2xl md:w-400">
+      <p className="text-xl font-semibold">{player.selectedSeason} Season Summary</p>
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        {fields.map((field) => (
+          <div className="border-b border-color pb-3" key={field.label}>
+            <p className="text-green-500 text-3xl font-semibold mb-0">
+              {getStatValue(seasonStats, field.paths)}
+            </p>
+            <p className="text-gray-500 mt-1 mb-0">{field.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const WeeklyStatsCard = ({ player }) => {
+  const weeklyRows = getWeeklyStatsRows(player);
+  const columns = getWeeklyStatsColumns(player.position);
+
+  return (
+    <div className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-6 rounded-2xl md:w-1000">
+      <div className="flex justify-between items-center gap-2">
+        <p className="text-xl font-semibold mb-0">Weekly Stats</p>
+        <p className="text-gray-500 mb-0">{player.selectedSeason}</p>
+      </div>
+      <div className="table-responsive mt-4" style={{ maxHeight: "520px", overflowY: "auto" }}>
+        <table
+          className="table table-striped table-hover mb-0 text-center"
+          style={{ minWidth: "900px" }}
+        >
+          <thead>
+            <tr>
+              {columns.map((column) => (
+                <th className="text-center" key={column.label} scope="col">
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {weeklyRows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length}>No weekly stats found.</td>
+              </tr>
+            ) : (
+              weeklyRows.map((row) => (
+                <tr key={row.id ?? `${row.season}-${row.week}`}>
+                  {columns.map((column) => (
+                    <td className="text-center" key={column.label}>
+                      {getStatValue(row, column.paths)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 const PlayerDetailPage = () => {
   const { sleeperId } = useParams();
   const navigate = useNavigate();
@@ -194,28 +413,33 @@ const PlayerDetailPage = () => {
         return;
       }
 
-      const currentSeasonYear = getCurrentSeasonYear();
+      const lastSeasonYear = getLastSeasonYear();
       const projectedSeasonYear = getProjectedSeasonYear();
       const seasonStatsSnap = await getDoc(
-        doc(playerRef, "seasonStats", `${currentSeasonYear}`)
+        doc(playerRef, "seasonStats", `${lastSeasonYear}`)
       );
       const projectedStatsSnap = await getDoc(
         doc(playerRef, "projectedStats", `${projectedSeasonYear}`)
       );
+      const seasonNotesSnap = await getDoc(
+        doc(playerRef, "seasonNotes", `${projectedSeasonYear}`)
+      );
       const weeklyStatsSnapshot = await getDocs(
         query(
           collection(playerRef, "weeklyStats"),
-          where("season", "==", currentSeasonYear)
+          where("season", "==", lastSeasonYear)
         )
       );
 
       setPlayer(
         normalizePlayerDoc(playerSnap.id, {
           ...playerSnap.data(),
-          selectedSeason: currentSeasonYear,
+          selectedSeason: lastSeasonYear,
           projectedSeason: projectedSeasonYear,
+          seasonNotesYear: projectedSeasonYear,
           seasonStats: seasonStatsSnap.exists() ? seasonStatsSnap.data() : {},
           projectedStats: projectedStatsSnap?.exists() ? projectedStatsSnap.data() : {},
+          seasonNotes: seasonNotesSnap.exists() ? seasonNotesSnap.data() : {},
           weeklyStats: weeklyStatsSnapshot.docs.map((weeklyStatsDoc) => ({
             id: weeklyStatsDoc.id,
             ...weeklyStatsDoc.data(),
@@ -235,15 +459,14 @@ const PlayerDetailPage = () => {
 
   const handleFlagPlayer = async (flagName) => {
     try {
-      const nextValue = !player?.draftFlags?.[flagName];
+      const notesYear = player?.seasonNotesYear ?? getProjectedSeasonYear();
+      const nextValue = !player?.seasonNotes?.[flagName];
 
       await setDoc(
-        doc(db, "players", sleeperId),
+        doc(db, "players", sleeperId, "seasonNotes", `${notesYear}`),
         {
-          draftFlags: {
-            ...(player?.draftFlags ?? {}),
-            [flagName]: nextValue,
-          },
+          season: notesYear,
+          [flagName]: nextValue,
           timestamps: {
             updatedAt: serverTimestamp(),
           },
@@ -253,8 +476,8 @@ const PlayerDetailPage = () => {
 
       setPlayer((currentPlayer) => ({
         ...(currentPlayer ?? {}),
-        draftFlags: {
-          ...(currentPlayer?.draftFlags ?? {}),
+        seasonNotes: {
+          ...(currentPlayer?.seasonNotes ?? {}),
           [flagName]: nextValue,
         },
       }));
@@ -293,12 +516,13 @@ const PlayerDetailPage = () => {
   const secondPlayerInfoColumn = ["height", "weight", "college", "byeWeek"].map((fieldKey) =>
     resolveField(player, fieldKey)
   );
-  const firstDraftValueColumn = ["rank", "tier", "strengthOfSchedule", "projectedPoints"].map((fieldKey) =>
+  const firstDraftValueColumn = ["rank", "tier", "strengthOfSchedule"].map((fieldKey) =>
     resolveField(player, fieldKey)
   );
   const secondDraftValueColumn = ["auctionValue", "maxBid", "hardMax"].map((fieldKey) =>
     resolveField(player, fieldKey)
   );
+  const draftFlags = player.seasonNotes ?? {};
 
   return (
     <>
@@ -314,24 +538,24 @@ const PlayerDetailPage = () => {
           </p>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              className={`btn ${
-                player.draftFlags?.target ? "btn-success" : "btn-outline-success"
-              }`}
+            <DraftFlagButton
+              active={!!draftFlags.target}
+              color="success"
+              label="Target"
               onClick={() => handleFlagPlayer("target")}
-              type="button"
-            >
-              Target
-            </button>
-            <button
-              className={`btn ${
-                player.draftFlags?.doNotDraft ? "btn-danger" : "btn-outline-danger"
-              }`}
+            />
+            <DraftFlagButton
+              active={!!draftFlags.doNotDraft}
+              color="danger"
+              label="Do Not Draft"
               onClick={() => handleFlagPlayer("doNotDraft")}
-              type="button"
-            >
-              Do Not Draft
-            </button>
+            />
+            <DraftFlagButton
+              active={!!draftFlags.sleeper}
+              color="purple"
+              label="Sleeper"
+              onClick={() => handleFlagPlayer("sleeper")}
+            />
           </div>
         </div>
 
@@ -386,7 +610,6 @@ const PlayerDetailPage = () => {
             <div>
               {firstDraftValueColumn.map((field) => (
                 <DetailRow
-                  emphasize={field.key === "projectedPoints"}
                   field={field}
                   key={field.key}
                 />
@@ -394,15 +617,16 @@ const PlayerDetailPage = () => {
             </div>
             <div>
               {secondDraftValueColumn.map((field) => (
-                <DetailRow
-                  emphasize={field.key === "auctionValue"}
-                  field={field}
-                  key={field.key}
-                />
+                <DetailRow field={field} key={field.key} />
               ))}
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="flex gap-10 flex-wrap justify-center mt-4">
+        <SeasonSummaryCard player={player} />
+        <WeeklyStatsCard player={player} />
       </div>
     </>
   );

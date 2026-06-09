@@ -76,9 +76,9 @@ const uniquePlayers = (players) => {
 
 const getCsvPlayerName = (row) =>
   findRowValue(row, [
-    "player_name",
-    "player display name",
     "player_display_name",
+    "player display name",
+    "player_name",
     "player",
     "player name",
     "name",
@@ -124,7 +124,14 @@ const normalizeStatsRow = (row, fallbackSeason = null) => {
         findRowValue(row, ["passing_tds", "passing touchdowns", "pass_tds", "pass td"])
       ),
       interceptions: toNumberOrNull(
-        findRowValue(row, ["interceptions", "passing_ints", "ints", "int"])
+        findRowValue(row, [
+          "interceptions",
+          "passing_interceptions",
+          "passing_intercentions",
+          "passing_ints",
+          "ints",
+          "int",
+        ])
       ),
       rushingAttempts: toNumberOrNull(
         findRowValue(row, ["rushing_attempts", "carries", "rush_att", "rush att"])
@@ -208,6 +215,17 @@ export function findMatchingPlayer(csvPlayer, allPlayers) {
 
     if (sourceIdResult) {
       return sourceIdResult;
+    }
+
+    const gsisIdResult = getMatchResult(
+      allPlayers.filter(
+        (player) => `${player.sourceIds?.gsis ?? ""}` === csvPlayer.sourceId
+      ),
+      "sourceIds.gsis"
+    );
+
+    if (gsisIdResult) {
+      return gsisIdResult;
     }
   }
 

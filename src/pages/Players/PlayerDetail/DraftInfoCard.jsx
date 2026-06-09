@@ -4,7 +4,6 @@ import { InfoRow } from "./PlayerDetailHelpers";
 
 const DRAFT_INFO_FIELDS = [
   "auctionValue",
-  "projectedPoints",
   "rank",
   "tier",
   "adp",

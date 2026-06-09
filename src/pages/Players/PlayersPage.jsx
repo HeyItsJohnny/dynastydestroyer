@@ -14,6 +14,15 @@ import PlayerTable from "./PlayerTable";
 import "./PlayersPage.css";
 
 const POSITIONS = ["All", "QB", "RB", "WR", "TE"];
+const TIERS = [
+  { label: "All", value: "All" },
+  { label: "Tier 1", value: "1" },
+  { label: "Tier 2", value: "2" },
+  { label: "Tier 3", value: "3" },
+  { label: "Tier 4", value: "4" },
+  { label: "Tier 5", value: "5" },
+  { label: "Tier 6 and below", value: "6+" },
+];
 
 const normalizeText = (value) => `${value ?? ""}`.toLowerCase().trim();
 
@@ -24,6 +33,11 @@ const getSortableNumber = (value) => {
   return Number.isNaN(parsed) || value === "" || value == null
     ? Number.MAX_SAFE_INTEGER
     : parsed;
+};
+
+const getPlayerTier = (player) => {
+  const parsed = Number(player.tier);
+  return Number.isNaN(parsed) ? null : parsed;
 };
 
 const sortPlayersByRankThenTier = (playerList) =>
@@ -74,6 +88,7 @@ const addProjectedStatsToPlayer = async (player) => {
 const PlayersPage = () => {
   const [players, setPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTier, setSelectedTier] = useState("All");
   const [selectedPosition, setSelectedPosition] = useState("All");
   const [loading, setLoading] = useState(true);
 
@@ -107,16 +122,21 @@ const PlayersPage = () => {
     const search = normalizeText(searchTerm);
 
     return players.filter((player) => {
+      const playerTier = getPlayerTier(player);
       const matchesPosition =
         selectedPosition === "All" || player.position === selectedPosition;
+      const matchesTier =
+        selectedTier === "All" ||
+        (selectedTier === "6+" && playerTier != null && playerTier >= 6) ||
+        playerTier === Number(selectedTier);
       const matchesSearch =
         search === "" ||
         normalizeText(player.fullName).includes(search) ||
         normalizeText(player.nflTeam).includes(search);
 
-      return matchesPosition && matchesSearch;
+      return matchesPosition && matchesTier && matchesSearch;
     });
-  }, [players, searchTerm, selectedPosition]);
+  }, [players, searchTerm, selectedPosition, selectedTier]);
 
   return (
     <div className="players-page m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
@@ -132,6 +152,25 @@ const PlayersPage = () => {
             type="search"
             value={searchTerm}
           />
+        </div>
+
+        <div className="players-tier-filter">
+          <label className="players-filter-label" htmlFor="players-tier-filter">
+            Tiers
+          </label>
+          <select
+            aria-label="Tier filter"
+            className="form-control"
+            id="players-tier-filter"
+            onChange={(event) => setSelectedTier(event.target.value)}
+            value={selectedTier}
+          >
+            {TIERS.map((tier) => (
+              <option key={tier.value} value={tier.value}>
+                {tier.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <ul className="nav nav-pills" aria-label="Position filter">

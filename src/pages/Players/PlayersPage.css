@@ -12,6 +12,21 @@
   max-width: 420px;
 }
 
+.players-page .players-tier-filter {
+  flex: 0 1 220px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.players-page .players-filter-label {
+  color: #4b5563;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
 .players-page .form-control {
   display: block;
   width: 100%;
@@ -136,6 +151,10 @@
   border-color: #374151;
 }
 
+.dark .players-page .players-filter-label {
+  color: #d1d5db;
+}
+
 .dark .players-page .table thead th,
 .dark .players-page .table-striped tbody tr:nth-of-type(odd) {
   background-color: #111827;
@@ -154,5 +173,11 @@
 
   .players-page .players-search {
     max-width: none;
+  }
+
+  .players-page .players-tier-filter {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
   }
 }
