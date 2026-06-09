@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   collection,
   doc,
@@ -197,6 +199,7 @@ const DraftFlagButton = ({ active, color, label, onClick }) => {
   const buttonStyle = {
     backgroundColor: active ? buttonColor : "transparent",
     borderColor: buttonColor,
+    borderRadius: "9999px",
     color: "#fff",
   };
 
@@ -211,6 +214,24 @@ const DraftFlagButton = ({ active, color, label, onClick }) => {
       {label}
     </button>
   );
+};
+
+const getDraftFlagToastMessage = (playerName, flagName, isActive) => {
+  const activeMessages = {
+    target: `${playerName} set as Target`,
+    doNotDraft: `${playerName} set as Do Not Draft`,
+    sleeper: `${playerName} set as Sleeper`,
+  };
+  const removedLabels = {
+    target: "Targeted",
+    doNotDraft: "Do Not Draft",
+    sleeper: "Sleeper",
+  };
+  const removedLabel = removedLabels[flagName] ?? flagName;
+
+  return isActive
+    ? activeMessages[flagName] ?? `${playerName} set as ${flagName}`
+    : `${playerName} removed as ${removedLabel}`;
 };
 
 const getStatValue = (source, paths) => {
@@ -558,7 +579,17 @@ const NotesCard = ({ notes, onNotesChange, onSave, season }) => (
   >
     <div className="flex flex-wrap justify-between items-center gap-3">
       <p className="text-xl font-semibold mb-0">{season} Notes</p>
-      <button className="btn btn-primary rounded-pill px-4" onClick={onSave} type="button">
+      <button
+        className="btn btn-success rounded-pill px-4"
+        onClick={onSave}
+        style={{
+          backgroundColor: "#198754",
+          borderColor: "#198754",
+          borderRadius: "9999px",
+          color: "#fff",
+        }}
+        type="button"
+      >
         Save
       </button>
     </div>
@@ -671,6 +702,21 @@ const PlayerDetailPage = () => {
           [flagName]: nextValue,
         },
       }));
+      const toastMessage = getDraftFlagToastMessage(
+        player?.fullName ?? "Player",
+        flagName,
+        nextValue
+      );
+      const toastOptions = {
+        autoClose: 2500,
+        position: "top-center",
+      };
+
+      if (nextValue) {
+        toast.success(toastMessage, toastOptions);
+      } else {
+        toast.error(toastMessage, toastOptions);
+      }
     } catch (error) {
       setMessage(`Updating draft flag failed: ${error.message}`);
     }
@@ -699,7 +745,10 @@ const PlayerDetailPage = () => {
           notes: notesText,
         },
       }));
-      setMessage("Notes saved.");
+      toast.success("Notes Saved", {
+        autoClose: 2500,
+        position: "top-center",
+      });
     } catch (error) {
       setMessage(`Saving notes failed: ${error.message}`);
     }
@@ -742,18 +791,21 @@ const PlayerDetailPage = () => {
     resolveField(player, fieldKey)
   );
   const draftFlags = player.seasonNotes ?? {};
+  const headerRank = resolveField(player, "rank");
+  const headerTier = resolveField(player, "tier");
 
   return (
     <>
+      <ToastContainer />
+
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <button className="btn btn-outline-secondary" onClick={() => navigate("/players")}>
-            Back to Players
-          </button>
-
-          <p className={`text-xl font-semibold mb-0 ${fullName.isPlaceholder ? "text-gray-400 italic" : ""}`}>
+          <p className="text-xl font-semibold mb-0">
             {fullName.value}
-            {fullName.isPlaceholder ? "*" : ""}
+            {fullName.isPlaceholder ? "*" : ""} • {position.value}
+            {position.isPlaceholder ? "*" : ""} • Rank: {headerRank.value}
+            {headerRank.isPlaceholder ? "*" : ""} • Tier {headerTier.value}
+            {headerTier.isPlaceholder ? "*" : ""}
           </p>
 
           <div className="flex flex-wrap gap-2">
