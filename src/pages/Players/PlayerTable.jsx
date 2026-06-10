@@ -11,13 +11,16 @@ const PlayerTable = ({ players }) => {
       <table className="table table-striped table-hover align-middle mb-0">
         <thead>
           <tr>
-            <th scope="col">Position</th>
+            <th className="players-position-col" scope="col">Position</th>
             <th scope="col">Name</th>
+            <th scope="col">Age</th>
             <th scope="col">Team</th>
             <th scope="col">Rank</th>
             <th scope="col">Tier</th>
+            <th scope="col">Auction Value</th>
+            <th scope="col">Max Value</th>
+            <th scope="col">Hard Max Value</th>
             <th scope="col">Depth</th>
-            <th scope="col">Age</th>
           </tr>
         </thead>
         <tbody>

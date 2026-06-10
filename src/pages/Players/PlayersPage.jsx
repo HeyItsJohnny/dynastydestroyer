@@ -40,6 +40,9 @@ const getPlayerTier = (player) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const getFirstValue = (...values) =>
+  values.find((value) => value !== undefined && value !== null && value !== "");
+
 const sortPlayersByRankThenTier = (playerList) =>
   [...playerList].sort((firstPlayer, secondPlayer) => {
     const rankDifference =
@@ -82,6 +85,15 @@ const addProjectedStatsToPlayer = async (player) => {
     ...player,
     rank: projectedStats.rank ?? "",
     tier: projectedStats.tier ?? "",
+    auctionValue: getFirstValue(
+      projectedStats.auction_value,
+      projectedStats["Auction Value"]
+    ),
+    maxBid: getFirstValue(projectedStats.max_bid, projectedStats["Max Bid"]),
+    hardMax: getFirstValue(
+      projectedStats.hard_max_bid,
+      projectedStats["Hard Max Bid"]
+    ),
   };
 };
 

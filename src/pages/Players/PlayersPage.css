@@ -102,6 +102,12 @@
   text-transform: uppercase;
 }
 
+.players-page .players-position-col {
+  max-width: 72px;
+  text-align: center;
+  width: 72px;
+}
+
 .players-page .table-striped tbody tr:nth-of-type(odd) {
   background-color: #f9fafb;
 }
