@@ -30,6 +30,93 @@ const normalizeLeagueTeams = (teamList, teamCount) => {
   }));
 };
 
+const defaultAllocationRules = [
+  {
+    position: "RB",
+    title: "Running Backs",
+    minPercent: 35,
+    maxPercent: 45,
+    description:
+      "Elite rushers are scarce, so top-tier running backs command a premium.",
+  },
+  {
+    position: "WR",
+    title: "Wide Receivers",
+    minPercent: 35,
+    maxPercent: 45,
+    description:
+      "Receiver talent is deeper, but strong starters still deserve premium budget.",
+  },
+  {
+    position: "QB",
+    title: "Quarterbacks",
+    minPercent: 5,
+    maxPercent: 10,
+    description:
+      "Unless this is Superflex, quarterbacks are usually abundant.",
+  },
+  {
+    position: "TE",
+    title: "Tight Ends",
+    minPercent: 5,
+    maxPercent: 10,
+    description:
+      "Elite tight ends create an edge, but mid-tier options are cheaper.",
+  },
+  {
+    position: "K",
+    title: "Kickers",
+    minPercent: 1,
+    maxPercent: 1,
+    description:
+      "Do not overspend. Stream this position when needed.",
+  },
+  {
+    position: "DST",
+    title: "Defense",
+    minPercent: 1,
+    maxPercent: 1,
+    description:
+      "Keep the spend minimal and stream matchups during the season.",
+  },
+];
+
+const formatCurrency = (value) => `$${Math.round(value).toLocaleString()}`;
+
+const getAllocationRange = (budgetValue, rule) => {
+  const parsedBudget = Number(budgetValue) || 0;
+  const minAmount = (parsedBudget * rule.minPercent) / 100;
+  const maxAmount = (parsedBudget * rule.maxPercent) / 100;
+
+  return rule.minPercent === rule.maxPercent
+    ? formatCurrency(minAmount)
+    : `${formatCurrency(minAmount)} - ${formatCurrency(maxAmount)}`;
+};
+
+const getAllocationAmount = (budgetValue, percent) => {
+  const parsedBudget = Number(budgetValue) || 0;
+  const parsedPercent = Number(percent) || 0;
+
+  return formatCurrency((parsedBudget * parsedPercent) / 100);
+};
+
+const normalizeAllocationRules = (rules) => {
+  const existingRules = Array.isArray(rules) ? rules : [];
+
+  return defaultAllocationRules.map((defaultRule) => {
+    const existingRule = existingRules.find(
+      (rule) => rule.position === defaultRule.position
+    );
+
+    return {
+      ...defaultRule,
+      ...(existingRule ?? {}),
+      minPercent: existingRule?.minPercent ?? defaultRule.minPercent,
+      maxPercent: existingRule?.maxPercent ?? defaultRule.maxPercent,
+    };
+  });
+};
+
 const LeagueSettings = () => {
   const { currentUser } = useAuth();
   const [leagueName, setLeagueName] = useState("");
@@ -48,6 +135,7 @@ const LeagueSettings = () => {
   const [flexPlayers, setFlexPlayers] = useState(1);
   const [defPlayers, setDefPlayers] = useState(1);
   const [kPlayers, setKPlayers] = useState(1);
+  const [allocationRules, setAllocationRules] = useState(defaultAllocationRules);
 
   const fetchLeagueSettings = useCallback(async () => {
     try {
@@ -68,6 +156,7 @@ const LeagueSettings = () => {
         setFlexPlayers(data.FLEXPlayers ?? 1);
         setDefPlayers(data.DEFPlayers ?? 1);
         setKPlayers(data.KPlayers ?? 1);
+        setAllocationRules(normalizeAllocationRules(data.AllocationRules));
       }
     } catch (error) {
       alert("Error fetching league settings: " + error);
@@ -91,6 +180,7 @@ const LeagueSettings = () => {
         FLEXPlayers: flexPlayers,
         DEFPlayers: defPlayers,
         KPlayers: kPlayers,
+        AllocationRules: allocationRules,
       };
 
       await createOrUpdateLeagueSettings(currentUser.uid, leagueSettings);
@@ -128,6 +218,19 @@ const LeagueSettings = () => {
         ...team,
         MyTeam: checked && teamIndex === index,
       }))
+    );
+  };
+
+  const handleAllocationRuleChange = (position, field, value) => {
+    setAllocationRules((currentRules) =>
+      currentRules.map((rule) =>
+        rule.position === position
+          ? {
+              ...rule,
+              [field]: value,
+            }
+          : rule
+      )
     );
   };
 
@@ -215,6 +318,99 @@ const LeagueSettings = () => {
             />
           </div>
         </FormControl>
+      </div>
+
+      <div className="m-2 md:m-10 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+        <Header category="Auction" title="Allocation Rules" />
+        <p className="text-gray-500 mb-6">
+          Baseline positional spending guide based on a {formatCurrency(Number(budget) || 0)} budget.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {allocationRules.map((rule) => (
+            <div
+              className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg p-6 rounded-2xl shadow-sm border-b border-color"
+              key={rule.position}
+            >
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <p className="text-xl font-semibold mb-1">{rule.title}</p>
+                  <p className="text-gray-500 mb-0">{rule.position}</p>
+                </div>
+                <span className="badge bg-primary rounded-pill px-3 py-2">
+                  {Number(rule.minPercent) === Number(rule.maxPercent)
+                    ? `${rule.minPercent}%`
+                    : `${rule.minPercent}% - ${rule.maxPercent}%`}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-5">
+                <TextField
+                  InputProps={{
+                    ...fieldInputProps,
+                    inputProps: { min: "0", max: "100", step: "1" },
+                  }}
+                  InputLabelProps={fieldLabelProps}
+                  label="Min %"
+                  type="number"
+                  variant="standard"
+                  value={rule.minPercent}
+                  onChange={(e) =>
+                    handleAllocationRuleChange(
+                      rule.position,
+                      "minPercent",
+                      e.target.value
+                    )
+                  }
+                />
+
+                <TextField
+                  InputProps={{
+                    ...fieldInputProps,
+                    inputProps: { min: "0", max: "100", step: "1" },
+                  }}
+                  InputLabelProps={fieldLabelProps}
+                  label="Max %"
+                  type="number"
+                  variant="standard"
+                  value={rule.maxPercent}
+                  onChange={(e) =>
+                    handleAllocationRuleChange(
+                      rule.position,
+                      "maxPercent",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div className="mt-5">
+                <p className="text-gray-500 mb-1">Recommended Spend</p>
+                <p className="font-semibold mb-0">
+                  {getAllocationRange(budget, rule)}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="border-b border-color py-2">
+                  <p className="text-gray-500 mb-1">Min Spend</p>
+                  <p className="font-semibold mb-0">
+                    {getAllocationAmount(budget, rule.minPercent)}
+                  </p>
+                </div>
+
+                <div className="border-b border-color py-2">
+                  <p className="text-gray-500 mb-1">Max Spend</p>
+                  <p className="font-semibold mb-0">
+                    {getAllocationAmount(budget, rule.maxPercent)}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-gray-500 mt-4 mb-0">{rule.description}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="m-2 md:m-10 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">

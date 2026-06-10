@@ -14,6 +14,11 @@ export const links = [
         linktoname: "bigdawgsdraft/commandcenter"
       },
       {
+        name: "Review Team",
+        icon: <MdSportsFootball />,
+        linktoname: "bigdawgsdraft/reviewteam"
+      },
+      {
         name: "Teams",
         icon: <GiAmericanFootballHelmet />,
         linktoname: "bigdawgsdraft/teams"

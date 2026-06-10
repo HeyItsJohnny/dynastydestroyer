@@ -26,6 +26,15 @@ const normalizeLeagueSettings = (leagueSettings) => ({
   FLEXPlayers: leagueSettings.FLEXPlayers * 1,
   DEFPlayers: leagueSettings.DEFPlayers * 1,
   KPlayers: leagueSettings.KPlayers * 1,
+  AllocationRules: Array.isArray(leagueSettings.AllocationRules)
+    ? leagueSettings.AllocationRules.map((rule) => ({
+        position: rule.position ?? "",
+        title: rule.title ?? "",
+        minPercent: Number(rule.minPercent) || 0,
+        maxPercent: Number(rule.maxPercent) || 0,
+        description: rule.description ?? "",
+      }))
+    : [],
 });
 
 export async function getLeagueSettings(uid) {
