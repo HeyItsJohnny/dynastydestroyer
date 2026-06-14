@@ -120,6 +120,18 @@
   cursor: pointer;
 }
 
+.players-page .table th.keeper-ai-note-col,
+.players-page .table td.keeper-ai-note-col {
+  max-width: 360px;
+  min-width: 260px;
+  white-space: normal;
+}
+
+.players-page .table td.keeper-ai-note-col {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .players-page .fw-semibold {
   font-weight: 600;
 }
