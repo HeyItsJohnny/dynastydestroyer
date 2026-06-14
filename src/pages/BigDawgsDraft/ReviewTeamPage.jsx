@@ -228,7 +228,7 @@ const DeleteReviewPlayerModal = ({
       <DialogTitle>Delete Player?</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Do you want to delete {player?.fullName || "this player"} from Review Team?
+          Do you want to delete {player?.fullName || "this player"} from Pre-Draft?
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -447,7 +447,7 @@ const ReviewTeamPage = () => {
   return (
     <>
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Command Center" title="Review Team" />
+        <Header category="Command Center" title="Pre-Draft" />
         <p className="text-gray-500 mb-0">
           Draft prep workspace for entering your roster, reviewing imported player data,
           and eventually generating keep/cut recommendations.
