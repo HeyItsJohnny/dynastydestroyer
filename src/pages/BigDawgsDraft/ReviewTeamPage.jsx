@@ -411,6 +411,9 @@ const mapNotesByPlayerId = (notes = []) =>
     {}
   );
 
+const getRecommendationPlayerId = (recommendation) =>
+  recommendation?.player?.id || recommendation?.player?.playerId || "";
+
 const toFirestoreRecommendation = (recommendation, aiNote, aiSummary, rankIndex) =>
   JSON.parse(
     JSON.stringify({
@@ -430,7 +433,9 @@ const KeeperRecommendationsSection = ({
   notesByPlayerId,
   onGenerateAiNotes,
   onGenerateRecommendations,
+  onKeeperChange,
   recommendations,
+  savingKeeperPlayerId,
 }) => {
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const selectedPlayer = selectedRecommendation
@@ -491,6 +496,7 @@ const KeeperRecommendationsSection = ({
             <thead>
               <tr>
                 <th scope="col">Rank</th>
+                <th scope="col">Keep</th>
                 <th scope="col">Player</th>
                 <th scope="col">Rank/Tier</th>
                 <th scope="col">Label</th>
@@ -503,10 +509,25 @@ const KeeperRecommendationsSection = ({
               {recommendations.map((recommendation, index) => {
                 const normalizedPlayer = normalizeKeeperPlayer(recommendation.player);
                 const note = getNoteForRecommendation(recommendation, notesByPlayerId);
+                const playerId = getRecommendationPlayerId(recommendation);
 
                 return (
                   <tr key={normalizedPlayer.id || normalizedPlayer.playerId}>
                     <td className="fw-semibold">#{index + 1}</td>
+                    <td>
+                      <label className="keeper-checkbox-label">
+                        <input
+                          aria-label={`Keep ${normalizedPlayer.fullName}`}
+                          checked={recommendation.Keeper === true}
+                          disabled={savingKeeperPlayerId === playerId}
+                          onChange={(event) =>
+                            onKeeperChange(recommendation, event.target.checked)
+                          }
+                          type="checkbox"
+                        />
+                        <span>Keep</span>
+                      </label>
+                    </td>
                     <td>
                       <button
                         className="d-flex align-items-center gap-3 text-left border-0 bg-transparent p-0"
@@ -701,6 +722,7 @@ const ReviewTeamPage = () => {
   const [notesByPlayerId, setNotesByPlayerId] = useState({});
   const [generatingRecommendations, setGeneratingRecommendations] = useState(false);
   const [generatingAiNotes, setGeneratingAiNotes] = useState(false);
+  const [savingKeeperPlayerId, setSavingKeeperPlayerId] = useState("");
   const [useAiApis, setUseAiApis] = useState(false);
 
   useEffect(() => {
@@ -1016,6 +1038,7 @@ const ReviewTeamPage = () => {
                 notesResponse.summary ?? "",
                 index
               ),
+              Keeper: false,
               generatedAt: serverTimestamp(),
             }
           );
@@ -1030,6 +1053,76 @@ const ReviewTeamPage = () => {
       toast.error(`Unable to save keeper recommendations: ${error.message}`);
     } finally {
       setGeneratingRecommendations(false);
+    }
+  };
+
+  const updateKeeperSelection = async (selectedRecommendation, checked) => {
+    if (!currentUser?.uid) {
+      toast.error("You must be signed in to save keeper selections.");
+      return;
+    }
+
+    const selectedPlayerId = getRecommendationPlayerId(selectedRecommendation);
+
+    if (!selectedPlayerId) {
+      toast.error("Unable to save keeper selection for this player.");
+      return;
+    }
+
+    const selectedKeeperIds = savedKeeperRecommendations
+      .filter((recommendation) => recommendation.Keeper === true)
+      .map(getRecommendationPlayerId);
+
+    if (
+      checked &&
+      !selectedKeeperIds.includes(selectedPlayerId) &&
+      selectedKeeperIds.length >= 2
+    ) {
+      toast.error("You can select a maximum of two keepers.");
+      return;
+    }
+
+    setSavingKeeperPlayerId(selectedPlayerId);
+
+    try {
+      await Promise.all(
+        savedKeeperRecommendations.map((recommendation) => {
+          const playerId = getRecommendationPlayerId(recommendation);
+
+          return setDoc(
+            doc(
+              db,
+              "userprofile",
+              currentUser.uid,
+              "keeperrecommendations",
+              playerId
+            ),
+            {
+              Keeper:
+                playerId === selectedPlayerId
+                  ? checked
+                  : recommendation.Keeper === true,
+            },
+            { merge: true }
+          );
+        })
+      );
+
+      setSavedKeeperRecommendations((recommendations) =>
+        recommendations.map((recommendation) => ({
+          ...recommendation,
+          Keeper:
+            getRecommendationPlayerId(recommendation) === selectedPlayerId
+              ? checked
+              : recommendation.Keeper === true,
+        }))
+      );
+      toast.success(checked ? "Keeper selection saved." : "Keeper selection cleared.");
+    } catch (error) {
+      console.error("Error saving keeper selection:", error);
+      toast.error(`Unable to save keeper selection: ${error.message}`);
+    } finally {
+      setSavingKeeperPlayerId("");
     }
   };
 
@@ -1127,7 +1220,9 @@ const ReviewTeamPage = () => {
         notesByPlayerId={notesByPlayerId}
         onGenerateAiNotes={generateAiNotesForSavedRecommendations}
         onGenerateRecommendations={generateKeeperRecommendations}
+        onKeeperChange={updateKeeperSelection}
         recommendations={savedKeeperRecommendations}
+        savingKeeperPlayerId={savingKeeperPlayerId}
       />
 
     </>

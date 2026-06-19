@@ -149,6 +149,14 @@ function App() {
             }
           />
           <Route
+            path="/bigdawgsdraft/scouting"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTING" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/bigdawgsdraft/teams"
             element={
               <PrivateRoute>
