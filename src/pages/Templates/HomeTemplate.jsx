@@ -11,7 +11,10 @@ import {
   Home,
   BigDawgsDraftCommandCenter,
   ReviewTeamPage,
-  Scouting,
+  ScoutingQBs,
+  ScoutingRBs,
+  ScoutingWRs,
+  ScoutingTEs,
   Teams,
   Settings,
   LeagueSettings,
@@ -40,8 +43,14 @@ const HomeTemplate = ({ page }) => {
         return <BigDawgsDraftCommandCenter />;
       case "REVIEWTEAM":
         return <ReviewTeamPage />;
-      case "SCOUTING":
-        return <Scouting />;
+      case "SCOUTINGQBS":
+        return <ScoutingQBs />;
+      case "SCOUTINGRBS":
+        return <ScoutingRBs />;
+      case "SCOUTINGWRS":
+        return <ScoutingWRs />;
+      case "SCOUTINGTES":
+        return <ScoutingTEs />;
       case "BIGDAWGSTEAMS":
         return <Teams />;
       case "SETTINGS":

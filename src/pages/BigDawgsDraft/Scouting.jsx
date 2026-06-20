@@ -1,10 +1,24 @@
-import React, { useEffect, useState } from "react";
-import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
+import { FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 
 import { Header } from "../../components";
+import { useAuth } from "../../contexts/AuthContext";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { db } from "../../firebase/firebase";
-import PlayerTable from "../Players/PlayerTable";
+import {
+  buildFallbackScoutingNotes,
+  getOpenAIScoutingNotes,
+} from "../../services/openAIKeeperService";
 import "../Players/PlayersPage.css";
 
 const positionFilters = [
@@ -14,12 +28,53 @@ const positionFilters = [
   { label: "TE", value: "TE", title: "Tight Ends" },
 ];
 
+const tierFilters = [
+  { label: "All Tiers", value: "All" },
+  { label: "Tier 1", value: "1" },
+  { label: "Tier 2", value: "2" },
+  { label: "Tier 3", value: "3" },
+  { label: "Tier 4", value: "4" },
+  { label: "Tier 5", value: "5" },
+  { label: "Tier 6 and below", value: "6+" },
+];
+
+const rankFilters = [
+  { label: "All Ranks", value: "All" },
+  { label: "Top 5", value: "5" },
+  { label: "Top 10", value: "10" },
+  { label: "Top 15", value: "15" },
+  { label: "Top 20", value: "20" },
+  { label: "21+", value: "21+" },
+];
+
+const sleeperFilters = [
+  { label: "All Targets", value: "All" },
+  { label: "Sleepers", value: "Sleepers" },
+];
+
+const targetSortOptions = [
+  { label: "DD Score", value: "ddScore" },
+  { label: "Sleeper Score", value: "sleeperScore" },
+  { label: "Auction Value", value: "auctionValue" },
+  { label: "Tier", value: "tier" },
+  { label: "Position Rank", value: "positionRank" },
+];
+
+const TARGET_BOARD_PAGE_SIZE = 8;
+
 const getProjectedSeasonYear = (date = new Date()) => date.getFullYear();
 
 const hasValue = (value) =>
   value !== undefined && value !== null && `${value}`.trim() !== "";
 
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) || !hasValue(value) ? fallback : parsed;
+};
+
 const getFirstValue = (...values) => values.find(hasValue);
+
+const formatCurrency = (value) => `$${Math.round(toNumber(value))}`;
 
 const getSortableNumber = (value) => {
   const parsed = Number(value);
@@ -27,6 +82,31 @@ const getSortableNumber = (value) => {
     ? Number.MAX_SAFE_INTEGER
     : parsed;
 };
+
+const clampScore = (value) => Math.max(0, Math.min(100, Math.round(value)));
+
+const normalizeRangeScore = (value, min, max) => {
+  if (max <= min) return 80;
+  return clampScore(((value - min) / (max - min)) * 100);
+};
+
+const getDDScoreLabel = (score) => {
+  if (score >= 90) return "Elite Target";
+  if (score >= 80) return "Strong Buy";
+  if (score >= 70) return "Fair Value";
+  if (score >= 60) return "Risky Value";
+  return "Fade";
+};
+
+const getSleeperLabel = (score) => {
+  if (score >= 90) return "Priority Sleeper";
+  if (score >= 80) return "Strong Sleeper";
+  if (score >= 70) return "Watchlist Sleeper";
+  if (score >= 60) return "Deep Sleeper";
+  return "Not A Sleeper";
+};
+
+const addUniqueTag = (tags, tag) => (tags.includes(tag) ? tags : [...tags, tag]);
 
 const sortPlayersByRankThenTier = (players) =>
   [...players].sort((firstPlayer, secondPlayer) => {
@@ -48,6 +128,7 @@ const normalizePlayer = (playerDoc) => {
 
   return {
     id: playerDoc.id,
+    sleeperId: data.SleeperID ?? data.sleeperId ?? playerDoc.id,
     fullName: data.fullName ?? data.FullName ?? "",
     nflTeam: data.nflTeam ?? data.Team ?? "",
     position: data.position ?? data.Position ?? "",
@@ -65,39 +146,544 @@ const addProjectedStatsToPlayer = async (player) => {
 
   return {
     ...player,
-    rank: projectedStats.rank ?? "",
+    rank: getFirstValue(projectedStats.rank, projectedStats.overall_rank, ""),
+    positionRank: getFirstValue(
+      projectedStats.position_rank,
+      projectedStats.positionRank,
+      projectedStats.rank,
+      ""
+    ),
     tier: projectedStats.tier ?? "",
+    projectedPoints: getFirstValue(
+      projectedStats.projected_points,
+      projectedStats.ProjectedPoints,
+      projectedStats.projectedPoints,
+      0
+    ),
     auctionValue: getFirstValue(
       projectedStats.auction_value,
-      projectedStats["Auction Value"]
+      projectedStats["Auction Value"],
+      0
     ),
-    maxBid: getFirstValue(projectedStats.max_bid, projectedStats["Max Bid"]),
+    maxBid: getFirstValue(projectedStats.max_bid, projectedStats["Max Bid"], 0),
     hardMax: getFirstValue(
       projectedStats.hard_max_bid,
-      projectedStats["Hard Max Bid"]
+      projectedStats["Hard Max Bid"],
+      0
+    ),
+    passingAttempts: getFirstValue(
+      projectedStats.pass_attempts,
+      projectedStats.passing_attempts,
+      projectedStats.PassingAttempts,
+      projectedStats.PassingAtt,
+      0
+    ),
+    rushingAttempts: getFirstValue(
+      projectedStats.rush_attempts,
+      projectedStats.rushing_attempts,
+      projectedStats.RushingAttempts,
+      projectedStats.TotalCarries,
+      0
+    ),
+    rushingYards: getFirstValue(
+      projectedStats.rush_yards,
+      projectedStats.rushing_yards,
+      projectedStats.RushingYDS,
+      0
+    ),
+    gamesStarted: getFirstValue(
+      projectedStats.games_started,
+      projectedStats.GamesStarted,
+      projectedStats.starts,
+      0
+    ),
+    targets: getFirstValue(
+      projectedStats.targets,
+      projectedStats.ReceivingTargets,
+      projectedStats.receiving_targets,
+      0
+    ),
+    snapShare: getFirstValue(
+      projectedStats.snap_share,
+      projectedStats.SnapShare,
+      projectedStats.snapShare,
+      0
+    ),
+    routeParticipation: getFirstValue(
+      projectedStats.route_participation,
+      projectedStats.RouteParticipation,
+      projectedStats.routeParticipation,
+      0
+    ),
+    redZoneTargets: getFirstValue(
+      projectedStats.red_zone_targets,
+      projectedStats.RedzoneTargets,
+      projectedStats.RedZoneTargets,
+      0
     ),
   };
 };
 
-const Scouting = () => {
+const buildAuctionRecommendation = (player) => {
+  const auctionValue = toNumber(player.auctionValue);
+  const maxBid = toNumber(player.maxBid, auctionValue);
+  const hardMax = toNumber(player.hardMax, maxBid);
+  const valueGap = maxBid - auctionValue;
+  let label = "Fair Value";
+  let valueTag = "Fair Value";
+
+  if (valueGap >= 8) {
+    label = "Target Aggressively";
+    valueTag = "Underpriced";
+  } else if (valueGap >= 3) {
+    label = "Good Value";
+    valueTag = "Underpriced";
+  } else if (valueGap <= -8) {
+    label = "Avoid";
+    valueTag = "Overpriced";
+  } else if (valueGap <= -3) {
+    label = "Overpriced";
+    valueTag = "Overpriced";
+  }
+
+  return {
+    recommendation: {
+      label,
+      recommendedRange: `${formatCurrency(Math.max(0, auctionValue - 3))}-${formatCurrency(
+        maxBid || auctionValue
+      )}`,
+      hardStop: Math.max(hardMax, maxBid, auctionValue),
+    },
+    valueTag,
+  };
+};
+
+const buildTierCliff = (player, positionPlayers) => {
+  const sameTierPlayers = positionPlayers.filter(
+    (positionPlayer) => `${positionPlayer.tier}` === `${player.tier}`
+  );
+  const currentTierIndex = sameTierPlayers.findIndex(
+    (positionPlayer) => positionPlayer.id === player.id
+  );
+  const playersLeftInTier =
+    currentTierIndex === -1
+      ? sameTierPlayers.length
+      : sameTierPlayers.length - currentTierIndex;
+  const nextTierPlayer = positionPlayers.find(
+    (positionPlayer) => toNumber(positionPlayer.tier) > toNumber(player.tier)
+  );
+  const nextTierDrop = nextTierPlayer
+    ? Math.max(
+        0,
+        toNumber(player.projectedPoints) - toNumber(nextTierPlayer.projectedPoints)
+      )
+    : 0;
+
+  return {
+    isCliff: playersLeftInTier <= 3,
+    playersLeftInTier,
+    nextTierDrop: Number(nextTierDrop.toFixed(1)),
+  };
+};
+
+const getProjectedPointsRank = (player, positionPlayers) => {
+  const projectedRankings = [...positionPlayers].sort(
+    (firstPlayer, secondPlayer) =>
+      toNumber(secondPlayer.projectedPoints) - toNumber(firstPlayer.projectedPoints)
+  );
+
+  const projectedIndex = projectedRankings.findIndex(
+    (positionPlayer) => positionPlayer.id === player.id
+  );
+
+  return projectedIndex === -1 ? toNumber(player.positionRank) : projectedIndex + 1;
+};
+
+const buildOpportunityValue = (player) => {
+  if (player.position === "QB") {
+    return (
+      toNumber(player.passingAttempts) * 0.35 +
+      toNumber(player.rushingAttempts) * 1.2 +
+      toNumber(player.rushingYards) * 0.08 +
+      toNumber(player.gamesStarted) * 8
+    );
+  }
+
+  if (player.position === "RB") {
+    return (
+      toNumber(player.rushingAttempts) * 1.1 +
+      toNumber(player.targets) * 1.4 +
+      toNumber(player.snapShare) * 0.8
+    );
+  }
+
+  if (player.position === "WR") {
+    return (
+      toNumber(player.targets) * 1.3 +
+      toNumber(player.routeParticipation) * 0.8 +
+      toNumber(player.redZoneTargets) * 2
+    );
+  }
+
+  if (player.position === "TE") {
+    return (
+      toNumber(player.targets) * 1.4 +
+      toNumber(player.routeParticipation) * 0.9 +
+      toNumber(player.redZoneTargets) * 2
+    );
+  }
+
+  return 0;
+};
+
+const buildSleeperScore = (player, positionPlayers, tierCliff) => {
+  const projectedRank = getProjectedPointsRank(player, positionPlayers);
+  const rankGap = toNumber(player.positionRank) - projectedRank;
+  const rankGapScore = clampScore((rankGap + 5) * 6.67);
+  const nearbyRankPlayers = positionPlayers.filter(
+    (positionPlayer) =>
+      Math.abs(toNumber(positionPlayer.positionRank) - toNumber(player.positionRank)) <=
+      3
+  );
+  const expectedCostPlayers =
+    nearbyRankPlayers.length > 0 ? nearbyRankPlayers : positionPlayers;
+  const expectedCost =
+    expectedCostPlayers.reduce(
+      (total, positionPlayer) => total + toNumber(positionPlayer.auctionValue),
+      0
+    ) / Math.max(expectedCostPlayers.length, 1);
+  const auctionDiscount = expectedCost - toNumber(player.auctionValue);
+  const auctionDiscountScore = clampScore((auctionDiscount + 8) * 5);
+  const sameTierPlayers = positionPlayers.filter(
+    (positionPlayer) => `${positionPlayer.tier}` === `${player.tier}`
+  );
+  const sameTierAverageAuction =
+    sameTierPlayers.reduce(
+      (total, positionPlayer) => total + toNumber(positionPlayer.auctionValue),
+      0
+    ) / Math.max(sameTierPlayers.length, 1);
+  const tierPositionIndex = sameTierPlayers.findIndex(
+    (positionPlayer) => positionPlayer.id === player.id
+  );
+  const topOfTierScore =
+    tierPositionIndex === -1
+      ? 40
+      : clampScore(100 - (tierPositionIndex / Math.max(sameTierPlayers.length, 1)) * 100);
+  const sameTierDiscountScore = clampScore(
+    (sameTierAverageAuction - toNumber(player.auctionValue) + 8) * 5
+  );
+  const tierCliffScore = tierCliff.isCliff ? 90 : 45;
+  const tierValueScore = clampScore(
+    topOfTierScore * 0.35 + sameTierDiscountScore * 0.35 + tierCliffScore * 0.3
+  );
+  const opportunityValues = positionPlayers.map(buildOpportunityValue);
+  const opportunityScore = normalizeRangeScore(
+    buildOpportunityValue(player),
+    Math.min(...opportunityValues),
+    Math.max(...opportunityValues)
+  );
+  const upsideRange =
+    toNumber(player.hardMax) - toNumber(player.auctionValue) +
+    Math.max(0, toNumber(player.maxBid) - toNumber(player.auctionValue));
+  const upsideScore = clampScore(upsideRange * 5);
+  const elitePenalty =
+    toNumber(player.tier) <= 2 && toNumber(player.auctionValue) >= 25 ? 20 : 0;
+  const sleeperScore = clampScore(
+    rankGapScore * 0.35 +
+      auctionDiscountScore * 0.25 +
+      tierValueScore * 0.15 +
+      opportunityScore * 0.15 +
+      upsideScore * 0.1 -
+      elitePenalty
+  );
+
+  return {
+    sleeperScore,
+    sleeperLabel: getSleeperLabel(sleeperScore),
+    isSleeper: sleeperScore >= 80,
+  };
+};
+
+const buildTargetedPlayer = (player, positionPlayers) => {
+  const rankScore = clampScore(100 - (toNumber(player.rank) - 1) * 1.5);
+  const tierScore = clampScore(100 - (toNumber(player.tier) - 1) * 14);
+  const projectedPointValues = positionPlayers.map((item) =>
+    toNumber(item.projectedPoints)
+  );
+  const auctionValues = positionPlayers.map((item) => toNumber(item.auctionValue));
+  const projectedPointsScore = normalizeRangeScore(
+    toNumber(player.projectedPoints),
+    Math.min(...projectedPointValues),
+    Math.max(...projectedPointValues)
+  );
+  const auctionValueScore = normalizeRangeScore(
+    toNumber(player.auctionValue),
+    Math.min(...auctionValues),
+    Math.max(...auctionValues)
+  );
+  const scarcityScore = clampScore(100 - (toNumber(player.positionRank) - 1) * 4);
+  const ddScore = clampScore(
+    rankScore * 0.25 +
+      tierScore * 0.25 +
+      projectedPointsScore * 0.2 +
+      auctionValueScore * 0.2 +
+      scarcityScore * 0.1
+  );
+  const tierCliff = buildTierCliff(player, positionPlayers);
+  const { recommendation, valueTag } = buildAuctionRecommendation(player);
+  const sleeper = buildSleeperScore(player, positionPlayers, tierCliff);
+  let systemTags = [valueTag];
+
+  if (tierCliff.isCliff) {
+    systemTags = addUniqueTag(systemTags, "Tier Cliff");
+  }
+
+  if (sleeper.sleeperScore >= 80) {
+    systemTags = addUniqueTag(systemTags, "Sleeper");
+  }
+
+  if (sleeper.sleeperScore >= 90) {
+    systemTags = addUniqueTag(systemTags, "Priority Sleeper");
+  }
+
+  return {
+    playerId: player.id,
+    sleeperId: player.sleeperId ?? player.id,
+    name: player.fullName,
+    position: player.position,
+    team: player.nflTeam,
+    rank: toNumber(player.rank),
+    positionRank: toNumber(player.positionRank),
+    tier: toNumber(player.tier),
+    projectedPoints: toNumber(player.projectedPoints),
+    auctionValue: toNumber(player.auctionValue),
+    maxBid: toNumber(player.maxBid),
+    hardMaxBid: toNumber(player.hardMax),
+    ddScore,
+    ddScoreLabel: getDDScoreLabel(ddScore),
+    sleeperScore: sleeper.sleeperScore,
+    sleeperLabel: sleeper.sleeperLabel,
+    isSleeper: sleeper.isSleeper,
+    tierCliff,
+    auctionRecommendation: recommendation,
+    systemTags,
+    userTags: [],
+    systemNotes: "",
+    recommendationNotes: "",
+    userNotes: "",
+  };
+};
+
+const Scouting = ({
+  lockedPosition = "",
+  pageTitle = "Scouting",
+  showPositionFilters = true,
+  playerListInModal = false,
+  showTargetFilterCard = true,
+}) => {
+  const { currentUser } = useAuth();
   const { currentColor } = useStateContext();
-  const [selectedPosition, setSelectedPosition] = useState("");
+  const [selectedPosition, setSelectedPosition] = useState(lockedPosition);
+  const [selectedTier, setSelectedTier] = useState("All");
+  const [targetPosition, setTargetPosition] = useState(
+    showTargetFilterCard ? "" : lockedPosition
+  );
+  const [targetTier, setTargetTier] = useState("All");
+  const [targetRank, setTargetRank] = useState("All");
+  const [targetSearchTerm, setTargetSearchTerm] = useState("");
+  const [targetSleeperFilter, setTargetSleeperFilter] = useState("All");
+  const [targetSortBy, setTargetSortBy] = useState("ddScore");
+  const [targetPage, setTargetPage] = useState(1);
   const [playerData, setPlayerData] = useState([]);
+  const [targetBoardPlayers, setTargetBoardPlayers] = useState([]);
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+  const [playerSearchTerm, setPlayerSearchTerm] = useState("");
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [isTargetActionModalOpen, setIsTargetActionModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [processedCount, setProcessedCount] = useState(0);
+  const [processingTotal, setProcessingTotal] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
 
   const selectedFilter = positionFilters.find(
     (position) => position.value === selectedPosition
   );
+  const selectedCount = selectedPlayerIds.length;
+  const selectedPlayerSet = useMemo(
+    () => new Set(selectedPlayerIds),
+    [selectedPlayerIds]
+  );
+  const filteredPlayerData = useMemo(
+    () =>
+      playerData.filter((player) => {
+        const playerTier = toNumber(player.tier, null);
+        const searchTerm = playerSearchTerm.toLowerCase().trim();
+        const matchesSearch =
+          searchTerm === "" || player.fullName.toLowerCase().includes(searchTerm);
+
+        return (
+          matchesSearch &&
+          (selectedTier === "All" ||
+            (selectedTier === "6+" && playerTier >= 6) ||
+            playerTier === Number(selectedTier))
+        );
+      }),
+    [playerData, playerSearchTerm, selectedTier]
+  );
+  const filteredTargetBoardPlayers = useMemo(
+    () => {
+      const filteredPlayers = targetBoardPlayers.filter((player) => {
+        const playerTier = toNumber(player.tier, null);
+        const rawPlayerRank = player.positionRank || player.rank;
+        const playerRank = toNumber(rawPlayerRank, null);
+        const searchTerm = targetSearchTerm.toLowerCase().trim();
+        const matchesPosition =
+          targetPosition === "" || player.position === targetPosition;
+        const matchesTier =
+          targetTier === "All" ||
+          (targetTier === "6+" && playerTier >= 6) ||
+          playerTier === Number(targetTier);
+        const matchesRank =
+          targetRank === "All" ||
+          (hasValue(rawPlayerRank) &&
+            ((targetRank === "21+" && playerRank >= 21) ||
+              playerRank <= Number(targetRank)));
+        const matchesSearch =
+          searchTerm === "" ||
+          `${player.name ?? ""}`.toLowerCase().includes(searchTerm);
+        const matchesSleeper =
+          targetSleeperFilter === "All" || toNumber(player.sleeperScore) >= 80;
+
+        return matchesPosition && matchesTier && matchesRank && matchesSearch && matchesSleeper;
+      });
+
+      return [...filteredPlayers].sort((firstPlayer, secondPlayer) => {
+        if (targetSortBy === "tier" || targetSortBy === "positionRank") {
+          return (
+            getSortableNumber(firstPlayer[targetSortBy]) -
+              getSortableNumber(secondPlayer[targetSortBy]) ||
+            getSortableNumber(secondPlayer.ddScore) -
+              getSortableNumber(firstPlayer.ddScore)
+          );
+        }
+
+        return (
+          getSortableNumber(secondPlayer[targetSortBy]) -
+            getSortableNumber(firstPlayer[targetSortBy]) ||
+          getSortableNumber(firstPlayer.positionRank) -
+            getSortableNumber(secondPlayer.positionRank)
+        );
+      });
+    },
+    [
+      targetBoardPlayers,
+      targetPosition,
+      targetRank,
+      targetSearchTerm,
+      targetSleeperFilter,
+      targetSortBy,
+      targetTier,
+    ]
+  );
+  const targetBoardPageCount = Math.max(
+    1,
+    Math.ceil(filteredTargetBoardPlayers.length / TARGET_BOARD_PAGE_SIZE)
+  );
+  const targetBoardPageItems = useMemo(() => {
+    const startIndex = (targetPage - 1) * TARGET_BOARD_PAGE_SIZE;
+
+    return filteredTargetBoardPlayers.slice(
+      startIndex,
+      startIndex + TARGET_BOARD_PAGE_SIZE
+    );
+  }, [filteredTargetBoardPlayers, targetPage]);
+  const targetPaginationItems = useMemo(() => {
+    if (targetBoardPageCount <= 5) {
+      return Array.from({ length: targetBoardPageCount }, (_, index) => index + 1);
+    }
+
+    if (targetPage <= 3) {
+      return [1, 2, 3, "ellipsis", targetBoardPageCount];
+    }
+
+    if (targetPage >= targetBoardPageCount - 2) {
+      return [
+        1,
+        "ellipsis",
+        targetBoardPageCount - 2,
+        targetBoardPageCount - 1,
+        targetBoardPageCount,
+      ];
+    }
+
+    return [1, "ellipsis", targetPage, "ellipsis", targetBoardPageCount];
+  }, [targetBoardPageCount, targetPage]);
+
+  useEffect(() => {
+    setTargetPage(1);
+  }, [
+    targetPosition,
+    targetRank,
+    targetSearchTerm,
+    targetSleeperFilter,
+    targetSortBy,
+    targetTier,
+  ]);
+
+  useEffect(() => {
+    setTargetPage((currentPage) =>
+      Math.min(Math.max(currentPage, 1), targetBoardPageCount)
+    );
+  }, [targetBoardPageCount]);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return undefined;
+
+    const targetedPlayersRef = collection(
+      db,
+      "userprofile",
+      currentUser.uid,
+      "targetedPlayers"
+    );
+
+    const unsubscribe = onSnapshot(
+      targetedPlayersRef,
+      (querySnapshot) => {
+        const targetedPlayers = querySnapshot.docs.map((targetDoc) => ({
+          id: targetDoc.id,
+          ...targetDoc.data(),
+        }));
+
+        setTargetBoardPlayers(
+          targetedPlayers.sort(
+            (firstPlayer, secondPlayer) =>
+              getSortableNumber(secondPlayer.ddScore) -
+                getSortableNumber(firstPlayer.ddScore) ||
+              getSortableNumber(firstPlayer.rank) -
+                getSortableNumber(secondPlayer.rank)
+          )
+        );
+      },
+      (error) => {
+        console.error("Error loading target board:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     if (!selectedPosition) {
       setPlayerData([]);
+      setSelectedPlayerIds([]);
       setLoading(false);
       return undefined;
     }
 
     setPlayerData([]);
+    setSelectedPlayerIds([]);
     setErrorMessage("");
     setLoading(true);
 
@@ -141,51 +727,478 @@ const Scouting = () => {
   }, [selectedPosition]);
 
   const handlePositionSelect = (position) => {
-    setSelectedPosition(position);
+    setSelectedPosition(lockedPosition || position);
   };
+
+  const handleTierSelect = (event) => {
+    setSelectedTier(event.target.value);
+    setSelectedPlayerIds([]);
+  };
+
+  const handleTargetTierSelect = (event) => {
+    setTargetTier(event.target.value);
+  };
+
+  const handleTargetRankSelect = (event) => {
+    setTargetRank(event.target.value);
+  };
+
+  const handleTargetSleeperFilterSelect = (event) => {
+    setTargetSleeperFilter(event.target.value);
+  };
+
+  const handleTargetSortSelect = (event) => {
+    setTargetSortBy(event.target.value);
+  };
+
+  const handleTogglePlayer = (playerId) => {
+    setSelectedPlayerIds((currentIds) =>
+      currentIds.includes(playerId)
+        ? currentIds.filter((id) => id !== playerId)
+        : [...currentIds, playerId]
+    );
+  };
+
+  const processSelectedPlayers = async () => {
+    if (!currentUser?.uid || selectedCount === 0) return;
+
+    const totalToProcess = selectedCount;
+
+    if (playerListInModal) {
+      setIsPlayerModalOpen(false);
+      setIsProgressModalOpen(true);
+    }
+
+    setProcessing(true);
+    setProcessedCount(0);
+    setProcessingTotal(totalToProcess);
+    setErrorMessage("");
+
+    try {
+      const selectedPlayers = selectedPlayerIds
+        .map((playerId) => playerData.find((player) => player.id === playerId))
+        .filter(Boolean);
+
+      for (const player of selectedPlayers) {
+        const masterPlayerSnap = await getDoc(doc(db, "players", player.id));
+
+        if (!masterPlayerSnap.exists()) {
+          setProcessedCount((count) => count + 1);
+          continue;
+        }
+
+        const masterPlayer = normalizePlayer(masterPlayerSnap);
+        const playerWithStats = await addProjectedStatsToPlayer(masterPlayer);
+        const targetedPlayer = buildTargetedPlayer(playerWithStats, playerData);
+        let notes = buildFallbackScoutingNotes(targetedPlayer);
+
+        try {
+          notes = await getOpenAIScoutingNotes(targetedPlayer);
+        } catch (error) {
+          console.warn("Using fallback scouting notes:", error);
+        }
+
+        const targetedPlayerRef = doc(
+          db,
+          "userprofile",
+          currentUser.uid,
+          "targetedPlayers",
+          player.id
+        );
+        const existingTargetSnap = await getDoc(targetedPlayerRef);
+        const existingTargetData = existingTargetSnap.exists()
+          ? existingTargetSnap.data()
+          : {};
+
+        await setDoc(
+          targetedPlayerRef,
+          {
+            ...targetedPlayer,
+            systemNotes: notes.systemNotes ?? targetedPlayer.systemNotes,
+            recommendationNotes:
+              notes.recommendationNotes ?? targetedPlayer.recommendationNotes,
+            userNotes: existingTargetData.userNotes ?? "",
+            userTags: existingTargetData.userTags ?? [],
+            processedAt: serverTimestamp(),
+            createdAt: existingTargetData.createdAt ?? serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        setProcessedCount((count) => count + 1);
+      }
+
+      setSelectedPlayerIds([]);
+    } catch (error) {
+      console.error("Error processing selected players:", error);
+      setErrorMessage("Unable to process selected players.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const renderSelectablePlayerList = ({ processButtonLabel = "Process Selected Players" }) => (
+    <>
+      <div className="table-responsive players-table-wrap">
+        <table className="table table-striped table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Select</th>
+              <th scope="col">Player Name</th>
+              <th scope="col">Position Rank</th>
+              <th scope="col">Tier</th>
+              <th scope="col">Auction Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPlayerData.map((player) => (
+              <tr key={player.id}>
+                <td>
+                  <label className="keeper-checkbox-label">
+                    <input
+                      checked={selectedPlayerSet.has(player.id)}
+                      disabled={processing}
+                      onChange={() => handleTogglePlayer(player.id)}
+                      type="checkbox"
+                    />
+                    <span>Select</span>
+                  </label>
+                </td>
+                <td className="fw-semibold">{player.fullName}</td>
+                <td>
+                  {player.position}
+                  {player.positionRank}
+                </td>
+                <td>Tier {player.tier}</td>
+                <td>{formatCurrency(player.auctionValue)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-5">
+        <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+          {selectedCount} Players Selected
+        </span>
+        <button
+          type="button"
+          disabled={selectedCount === 0 || processing}
+          onClick={processSelectedPlayers}
+          className="px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl"
+          style={{
+            backgroundColor: currentColor,
+            borderRadius: "10px",
+          }}
+        >
+          {processButtonLabel}
+        </button>
+      </div>
+    </>
+  );
+
+  const renderTargetBoardList = () => (
+    <div className="target-board-list">
+      <div className="target-board-list-head">
+        <span>Rank</span>
+        <span>Player</span>
+        <span>Tier</span>
+        <span>DD Score</span>
+        <span>Sleeper</span>
+        <span>Value</span>
+        <span>Max</span>
+      </div>
+      {targetBoardPageItems.map((player) => {
+        const ddLabel =
+          toNumber(player.ddScore) >= 90 ? "Elite" : player.ddScoreLabel;
+
+        return (
+          <div className="target-board-row" key={player.playerId}>
+            <div className="target-board-rank">
+              {player.positionRank || player.rank}
+            </div>
+            <button
+              aria-label={`Open actions for ${player.name}`}
+              className="target-board-player"
+              onClick={() => setIsTargetActionModalOpen(true)}
+              type="button"
+            >
+              <img
+                alt=""
+                className="target-board-avatar"
+                src={`https://sleepercdn.com/content/nfl/players/${
+                  player.sleeperId || player.playerId
+                }.jpg`}
+              />
+              <div>
+                <div className="target-board-name">{player.name}</div>
+                <div className="target-board-meta">
+                  {player.team} <span>•</span> {player.position}
+                </div>
+              </div>
+            </button>
+            <div>
+              <span className="target-board-tier">{player.tier}</span>
+            </div>
+            <div className="target-board-score">
+              <span className="target-board-score-ring">
+                {toNumber(player.ddScore)}
+              </span>
+              <span>{ddLabel}</span>
+            </div>
+            <div className="target-board-score sleeper">
+              <span className="target-board-sleeper-score">
+                {toNumber(player.sleeperScore)}
+              </span>
+              <span>
+                {player.sleeperLabel || getSleeperLabel(toNumber(player.sleeperScore))}
+              </span>
+            </div>
+            <div className="target-board-money">
+              {formatCurrency(player.auctionValue)}
+            </div>
+            <div className="target-board-money">
+              {formatCurrency(player.maxBid)}
+            </div>
+          </div>
+        );
+      })}
+      {targetBoardPageCount > 1 && (
+        <div className="target-board-pagination">
+          <button
+            aria-label="Previous target page"
+            className="target-board-page-button"
+            disabled={targetPage === 1}
+            onClick={() => setTargetPage((page) => Math.max(1, page - 1))}
+            type="button"
+          >
+            <FiChevronLeft />
+          </button>
+          {targetPaginationItems.map((pageItem, index) =>
+            pageItem === "ellipsis" ? (
+              <span
+                className="target-board-page-button target-board-page-ellipsis"
+                key={`target-ellipsis-${index}`}
+              >
+                ...
+              </span>
+            ) : (
+              <button
+                className={`target-board-page-button ${
+                  targetPage === pageItem ? "active" : ""
+                }`}
+                key={pageItem}
+                onClick={() => setTargetPage(pageItem)}
+                type="button"
+              >
+                {pageItem}
+              </button>
+            )
+          )}
+          <button
+            aria-label="Next target page"
+            className="target-board-page-button"
+            disabled={targetPage === targetBoardPageCount}
+            onClick={() =>
+              setTargetPage((page) => Math.min(targetBoardPageCount, page + 1))
+            }
+            type="button"
+          >
+            <FiChevronRight />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="players-page m-2 md:m-10 mt-24">
       <div className="p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Command Center" title="Scouting" />
+        <Header category="Command Center" title={pageTitle} />
         <div className="flex flex-wrap gap-3">
-          {positionFilters.map((position) => {
-            const isSelected = selectedPosition === position.value;
+          {showPositionFilters &&
+            positionFilters.map((position) => {
+              const isSelected = selectedPosition === position.value;
 
-            return (
-              <button
-                key={position.value}
-                type="button"
-                onClick={() => handlePositionSelect(position.value)}
-                className={`px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl ${
-                  isSelected
-                    ? "text-white"
-                    : "text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
-                }`}
-                style={{
-                  backgroundColor: isSelected ? currentColor : "transparent",
-                  borderColor: isSelected ? currentColor : undefined,
-                  borderRadius: "10px",
-                }}
+              return (
+                <button
+                  key={position.value}
+                  type="button"
+                  onClick={() => handlePositionSelect(position.value)}
+                  className={`px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl ${
+                    isSelected
+                      ? "text-white"
+                      : "text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+                  }`}
+                  style={{
+                    backgroundColor: isSelected ? currentColor : "transparent",
+                    borderColor: isSelected ? currentColor : undefined,
+                    borderRadius: "10px",
+                  }}
+                >
+                  {position.label}
+                </button>
+              );
+            })}
+          {showPositionFilters && (
+            <button
+              type="button"
+              onClick={() => handlePositionSelect("")}
+              className="px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+              style={{ borderRadius: "10px" }}
+            >
+              Clear
+            </button>
+          )}
+          {!playerListInModal && (
+            <div className="players-tier-filter">
+              <label className="players-filter-label" htmlFor="scouting-tier-filter">
+                Tiers
+              </label>
+              <select
+                aria-label="Tier filter"
+                className="form-control"
+                id="scouting-tier-filter"
+                onChange={handleTierSelect}
+                value={selectedTier}
               >
-                {position.label}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => handlePositionSelect("")}
-            className="px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
-            style={{
-              borderRadius: "10px",
-            }}
-          >
-            Clear
-          </button>
+                {tierFilters.map((tier) => (
+                  <option key={tier.value} value={tier.value}>
+                    {tier.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
-      {selectedPosition && (
+      {playerListInModal && isPlayerModalOpen && selectedPosition && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="players-page w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl p-4 md:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+              <div>
+                <p className="text-gray-400 text-sm mb-1">Player List</p>
+                <h2 className="text-2xl font-semibold">
+                  {selectedFilter?.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPlayerModalOpen(false)}
+                className="px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+                style={{ borderRadius: "10px" }}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="players-toolbar">
+              <div className="players-search">
+                <input
+                  aria-label="Search players"
+                  className="form-control"
+                  onChange={(event) => setPlayerSearchTerm(event.target.value)}
+                  placeholder="Search by player name"
+                  type="search"
+                  value={playerSearchTerm}
+                />
+              </div>
+              <div className="players-tier-filter">
+                <label
+                  className="players-filter-label"
+                  htmlFor="scouting-modal-tier-filter"
+                >
+                  Tiers
+                </label>
+                <select
+                  aria-label="Tier filter"
+                  className="form-control"
+                  id="scouting-modal-tier-filter"
+                  onChange={handleTierSelect}
+                  value={selectedTier}
+                >
+                  {tierFilters.map((tier) => (
+                    <option key={tier.value} value={tier.value}>
+                      {tier.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {!loading && !errorMessage && (
+                <span className="text-sm text-gray-500 dark:text-gray-300">
+                  {filteredPlayerData.length} players
+                </span>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="players-loading">Loading players...</div>
+            ) : errorMessage ? (
+              <div className="players-empty-state text-red-500">{errorMessage}</div>
+            ) : filteredPlayerData.length === 0 ? (
+              <div className="players-empty-state">
+                No ranked and tiered players found for {selectedPosition}.
+              </div>
+            ) : (
+              renderSelectablePlayerList({ processButtonLabel: "Process" })
+            )}
+          </div>
+        </div>
+      )}
+
+      {playerListInModal && isProgressModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-md bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl p-6 md:p-8">
+            <p className="text-gray-400 text-sm mb-1">Progress</p>
+            <h2 className="text-2xl font-semibold mb-5">
+              {processing ? "Processing Players" : "Processing Complete"}
+            </h2>
+            <div className="players-loading">
+              {processedCount}/{processingTotal} players processed
+            </div>
+            {!processing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProgressModalOpen(false);
+                  setProcessingTotal(0);
+                }}
+                className="mt-5 w-full px-5 py-3 text-sm font-semibold text-white hover:drop-shadow-xl"
+                style={{
+                  backgroundColor: currentColor,
+                  borderRadius: "10px",
+                }}
+              >
+                Close
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isTargetActionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-md bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl p-6 md:p-8">
+            <p className="text-gray-400 text-sm mb-1">Target Player</p>
+            <h2 className="text-2xl font-semibold mb-5">In Progress</h2>
+            <button
+              type="button"
+              onClick={() => setIsTargetActionModalOpen(false)}
+              className="w-full px-5 py-3 text-sm font-semibold text-white hover:drop-shadow-xl"
+              style={{
+                backgroundColor: currentColor,
+                borderRadius: "10px",
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selectedPosition && !playerListInModal && (
         <div className="mt-6 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
@@ -196,7 +1209,7 @@ const Scouting = () => {
             </div>
             {!loading && !errorMessage && (
               <span className="text-sm text-gray-500 dark:text-gray-300">
-                {playerData.length} players
+                {filteredPlayerData.length} players
               </span>
             )}
           </div>
@@ -205,15 +1218,200 @@ const Scouting = () => {
             <div className="players-loading">Loading players...</div>
           ) : errorMessage ? (
             <div className="players-empty-state text-red-500">{errorMessage}</div>
-          ) : playerData.length === 0 ? (
+          ) : filteredPlayerData.length === 0 ? (
             <div className="players-empty-state">
               No ranked and tiered players found for {selectedPosition}.
             </div>
           ) : (
-            <PlayerTable players={playerData} />
+            <>
+              {renderSelectablePlayerList({
+                processButtonLabel: "Process Selected Players",
+              })}
+              {processing && (
+                <div className="players-loading mt-5">
+                  Processing {processingTotal} Players... {processedCount} /{" "}
+                  {processingTotal} Complete
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
+
+      {showTargetFilterCard && (
+        <div className="mt-6 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+          <Header category="Target Players" title="Filters" />
+          <div className="flex flex-wrap gap-3">
+            {positionFilters.map((position) => {
+              const isSelected = targetPosition === position.value;
+
+              return (
+                <button
+                  key={position.value}
+                  type="button"
+                  onClick={() => setTargetPosition(position.value)}
+                  className={`px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl ${
+                    isSelected
+                      ? "text-white"
+                      : "text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+                  }`}
+                  style={{
+                    backgroundColor: isSelected ? currentColor : "transparent",
+                    borderColor: isSelected ? currentColor : undefined,
+                    borderRadius: "10px",
+                  }}
+                >
+                  {position.label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setTargetPosition("")}
+              className="px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+              style={{ borderRadius: "10px" }}
+            >
+              Clear
+            </button>
+            <div className="players-tier-filter">
+              <label
+                className="players-filter-label"
+                htmlFor="target-board-tier-filter"
+              >
+                Tiers
+              </label>
+              <select
+                aria-label="Target board tier filter"
+                className="form-control"
+                id="target-board-tier-filter"
+                onChange={handleTargetTierSelect}
+                value={targetTier}
+              >
+                {tierFilters.map((tier) => (
+                  <option key={tier.value} value={tier.value}>
+                    {tier.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="players-tier-filter">
+              <label
+                className="players-filter-label"
+                htmlFor="target-board-sleeper-filter"
+              >
+                Sleepers
+              </label>
+              <select
+                aria-label="Target board sleeper filter"
+                className="form-control"
+                id="target-board-sleeper-filter"
+                onChange={handleTargetSleeperFilterSelect}
+                value={targetSleeperFilter}
+              >
+                {sleeperFilters.map((filter) => (
+                  <option key={filter.value} value={filter.value}>
+                    {filter.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="players-tier-filter">
+              <label
+                className="players-filter-label"
+                htmlFor="target-board-sort"
+              >
+                Sort
+              </label>
+              <select
+                aria-label="Target board sort"
+                className="form-control"
+                id="target-board-sort"
+                onChange={handleTargetSortSelect}
+                value={targetSortBy}
+              >
+                {targetSortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="target-board-layout mt-6">
+        <div className="target-board-card p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+          <div className="target-board-toolbar">
+            <div className="target-board-search">
+              <FiSearch />
+              <input
+                aria-label="Search target players"
+                onChange={(event) => setTargetSearchTerm(event.target.value)}
+                placeholder={`Search ${targetPosition || lockedPosition || "targets"}...`}
+                type="search"
+                value={targetSearchTerm}
+              />
+            </div>
+            <span className="target-board-count">
+              {filteredTargetBoardPlayers.length}{" "}
+              {targetPosition || lockedPosition || "targets"}
+            </span>
+            <select
+              aria-label="Target board rank filter"
+              className="target-board-select"
+              onChange={handleTargetRankSelect}
+              value={targetRank}
+            >
+              {rankFilters.map((rank) => (
+                <option key={rank.value} value={rank.value}>
+                  {rank.label}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Target board tier filter"
+              className="target-board-select"
+              onChange={handleTargetTierSelect}
+              value={targetTier}
+            >
+              {tierFilters.map((tier) => (
+                <option key={tier.value} value={tier.value}>
+                  {tier.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filteredTargetBoardPlayers.length === 0 ? (
+            <div className="players-empty-state">
+              Process selected players to build your target board.
+            </div>
+          ) : (
+            renderTargetBoardList()
+          )}
+        </div>
+
+        {playerListInModal && (
+          <div className="target-board-action-card p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+            <div className="target-board-action-header">
+              <h2>Actions</h2>
+            </div>
+            <div className="target-board-action-divider" />
+            <button
+              id="open-player-list"
+              type="button"
+              onClick={() => setIsPlayerModalOpen(true)}
+              className="target-board-action-button"
+              style={{
+                backgroundColor: currentColor,
+              }}
+            >
+              Target Players
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -21,7 +21,29 @@ export const links = [
       {
         name: "Scouting",
         icon: <MdSportsFootball />,
-        linktoname: "bigdawgsdraft/scouting"
+        linktoname: "bigdawgsdraft/scouting/qbs",
+        children: [
+          {
+            name: "QBs",
+            icon: <MdSportsFootball />,
+            linktoname: "bigdawgsdraft/scouting/qbs"
+          },
+          {
+            name: "RBs",
+            icon: <MdSportsFootball />,
+            linktoname: "bigdawgsdraft/scouting/rbs"
+          },
+          {
+            name: "WRs",
+            icon: <MdSportsFootball />,
+            linktoname: "bigdawgsdraft/scouting/wrs"
+          },
+          {
+            name: "TEs",
+            icon: <MdSportsFootball />,
+            linktoname: "bigdawgsdraft/scouting/tes"
+          },
+        ],
       },
       {
         name: "Teams",

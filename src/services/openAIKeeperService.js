@@ -112,3 +112,65 @@ export const getOpenAIKeeperNotes = async (recommendations = []) => {
 
   return JSON.parse(content);
 };
+
+export const buildFallbackScoutingNotes = (targetedPlayer) => {
+  const rankText = targetedPlayer.positionRank
+    ? `${targetedPlayer.position}${targetedPlayer.positionRank}`
+    : targetedPlayer.position;
+  const tagText =
+    targetedPlayer.systemTags?.length > 0
+      ? ` Tags: ${targetedPlayer.systemTags.join(", ")}.`
+      : "";
+
+  return {
+    systemNotes: `${targetedPlayer.name} is a ${targetedPlayer.ddScoreLabel} at ${rankText}, Tier ${targetedPlayer.tier}, with ${targetedPlayer.projectedPoints} projected points. Sleeper grade: ${targetedPlayer.sleeperLabel} (${targetedPlayer.sleeperScore}).${tagText}`,
+    recommendationNotes: `${targetedPlayer.auctionRecommendation.label}: recommended range ${targetedPlayer.auctionRecommendation.recommendedRange}, hard stop $${targetedPlayer.auctionRecommendation.hardStop}. ${targetedPlayer.isSleeper ? "This profile has value-upside sleeper traits." : "This profile is not primarily a sleeper value."}`,
+  };
+};
+
+export const getOpenAIScoutingNotes = async (targetedPlayer) => {
+  if (!OPENAI_API_KEY) {
+    throw new Error("Missing REACT_APP_OPENAI_API_KEY");
+  }
+
+  const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You write concise dynasty fantasy football scouting notes. Use only the provided data. Do not recalculate scores or change recommendations. DD Score identifies best targets; Sleeper Score identifies undervalued players who may outperform rank, tier, ADP, or auction cost. Do not call an elite expensive player a sleeper unless the provided Sleeper Score supports it.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            instructions:
+              'Return JSON exactly like {"systemNotes":"one sentence","recommendationNotes":"one sentence"}. Keep each sentence practical for an auction draft target board.',
+            player: targetedPlayer,
+          }),
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `OpenAI request failed with ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+
+  if (!content) {
+    throw new Error("OpenAI response did not include content");
+  }
+
+  return JSON.parse(content);
+};

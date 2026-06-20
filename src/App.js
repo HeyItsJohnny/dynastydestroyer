@@ -149,10 +149,34 @@ function App() {
             }
           />
           <Route
-            path="/bigdawgsdraft/scouting"
+            path="/bigdawgsdraft/scouting/qbs"
             element={
               <PrivateRoute>
-                <HomeTemplate page="SCOUTING" />
+                <HomeTemplate page="SCOUTINGQBS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/bigdawgsdraft/scouting/rbs"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGRBS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/bigdawgsdraft/scouting/wrs"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGWRS" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/bigdawgsdraft/scouting/tes"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="SCOUTINGTES" />
               </PrivateRoute>
             }
           />

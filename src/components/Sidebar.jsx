@@ -15,13 +15,12 @@ import { doc, getDoc, query, collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
 const Sidebar = () => {
-  const { activeMenu, setActiveMenu, screenSize, currentColor } =
-    useStateContext();
+  const { activeMenu, setActiveMenu, currentColor } = useStateContext();
   const [sleeperLeagues, setSleeperLeagues] = useState([]);
   const { currentUser } = useAuth();
 
   const handleCloseSizeBar = () => {
-    if (activeMenu && screenSize <= 900) {
+    if (activeMenu) {
       setActiveMenu(false);
     }
   };
@@ -31,6 +30,10 @@ const Sidebar = () => {
     "flex items-center gap-5 pl-4 pt-3 pb-2.5 rounded-lg  text-white  text-md m-2";
   const normalLink =
     "flex items-center gap-5 pl-4 pt-3 pb-2.5 rounded-lg text-md text-gray-700 dark:text-gray-200 dark:hover:text-black hover:bg-light-gray m-2";
+  const activeChildLink =
+    "flex items-center gap-4 pl-8 pt-2 pb-2 rounded-lg text-white text-sm m-2";
+  const normalChildLink =
+    "flex items-center gap-4 pl-8 pt-2 pb-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 dark:hover:text-black hover:bg-light-gray m-2";
 
   return (
     <div className="ml-3 h-screen md:overflow-hidden overflow-auto md:hover:overflow-auto pb-10">
@@ -61,20 +64,38 @@ const Sidebar = () => {
               <div key={item.title}>
                 <p className="text-gray-400 m-3 mt-4 uppercase">{item.title}</p>
                 {item.links.map((link) => (
-                  <NavLink
-                    to={`/${link.linktoname}`}
-                    key={link.name}
-                    onClick={handleCloseSizeBar}
-                    style={({ isActive }) => ({
-                      backgroundColor: isActive ? currentColor : "",
-                    })}
-                    className={({ isActive }) =>
-                      isActive ? activeLink : normalLink
-                    }
-                  >
-                    {link.icon}
-                    <span className="capitalize">{link.name}</span>
-                  </NavLink>
+                  <React.Fragment key={link.name}>
+                    <NavLink
+                      to={`/${link.linktoname}`}
+                      onClick={handleCloseSizeBar}
+                      style={({ isActive }) => ({
+                        backgroundColor:
+                          isActive && !link.children ? currentColor : "",
+                      })}
+                      className={({ isActive }) =>
+                        isActive && !link.children ? activeLink : normalLink
+                      }
+                    >
+                      {link.icon}
+                      <span className="capitalize">{link.name}</span>
+                    </NavLink>
+                    {link.children?.map((childLink) => (
+                      <NavLink
+                        to={`/${childLink.linktoname}`}
+                        key={childLink.name}
+                        onClick={handleCloseSizeBar}
+                        style={({ isActive }) => ({
+                          backgroundColor: isActive ? currentColor : "",
+                        })}
+                        className={({ isActive }) =>
+                          isActive ? activeChildLink : normalChildLink
+                        }
+                      >
+                        {childLink.icon}
+                        <span className="capitalize">{childLink.name}</span>
+                      </NavLink>
+                    ))}
+                  </React.Fragment>
                 ))}
               </div>
             ))}
