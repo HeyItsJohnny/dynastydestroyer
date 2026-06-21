@@ -142,6 +142,72 @@
   opacity: 0.7;
 }
 
+.players-page .target-player-modal-stats-loading {
+  min-height: 0;
+  padding: 10px;
+}
+
+.players-page .target-player-season-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.players-page .target-player-season-section {
+  background: #f9fafb;
+  border-radius: 20px;
+  padding: 22px 24px 24px;
+}
+
+.players-page .target-player-season-section h3 {
+  color: #1f2937;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0 0 22px;
+}
+
+.players-page .target-player-season-group + .target-player-season-group {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.players-page .target-player-season-grid {
+  display: grid;
+  gap: 18px 28px;
+}
+
+.players-page .target-player-season-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.players-page .target-player-season-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.players-page .target-player-season-stat {
+  border-bottom: 1px solid #e5e7eb;
+  min-width: 0;
+  padding-bottom: 14px;
+}
+
+.players-page .target-player-season-stat span {
+  color: #6b7280;
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.players-page .target-player-season-stat strong {
+  color: #1f2937;
+  display: block;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
 .players-page .table th.keeper-ai-note-col,
 .players-page .table td.keeper-ai-note-col {
   max-width: 360px;
@@ -190,6 +256,13 @@
   color: #1f2937;
 }
 
+.players-page .target-board-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
 .players-page .target-board-action-header {
   align-items: center;
   display: flex;
@@ -202,6 +275,13 @@
   font-weight: 900;
   line-height: 1.15;
   margin: 0;
+}
+
+.players-page .target-board-action-header span {
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .players-page .target-board-action-divider {
@@ -222,6 +302,121 @@
   min-height: 52px;
   padding: 0 20px;
   width: 100%;
+}
+
+.players-page .target-board-wishlist-card {
+  color: #1f2937;
+  overflow: hidden;
+}
+
+.players-page .target-board-combos-card {
+  color: #1f2937;
+}
+
+.players-page .target-board-wishlist-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 800;
+  margin: 6px 0 0;
+}
+
+.players-page .target-board-wishlist-empty {
+  min-height: 160px;
+  padding: 20px 0;
+}
+
+.players-page .target-board-wishlist-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.players-page .target-board-wishlist-row {
+  align-items: center;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #e5e7eb;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 34px 54px minmax(0, 1fr) 54px 52px;
+  min-height: 84px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.players-page .target-board-wishlist-row:nth-child(odd) {
+  background: #f9fafb;
+}
+
+.players-page .target-board-wishlist-number {
+  color: #1f2937;
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.players-page .target-board-wishlist-avatar {
+  height: 54px;
+  object-fit: contain;
+  width: 54px;
+}
+
+.players-page .target-board-wishlist-player {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.players-page .target-board-wishlist-name {
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.players-page .target-board-wishlist-value {
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.players-page .target-board-combos-slots {
+  display: grid;
+  gap: 10px;
+}
+
+.players-page .target-board-combos-slot {
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 0 14px;
+}
+
+.players-page .target-board-combos-slot span {
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.players-page .target-board-combos-slot strong {
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.players-page .target-board-wishlist-pagination {
+  background: inherit;
+  margin: 0 -24px -24px;
+  padding: 16px 20px 0;
 }
 
 .players-page .target-board-toolbar {
@@ -476,8 +671,15 @@
 }
 
 .dark .players-page .target-board-action-card,
+.dark .players-page .target-board-wishlist-card,
+.dark .players-page .target-board-combos-card,
 .dark .players-page .target-board-action-header h2 {
   color: #e5e7eb;
+}
+
+.dark .players-page .target-board-action-header span,
+.dark .players-page .target-board-wishlist-subtitle {
+  color: #d1d5db;
 }
 
 .dark .players-page .target-board-action-divider {
@@ -486,7 +688,8 @@
 
 .dark .players-page .target-board-toolbar,
 .dark .players-page .target-board-list-head,
-.dark .players-page .target-board-row {
+.dark .players-page .target-board-row,
+.dark .players-page .target-board-wishlist-row {
   border-color: #374151;
 }
 
@@ -506,6 +709,9 @@
 .dark .players-page .target-board-search input,
 .dark .players-page .target-board-rank,
 .dark .players-page .target-board-name,
+.dark .players-page .target-board-wishlist-number,
+.dark .players-page .target-board-wishlist-name,
+.dark .players-page .target-board-wishlist-value,
 .dark .players-page .target-board-score-ring,
 .dark .players-page .target-board-sleeper-score,
 .dark .players-page .target-board-money {
@@ -513,13 +719,24 @@
 }
 
 .dark .players-page .target-board-list-head,
-.dark .players-page .target-board-row:nth-child(odd) {
+.dark .players-page .target-board-row:nth-child(odd),
+.dark .players-page .target-board-wishlist-row:nth-child(odd) {
   background: #111827;
   color: #d1d5db;
 }
 
-.dark .players-page .target-board-row {
+.dark .players-page .target-board-row,
+.dark .players-page .target-board-wishlist-row {
   background: #1f2937;
+}
+
+.dark .players-page .target-board-combos-slot {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.dark .players-page .target-board-combos-slot strong {
+  color: #e5e7eb;
 }
 
 .dark .players-page .target-board-meta {
@@ -533,6 +750,10 @@
 .dark .players-page .target-board-pagination {
   background: #111827;
   border-color: #374151;
+}
+
+.dark .players-page .target-board-wishlist-pagination {
+  background: inherit;
 }
 
 .dark .players-page .target-board-page-button {
@@ -576,6 +797,27 @@
   color: #d1d5db;
 }
 
+.dark .players-page .target-player-season-section {
+  background: #30343d;
+}
+
+.dark .players-page .target-player-season-section h3,
+.dark .players-page .target-player-season-stat strong {
+  color: #f3f4f6;
+}
+
+.dark .players-page .target-player-season-group + .target-player-season-group {
+  border-color: rgba(17, 24, 39, 0.35);
+}
+
+.dark .players-page .target-player-season-stat {
+  border-color: rgba(17, 24, 39, 0.35);
+}
+
+.dark .players-page .target-player-season-stat span {
+  color: #8f96a3;
+}
+
 .dark .players-page .table-hover tbody tr:hover {
   background-color: #243244;
 }
@@ -610,5 +852,10 @@
 
   .players-page .target-board-count {
     text-align: left;
+  }
+
+  .players-page .target-player-season-grid-2,
+  .players-page .target-player-season-grid-3 {
+    grid-template-columns: 1fr;
   }
 }

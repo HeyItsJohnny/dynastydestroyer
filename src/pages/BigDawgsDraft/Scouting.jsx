@@ -1,4 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
 import {
   collection,
   doc,
@@ -61,6 +68,17 @@ const targetSortOptions = [
 ];
 
 const TARGET_BOARD_PAGE_SIZE = 8;
+const WISHLIST_PAGE_SIZE = 5;
+const comboSlotCounts = {
+  QB: 2,
+  RB: 3,
+  WR: 4,
+  TE: 2,
+};
+
+const getCurrentSeasonYear = (date = new Date()) => date.getFullYear();
+
+const getLastSeasonYear = (date = new Date()) => getCurrentSeasonYear(date) - 1;
 
 const getProjectedSeasonYear = (date = new Date()) => date.getFullYear();
 
@@ -75,6 +93,19 @@ const toNumber = (value, fallback = 0) => {
 const getFirstValue = (...values) => values.find(hasValue);
 
 const formatCurrency = (value) => `$${Math.round(toNumber(value))}`;
+
+const getStatValue = (stats, ...paths) => {
+  const value = paths
+    .map((path) =>
+      path.split(".").reduce((currentValue, pathPart) => {
+        if (currentValue === undefined || currentValue === null) return undefined;
+        return currentValue[pathPart];
+      }, stats)
+    )
+    .find(hasValue);
+
+  return hasValue(value) ? value : "-";
+};
 
 const getSortableNumber = (value) => {
   const parsed = Number(value);
@@ -222,6 +253,128 @@ const addProjectedStatsToPlayer = async (player) => {
       0
     ),
   };
+};
+
+const addLastSeasonStatsToPlayer = async (player) => {
+  const lastSeasonYear = getLastSeasonYear();
+  const seasonStatsSnap = await getDoc(
+    doc(db, "players", player.id, "seasonStats", `${lastSeasonYear}`)
+  );
+  const seasonStats = seasonStatsSnap.exists() ? seasonStatsSnap.data() : {};
+
+  return {
+    ...player,
+    selectedSeason: lastSeasonYear,
+    seasonStats: {
+      ...seasonStats,
+      ...(seasonStats.stats ?? {}),
+    },
+  };
+};
+
+const getTargetPlayerSeasonSections = (position, season) => {
+  if (position === "QB") {
+    return [
+      {
+        title: "Passing",
+        columns: 3,
+        fields: [
+          { label: "Pass Yds", paths: ["passingYards"] },
+          { label: "Pass TD", paths: ["passingTDs"] },
+          {
+            label: "INT",
+            paths: [
+              "interceptions",
+              "passing_interceptions",
+              "rawRow.passing_interceptions",
+              "passing_intercentions",
+              "rawRow.passing_intercentions",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Rushing",
+        columns: 2,
+        fields: [
+          { label: "Rush Yds", paths: ["rushingYards"] },
+          { label: "Rush TD", paths: ["rushingTDs"] },
+        ],
+      },
+      {
+        title: "Fantasy Summary",
+        columns: 3,
+        fields: [
+          { label: "Games", paths: ["games"] },
+          { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+          { label: "PPR", paths: ["fantasyPointsPpr"] },
+        ],
+      },
+    ];
+  }
+
+  if (position === "RB") {
+    return [
+      {
+        title: "Rushing",
+        columns: 3,
+        fields: [
+          { label: "Carries", paths: ["rushingAttempts"] },
+          { label: "Rush Yds", paths: ["rushingYards"] },
+          { label: "Rush TD", paths: ["rushingTDs"] },
+        ],
+      },
+      {
+        title: "Receiving",
+        columns: 2,
+        fields: [
+          { label: "Targets", paths: ["targets"] },
+          { label: "Rec", paths: ["receptions"] },
+          { label: "Rec Yds", paths: ["receivingYards"] },
+          { label: "Rec TD", paths: ["receivingTDs"] },
+        ],
+      },
+      {
+        title: "Fantasy Summary",
+        columns: 3,
+        fields: [
+          { label: "Games", paths: ["games"] },
+          { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+          { label: "PPR", paths: ["fantasyPointsPpr"] },
+        ],
+      },
+    ];
+  }
+
+  return [
+    {
+      title: "Receiving",
+      columns: 2,
+      fields: [
+        { label: "Targets", paths: ["targets"] },
+        { label: "Rec", paths: ["receptions"] },
+        { label: "Rec Yds", paths: ["receivingYards"] },
+        { label: "Rec TD", paths: ["receivingTDs"] },
+      ],
+    },
+    {
+      title: "Rushing",
+      columns: 2,
+      fields: [
+        { label: "Rush Yds", paths: ["rushingYards"] },
+        { label: "Rush TD", paths: ["rushingTDs"] },
+      ],
+    },
+    {
+      title: "Fantasy Summary",
+      columns: 3,
+      fields: [
+        { label: "Games", paths: ["games"] },
+        { label: "Fantasy Pts", paths: ["fantasyPoints"] },
+        { label: "PPR", paths: ["fantasyPointsPpr"] },
+      ],
+    },
+  ];
 };
 
 const buildAuctionRecommendation = (player) => {
@@ -468,6 +621,7 @@ const buildTargetedPlayer = (player, positionPlayers) => {
     auctionRecommendation: recommendation,
     systemTags,
     userTags: [],
+    watchlist: false,
     systemNotes: "",
     recommendationNotes: "",
     userNotes: "",
@@ -494,13 +648,23 @@ const Scouting = ({
   const [targetSleeperFilter, setTargetSleeperFilter] = useState("All");
   const [targetSortBy, setTargetSortBy] = useState("ddScore");
   const [targetPage, setTargetPage] = useState(1);
+  const [wishlistPage, setWishlistPage] = useState(1);
   const [playerData, setPlayerData] = useState([]);
   const [targetBoardPlayers, setTargetBoardPlayers] = useState([]);
+  const [leagueTeams, setLeagueTeams] = useState([]);
+  const [selectedTargetPlayer, setSelectedTargetPlayer] = useState(null);
+  const [teamTargetPlayer, setTeamTargetPlayer] = useState(null);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [playerSearchTerm, setPlayerSearchTerm] = useState("");
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   const [isTargetActionModalOpen, setIsTargetActionModalOpen] = useState(false);
+  const [isAddToTeamModalOpen, setIsAddToTeamModalOpen] = useState(false);
+  const [selectedLeagueTeamNumber, setSelectedLeagueTeamNumber] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [targetPlayerStatsLoading, setTargetPlayerStatsLoading] = useState(false);
+  const [watchlistSavingPlayerId, setWatchlistSavingPlayerId] = useState("");
+  const [teamSavingPlayerId, setTeamSavingPlayerId] = useState("");
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
@@ -599,6 +763,32 @@ const Scouting = ({
       startIndex + TARGET_BOARD_PAGE_SIZE
     );
   }, [filteredTargetBoardPlayers, targetPage]);
+  const wishlistPlayers = useMemo(
+    () =>
+      targetBoardPlayers
+        .filter(
+          (player) =>
+            Boolean(player.watchlist) &&
+            (!lockedPosition || player.position === lockedPosition)
+        )
+        .sort(
+          (firstPlayer, secondPlayer) =>
+            getSortableNumber(firstPlayer.positionRank || firstPlayer.rank) -
+              getSortableNumber(secondPlayer.positionRank || secondPlayer.rank) ||
+            getSortableNumber(secondPlayer.ddScore) -
+              getSortableNumber(firstPlayer.ddScore)
+        ),
+    [lockedPosition, targetBoardPlayers]
+  );
+  const wishlistPageCount = Math.max(
+    1,
+    Math.ceil(wishlistPlayers.length / WISHLIST_PAGE_SIZE)
+  );
+  const wishlistPageItems = useMemo(() => {
+    const startIndex = (wishlistPage - 1) * WISHLIST_PAGE_SIZE;
+
+    return wishlistPlayers.slice(startIndex, startIndex + WISHLIST_PAGE_SIZE);
+  }, [wishlistPage, wishlistPlayers]);
   const targetPaginationItems = useMemo(() => {
     if (targetBoardPageCount <= 5) {
       return Array.from({ length: targetBoardPageCount }, (_, index) => index + 1);
@@ -620,6 +810,27 @@ const Scouting = ({
 
     return [1, "ellipsis", targetPage, "ellipsis", targetBoardPageCount];
   }, [targetBoardPageCount, targetPage]);
+  const wishlistPaginationItems = useMemo(() => {
+    if (wishlistPageCount <= 5) {
+      return Array.from({ length: wishlistPageCount }, (_, index) => index + 1);
+    }
+
+    if (wishlistPage <= 3) {
+      return [1, 2, 3, "ellipsis", wishlistPageCount];
+    }
+
+    if (wishlistPage >= wishlistPageCount - 2) {
+      return [
+        1,
+        "ellipsis",
+        wishlistPageCount - 2,
+        wishlistPageCount - 1,
+        wishlistPageCount,
+      ];
+    }
+
+    return [1, "ellipsis", wishlistPage, "ellipsis", wishlistPageCount];
+  }, [wishlistPageCount, wishlistPage]);
 
   useEffect(() => {
     setTargetPage(1);
@@ -637,6 +848,49 @@ const Scouting = ({
       Math.min(Math.max(currentPage, 1), targetBoardPageCount)
     );
   }, [targetBoardPageCount]);
+
+  useEffect(() => {
+    setWishlistPage((currentPage) =>
+      Math.min(Math.max(currentPage, 1), wishlistPageCount)
+    );
+  }, [wishlistPageCount]);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return undefined;
+
+    const leagueSettingsRef = doc(
+      db,
+      "userprofile",
+      currentUser.uid,
+      "leaguesettings",
+      "settings"
+    );
+
+    const unsubscribe = onSnapshot(
+      leagueSettingsRef,
+      (settingsDoc) => {
+        const settingsTeams = settingsDoc.exists()
+          ? settingsDoc.data().LeagueTeams
+          : [];
+        const normalizedTeams = Array.isArray(settingsTeams)
+          ? settingsTeams
+              .map((team, index) => ({
+                TeamName: team.TeamName ?? "",
+                TeamNumber: team.TeamNumber ?? index + 1,
+              }))
+              .filter((team) => team.TeamName.trim() !== "")
+          : [];
+
+        setLeagueTeams(normalizedTeams);
+      },
+      (error) => {
+        console.error("Error loading league teams:", error);
+        setLeagueTeams([]);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     if (!currentUser?.uid) return undefined;
@@ -759,6 +1013,162 @@ const Scouting = ({
     );
   };
 
+  const handleOpenTargetActionModal = async (player) => {
+    setSelectedTargetPlayer(player);
+    setIsTargetActionModalOpen(true);
+    setTargetPlayerStatsLoading(true);
+
+    try {
+      const playerWithStats = await addLastSeasonStatsToPlayer({
+        id: player.playerId,
+        ...player,
+      });
+
+      setSelectedTargetPlayer((currentPlayer) =>
+        currentPlayer?.playerId === player.playerId
+          ? {
+              ...currentPlayer,
+              selectedSeason: playerWithStats.selectedSeason,
+              seasonStats: playerWithStats.seasonStats,
+            }
+          : currentPlayer
+      );
+    } catch (error) {
+      console.error("Error loading target player stats:", error);
+    } finally {
+      setTargetPlayerStatsLoading(false);
+    }
+  };
+
+  const handleCloseTargetActionModal = () => {
+    setIsTargetActionModalOpen(false);
+    setSelectedTargetPlayer(null);
+    setTargetPlayerStatsLoading(false);
+  };
+
+  const handleOpenAddToTeamModal = (player) => {
+    setTeamTargetPlayer(player);
+    setSelectedLeagueTeamNumber(player.leagueTeamNumber ?? "");
+    setPurchasePrice(
+      player.purchasePrice !== undefined && player.purchasePrice !== null
+        ? `${player.purchasePrice}`
+        : ""
+    );
+    setIsTargetActionModalOpen(false);
+    setIsAddToTeamModalOpen(true);
+  };
+
+  const handleCloseAddToTeamModal = () => {
+    setIsAddToTeamModalOpen(false);
+    setTeamTargetPlayer(null);
+    setSelectedLeagueTeamNumber("");
+    setPurchasePrice("");
+  };
+
+  const handleToggleWatchlist = async (player) => {
+    if (!currentUser?.uid || !player?.playerId) return;
+
+    const nextWatchlist = !player.watchlist;
+
+    setWatchlistSavingPlayerId(player.playerId);
+    setSelectedTargetPlayer((currentPlayer) =>
+      currentPlayer?.playerId === player.playerId
+        ? { ...currentPlayer, watchlist: nextWatchlist }
+        : currentPlayer
+    );
+    setTargetBoardPlayers((currentPlayers) =>
+      currentPlayers.map((targetPlayer) =>
+        targetPlayer.playerId === player.playerId
+          ? { ...targetPlayer, watchlist: nextWatchlist }
+          : targetPlayer
+      )
+    );
+
+    try {
+      await setDoc(
+        doc(
+          db,
+          "userprofile",
+          currentUser.uid,
+          "targetedPlayers",
+          player.playerId
+        ),
+        {
+          watchlist: nextWatchlist,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Error updating watchlist:", error);
+      setSelectedTargetPlayer((currentPlayer) =>
+        currentPlayer?.playerId === player.playerId
+          ? { ...currentPlayer, watchlist: player.watchlist }
+          : currentPlayer
+      );
+      setTargetBoardPlayers((currentPlayers) =>
+        currentPlayers.map((targetPlayer) =>
+          targetPlayer.playerId === player.playerId
+            ? { ...targetPlayer, watchlist: player.watchlist }
+            : targetPlayer
+        )
+      );
+    } finally {
+      setWatchlistSavingPlayerId("");
+    }
+  };
+
+  const handleSavePlayerTeam = async () => {
+    if (!currentUser?.uid || !teamTargetPlayer?.playerId) return;
+
+    const selectedTeam = leagueTeams.find(
+      (team) => `${team.TeamNumber}` === `${selectedLeagueTeamNumber}`
+    );
+
+    if (!selectedTeam) return;
+
+    const parsedPurchasePrice =
+      purchasePrice === "" ? "" : Number(purchasePrice);
+
+    if (parsedPurchasePrice !== "" && Number.isNaN(parsedPurchasePrice)) return;
+
+    const teamUpdate = {
+      leagueTeam: selectedTeam.TeamName,
+      leagueTeamNumber: selectedTeam.TeamNumber,
+      purchasePrice: parsedPurchasePrice,
+      updatedAt: serverTimestamp(),
+    };
+
+    setTeamSavingPlayerId(teamTargetPlayer.playerId);
+
+    try {
+      await setDoc(
+        doc(
+          db,
+          "userprofile",
+          currentUser.uid,
+          "targetedPlayers",
+          teamTargetPlayer.playerId
+        ),
+        teamUpdate,
+        { merge: true }
+      );
+
+      setTargetBoardPlayers((currentPlayers) =>
+        currentPlayers.map((targetPlayer) =>
+          targetPlayer.playerId === teamTargetPlayer.playerId
+            ? { ...targetPlayer, ...teamUpdate }
+            : targetPlayer
+        )
+      );
+      handleCloseAddToTeamModal();
+    } catch (error) {
+      console.error("Error adding player to team:", error);
+    } finally {
+      setTeamSavingPlayerId("");
+    }
+  };
+
   const processSelectedPlayers = async () => {
     if (!currentUser?.uid || selectedCount === 0) return;
 
@@ -819,6 +1229,10 @@ const Scouting = ({
               notes.recommendationNotes ?? targetedPlayer.recommendationNotes,
             userNotes: existingTargetData.userNotes ?? "",
             userTags: existingTargetData.userTags ?? [],
+            watchlist: existingTargetData.watchlist ?? false,
+            leagueTeam: existingTargetData.leagueTeam ?? "",
+            leagueTeamNumber: existingTargetData.leagueTeamNumber ?? "",
+            purchasePrice: existingTargetData.purchasePrice ?? "",
             processedAt: serverTimestamp(),
             createdAt: existingTargetData.createdAt ?? serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -921,7 +1335,7 @@ const Scouting = ({
             <button
               aria-label={`Open actions for ${player.name}`}
               className="target-board-player"
-              onClick={() => setIsTargetActionModalOpen(true)}
+              onClick={() => handleOpenTargetActionModal(player)}
               type="button"
             >
               <img
@@ -1011,6 +1425,144 @@ const Scouting = ({
       )}
     </div>
   );
+
+  const renderWishlistCard = () => (
+    <div className="target-board-wishlist-card p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="target-board-action-header">
+        <h2>Top Wishlist</h2>
+        <span>{wishlistPlayers.length} players</span>
+      </div>
+      <p className="target-board-wishlist-subtitle">Organized by rank</p>
+      <div className="target-board-action-divider" />
+
+      {wishlistPlayers.length === 0 ? (
+        <div className="players-empty-state target-board-wishlist-empty">
+          Turn on Watchlist from a player popup to build this list.
+        </div>
+      ) : (
+        <>
+          <div className="target-board-wishlist-list">
+            {wishlistPageItems.map((player, index) => {
+              const displayRank = player.positionRank || player.rank;
+              const listRank =
+                (wishlistPage - 1) * WISHLIST_PAGE_SIZE + index + 1;
+
+              return (
+                <button
+                  aria-label={`Open actions for ${player.name}`}
+                  className="target-board-wishlist-row"
+                  key={player.playerId}
+                  onClick={() => handleOpenTargetActionModal(player)}
+                  type="button"
+                >
+                  <span className="target-board-wishlist-number">
+                    {displayRank || listRank}
+                  </span>
+                  <img
+                    alt=""
+                    className="target-board-wishlist-avatar"
+                    src={`https://sleepercdn.com/content/nfl/players/${
+                      player.sleeperId || player.playerId
+                    }.jpg`}
+                  />
+                  <span className="target-board-wishlist-player">
+                    <span className="target-board-wishlist-name">
+                      {player.name}
+                    </span>
+                    <span className="target-board-meta">
+                      {player.team} <span>•</span> {player.position}
+                    </span>
+                  </span>
+                  <span className="target-board-wishlist-value">
+                    {formatCurrency(player.auctionValue)}
+                  </span>
+                  <span className="target-board-score-ring">
+                    {toNumber(player.ddScore)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {wishlistPageCount > 1 && (
+            <div className="target-board-pagination target-board-wishlist-pagination">
+              <button
+                aria-label="Previous wishlist page"
+                className="target-board-page-button"
+                disabled={wishlistPage === 1}
+                onClick={() => setWishlistPage((page) => Math.max(1, page - 1))}
+                type="button"
+              >
+                <FiChevronLeft />
+              </button>
+              {wishlistPaginationItems.map((pageItem, index) =>
+                pageItem === "ellipsis" ? (
+                  <span
+                    className="target-board-page-button target-board-page-ellipsis"
+                    key={`wishlist-ellipsis-${index}`}
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    className={`target-board-page-button ${
+                      wishlistPage === pageItem ? "active" : ""
+                    }`}
+                    key={pageItem}
+                    onClick={() => setWishlistPage(pageItem)}
+                    type="button"
+                  >
+                    {pageItem}
+                  </button>
+                )
+              )}
+              <button
+                aria-label="Next wishlist page"
+                className="target-board-page-button"
+                disabled={wishlistPage === wishlistPageCount}
+                onClick={() =>
+                  setWishlistPage((page) => Math.min(wishlistPageCount, page + 1))
+                }
+                type="button"
+              >
+                <FiChevronRight />
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  const renderTargetedCombosCard = () => {
+    const comboSlotCount = comboSlotCounts[lockedPosition] ?? 0;
+    const comboTitle = lockedPosition ? `${lockedPosition} Stacks` : "Targeted Stacks";
+
+    return (
+      <div className="target-board-combos-card p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+        <div className="target-board-action-header">
+          <h2>{comboTitle}</h2>
+        </div>
+        <p className="target-board-wishlist-subtitle">
+          AI based, calculated combo of players based off of auction values. A
+          list of players I can grab based off of allocation percentage.
+        </p>
+        <div className="target-board-action-divider" />
+
+        <div className="target-board-combos-slots">
+          {Array.from({ length: comboSlotCount }).map((_, index) => (
+            <div
+              className="target-board-combos-slot"
+              key={`targeted-combo-${lockedPosition}-${index + 1}`}
+            >
+              <span>{lockedPosition || "POS"}</span>
+              <strong>Slot {index + 1}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="players-page m-2 md:m-10 mt-24">
@@ -1180,20 +1732,197 @@ const Scouting = ({
 
       {isTargetActionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-md bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl p-6 md:p-8">
+          <div className="players-page w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl p-6 md:p-8">
             <p className="text-gray-400 text-sm mb-1">Target Player</p>
-            <h2 className="text-2xl font-semibold mb-5">In Progress</h2>
+            <h2 className="text-2xl font-semibold mb-2">
+              {selectedTargetPlayer?.name || "Player"}
+            </h2>
+            {selectedTargetPlayer && (
+              <p className="text-sm text-gray-500 dark:text-gray-300 mb-5">
+                {selectedTargetPlayer.team} / {selectedTargetPlayer.position}
+                {selectedTargetPlayer.positionRank}
+              </p>
+            )}
+            {selectedTargetPlayer && (
+              <div className="target-player-modal-stats mb-5">
+                {targetPlayerStatsLoading ? (
+                  <div className="players-loading target-player-modal-stats-loading">
+                    Loading stats...
+                  </div>
+                ) : (
+                  <div className="target-player-season-sections">
+                    <div className="target-player-season-section">
+                      <h3>
+                        {selectedTargetPlayer.selectedSeason ||
+                          getLastSeasonYear()}{" "}
+                        Stats
+                      </h3>
+                      {getTargetPlayerSeasonSections(
+                        selectedTargetPlayer.position,
+                        selectedTargetPlayer.selectedSeason || getLastSeasonYear()
+                      ).map((section) => (
+                        <div
+                          className="target-player-season-group"
+                          key={section.title}
+                        >
+                          <div
+                            className={`target-player-season-grid target-player-season-grid-${section.columns}`}
+                          >
+                            {section.fields.map((field) => (
+                              <div
+                                className="target-player-season-stat"
+                                key={`${section.title}-${field.label}`}
+                              >
+                                <span>{field.label}</span>
+                                <strong>
+                                  {getStatValue(
+                                    selectedTargetPlayer.seasonStats,
+                                    ...field.paths
+                                  )}
+                                </strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {selectedTargetPlayer && (
+              <FormControlLabel
+                className="mb-5"
+                control={
+                  <Switch
+                  checked={Boolean(selectedTargetPlayer.watchlist)}
+                  disabled={
+                    watchlistSavingPlayerId === selectedTargetPlayer.playerId
+                  }
+                  onChange={() => handleToggleWatchlist(selectedTargetPlayer)}
+                  />
+                }
+                label="Watchlist"
+              />
+            )}
+            {selectedTargetPlayer && (
+              <button
+                type="button"
+                onClick={() => handleOpenAddToTeamModal(selectedTargetPlayer)}
+                className="mb-3 w-full px-5 py-3 text-sm font-semibold text-white hover:drop-shadow-xl"
+                style={{
+                  backgroundColor: currentColor,
+                  borderRadius: "10px",
+                }}
+              >
+                Add to Team
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setIsTargetActionModalOpen(false)}
-              className="w-full px-5 py-3 text-sm font-semibold text-white hover:drop-shadow-xl"
+              onClick={handleCloseTargetActionModal}
+              className="w-full px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
               style={{
-                backgroundColor: currentColor,
                 borderRadius: "10px",
               }}
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {isAddToTeamModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-md bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl p-6 md:p-8">
+            <p className="text-gray-400 text-sm mb-1">Add to Team</p>
+            <h2 className="text-2xl font-semibold mb-2">
+              {teamTargetPlayer?.name || "Player"}
+            </h2>
+            {teamTargetPlayer && (
+              <p className="text-sm text-gray-500 dark:text-gray-300 mb-5">
+                {teamTargetPlayer.team} / {teamTargetPlayer.position}
+                {teamTargetPlayer.positionRank}
+              </p>
+            )}
+
+            <div className="flex flex-col gap-5 mb-6">
+              <FormControl fullWidth>
+                <InputLabel
+                  id="target-player-team-label"
+                  className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg"
+                >
+                  Team
+                </InputLabel>
+                <Select
+                  labelId="target-player-team-label"
+                  label="Team"
+                  value={selectedLeagueTeamNumber}
+                  onChange={(event) =>
+                    setSelectedLeagueTeamNumber(event.target.value)
+                  }
+                  className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg"
+                >
+                  {leagueTeams.map((team) => (
+                    <MenuItem
+                      key={`target-player-team-${team.TeamNumber}`}
+                      value={team.TeamNumber}
+                    >
+                      {team.TeamName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                label="Purchase Price"
+                type="number"
+                value={purchasePrice}
+                onChange={(event) => setPurchasePrice(event.target.value)}
+                InputProps={{
+                  className:
+                    "bg-white dark:text-gray-200 dark:bg-secondary-dark-bg",
+                }}
+                InputLabelProps={{
+                  className:
+                    "bg-white dark:text-gray-200 dark:bg-secondary-dark-bg",
+                }}
+              />
+            </div>
+
+            {leagueTeams.length === 0 && (
+              <p className="text-sm text-red-500 mb-4">
+                Add teams in League Settings before assigning a player.
+              </p>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                disabled={
+                  !selectedLeagueTeamNumber ||
+                  leagueTeams.length === 0 ||
+                  teamSavingPlayerId === teamTargetPlayer?.playerId
+                }
+                onClick={handleSavePlayerTeam}
+                className="w-full px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl"
+                style={{
+                  backgroundColor: currentColor,
+                  borderRadius: "10px",
+                }}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseAddToTeamModal}
+                className="w-full px-5 py-3 text-sm font-semibold border hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+                style={{ borderRadius: "10px" }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1393,22 +2122,26 @@ const Scouting = ({
         </div>
 
         {playerListInModal && (
-          <div className="target-board-action-card p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-            <div className="target-board-action-header">
-              <h2>Actions</h2>
+          <div className="target-board-side-column">
+            <div className="target-board-action-card p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+              <div className="target-board-action-header">
+                <h2>Actions</h2>
+              </div>
+              <div className="target-board-action-divider" />
+              <button
+                id="open-player-list"
+                type="button"
+                onClick={() => setIsPlayerModalOpen(true)}
+                className="target-board-action-button"
+                style={{
+                  backgroundColor: currentColor,
+                }}
+              >
+                Target Players
+              </button>
             </div>
-            <div className="target-board-action-divider" />
-            <button
-              id="open-player-list"
-              type="button"
-              onClick={() => setIsPlayerModalOpen(true)}
-              className="target-board-action-button"
-              style={{
-                backgroundColor: currentColor,
-              }}
-            >
-              Target Players
-            </button>
+            {renderWishlistCard()}
+            {renderTargetedCombosCard()}
           </div>
         )}
       </div>
