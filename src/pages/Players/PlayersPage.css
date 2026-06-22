@@ -448,6 +448,171 @@
   font-weight: 900;
 }
 
+.players-page .budget-strategy-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.players-page .budget-strategy-summary {
+  border: 1px solid #e5e7eb;
+}
+
+.players-page .budget-strategy-title-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.players-page .budget-strategy-title-row h2 {
+  color: #111827;
+  font-size: 26px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.players-page .budget-strategy-status {
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 9px 14px;
+  white-space: nowrap;
+}
+
+.players-page .budget-strategy-status-balanced {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.players-page .budget-strategy-status-under {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.players-page .budget-strategy-status-over {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.players-page .budget-strategy-summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.players-page .budget-strategy-summary-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.players-page .budget-strategy-summary-item span {
+  color: #6b7280;
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.players-page .budget-strategy-summary-item strong {
+  color: #111827;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.players-page .budget-strategy-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.players-page .budget-strategy-card {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.players-page .budget-strategy-card-header {
+  align-items: flex-start;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 18px 18px;
+}
+
+.players-page .budget-strategy-card-header h3 {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 900;
+  margin: 0 0 8px;
+}
+
+.players-page .budget-strategy-card-header p {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 520px;
+}
+
+.players-page .budget-strategy-card-totals {
+  color: #6b7280;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.players-page .budget-strategy-card-totals strong {
+  color: #16a34a;
+  display: block;
+  font-size: 18px;
+  margin-top: 4px;
+}
+
+.players-page .budget-strategy-player-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.players-page .budget-strategy-player-row {
+  grid-template-columns: 38px minmax(0, 1fr) 56px 52px;
+  min-height: 74px;
+  padding: 12px 14px;
+}
+
+.players-page .budget-strategy-player-row {
+  background: #fff;
+}
+
+.players-page .budget-strategy-player-row:nth-child(odd) {
+  background: #f9fafb;
+}
+
+.players-page .budget-strategy-player-row:hover {
+  background: #f9fafb;
+}
+
+.players-page .budget-strategy-player-row:last-child {
+  border-bottom: 0;
+}
+
+.players-page .budget-strategy-player-name {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.players-page .budget-strategy-empty {
+  margin: 0;
+  min-height: 118px;
+}
+
 .players-page .target-board-wishlist-pagination {
   background: inherit;
   margin: 0 -24px -24px;
@@ -815,6 +980,47 @@
   color: #fff;
 }
 
+.dark .players-page .budget-strategy-summary,
+.dark .players-page .budget-strategy-card {
+  background: #33373e;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark .players-page .budget-strategy-title-row h2,
+.dark .players-page .budget-strategy-card-header h3,
+.dark .players-page .budget-strategy-summary-item strong,
+.dark .players-page .budget-strategy-player-name {
+  color: #f3f4f6;
+}
+
+.dark .players-page .budget-strategy-summary-item,
+.dark .players-page .budget-strategy-player-row {
+  border-color: #374151;
+  color: #d1d5db;
+}
+
+.dark .players-page .budget-strategy-player-row {
+  background: #1f2937;
+}
+
+.dark .players-page .budget-strategy-player-row:nth-child(odd) {
+  background: #111827;
+}
+
+.dark .players-page .budget-strategy-player-row:hover {
+  background: #243244;
+}
+
+.dark .players-page .budget-strategy-card-header {
+  border-color: #374151;
+}
+
+.dark .players-page .budget-strategy-card-header p,
+.dark .players-page .budget-strategy-summary-item span {
+  color: #d1d5db;
+}
+
 .dark .players-page .form-control,
 .dark .players-page .nav-pills .nav-link,
 .dark .players-page .table {
@@ -901,8 +1107,67 @@
     text-align: left;
   }
 
+  .players-page .budget-strategy-title-row,
+  .players-page .budget-strategy-card-header {
+    flex-direction: column;
+  }
+
+  .players-page .budget-strategy-status {
+    white-space: normal;
+  }
+
+  .players-page .budget-strategy-summary-grid,
+  .players-page .budget-strategy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .players-page .budget-strategy-player-list {
+    overflow-x: visible;
+  }
+
   .players-page .target-player-season-grid-2,
   .players-page .target-player-season-grid-3 {
     grid-template-columns: 1fr;
   }
+}
+
+.dark .players-page .budget-strategy-summary,
+.dark .players-page .budget-strategy-card {
+  background-color: #33373e !important;
+  color: #e5e7eb !important;
+}
+
+.dark .players-page .budget-strategy-summary-item {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+.dark .players-page .budget-strategy-player-row {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .players-page .budget-strategy-player-row:nth-child(odd) {
+  background-color: #111827 !important;
+}
+
+.dark .players-page .budget-strategy-player-row:hover {
+  background-color: #243244 !important;
+}
+
+.dark .players-page .budget-strategy-title-row h2,
+.dark .players-page .budget-strategy-card-header h3,
+.dark .players-page .budget-strategy-card-totals,
+.dark .players-page .budget-strategy-summary-item strong,
+.dark .players-page .budget-strategy-player-row .target-board-wishlist-number,
+.dark .players-page .budget-strategy-player-row .target-board-wishlist-name,
+.dark .players-page .budget-strategy-player-row .target-board-wishlist-value {
+  color: #f3f4f6 !important;
+}
+
+.dark .players-page .budget-strategy-card-header p,
+.dark .players-page .budget-strategy-summary-item span,
+.dark .players-page .budget-strategy-player-row .target-board-meta {
+  color: #d1d5db !important;
 }

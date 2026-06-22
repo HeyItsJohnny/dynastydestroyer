@@ -78,6 +78,48 @@ const comboSlotCounts = {
   TE: 2,
 };
 
+const defaultAllocationRules = [
+  { position: "RB", minPercent: 35, maxPercent: 45 },
+  { position: "WR", minPercent: 35, maxPercent: 45 },
+  { position: "QB", minPercent: 5, maxPercent: 10 },
+  { position: "TE", minPercent: 5, maxPercent: 10 },
+];
+
+const budgetStrategyText = {
+  WR: {
+    title: "WR Budget Strategy",
+    budgetLabel: "Target WR Budget",
+    eliteTitle: "⭐ Elite WR1s",
+    eliteDescription:
+      "Cornerstone WRs that can anchor a roster and consume a large portion of the WR budget.",
+    foundationDescription:
+      "Reliable starters that provide weekly stability and serve as the core of a balanced WR room.",
+    valueDescription:
+      "Players expected to outperform their acquisition cost. Mid players with high upside",
+    sleeperDescription:
+      "High-upside players, breakout candidates, rookies, injury discounts, and lottery tickets.",
+    underallocated: "WR Budget Underallocated",
+    balanced: "Balanced WR Strategy",
+    overallocated: "WR Budget Overallocated",
+  },
+  RB: {
+    title: "RB Budget Strategy",
+    budgetLabel: "Target RB Budget",
+    eliteTitle: "⭐ Elite RB1s",
+    eliteDescription:
+      "League-winning workhorse backs and cornerstone roster pieces.",
+    foundationDescription:
+      "Reliable RB2 and strong RB1 candidates that form the backbone of an RB room.",
+    valueDescription:
+      "Players expected to outperform their acquisition cost. Mid players with high upside",
+    sleeperDescription:
+      "Breakout candidates, rookies, committee backs with upside, and late-round dart throws.",
+    underallocated: "RB Budget Underallocated",
+    balanced: "Balanced RB Strategy",
+    overallocated: "RB Budget Overallocated",
+  },
+};
+
 const getCurrentSeasonYear = (date = new Date()) => date.getFullYear();
 
 const getLastSeasonYear = (date = new Date()) => getCurrentSeasonYear(date) - 1;
@@ -95,6 +137,25 @@ const toNumber = (value, fallback = 0) => {
 const getFirstValue = (...values) => values.find(hasValue);
 
 const formatCurrency = (value) => `$${Math.round(toNumber(value))}`;
+
+const formatPercent = (value) => `${Math.round(toNumber(value))}%`;
+
+const normalizeAllocationRules = (rules) => {
+  const existingRules = Array.isArray(rules) ? rules : [];
+
+  return defaultAllocationRules.map((defaultRule) => {
+    const existingRule = existingRules.find(
+      (rule) => rule.position === defaultRule.position
+    );
+
+    return {
+      ...defaultRule,
+      ...(existingRule ?? {}),
+      minPercent: toNumber(existingRule?.minPercent, defaultRule.minPercent),
+      maxPercent: toNumber(existingRule?.maxPercent, defaultRule.maxPercent),
+    };
+  });
+};
 
 const getStatValue = (stats, ...paths) => {
   const value = paths
@@ -674,6 +735,8 @@ const Scouting = ({
   const [playerData, setPlayerData] = useState([]);
   const [targetBoardPlayers, setTargetBoardPlayers] = useState([]);
   const [leagueTeams, setLeagueTeams] = useState([]);
+  const [leagueBudget, setLeagueBudget] = useState(200);
+  const [allocationRules, setAllocationRules] = useState(defaultAllocationRules);
   const [selectedTargetPlayer, setSelectedTargetPlayer] = useState(null);
   const [teamTargetPlayer, setTeamTargetPlayer] = useState(null);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
@@ -825,6 +888,118 @@ const Scouting = ({
 
     return wishlistPlayers.slice(startIndex, startIndex + WISHLIST_PAGE_SIZE);
   }, [wishlistPage, wishlistPlayers]);
+  const budgetStrategy = useMemo(() => {
+    if (!["RB", "WR"].includes(lockedPosition)) return null;
+
+    const strategyCopy = budgetStrategyText[lockedPosition];
+    const allocationRule =
+      allocationRules.find((rule) => rule.position === lockedPosition) ??
+      defaultAllocationRules.find((rule) => rule.position === lockedPosition);
+    const minBudget =
+      (toNumber(leagueBudget) * toNumber(allocationRule?.minPercent)) / 100;
+    const maxBudget =
+      (toNumber(leagueBudget) * toNumber(allocationRule?.maxPercent)) / 100;
+    const midpointBudget = (minBudget + maxBudget) / 2 || 1;
+    const strategyPlayers = wishlistPlayers.filter(
+      (player) => player.position === lockedPosition
+    );
+    const withValueScores = (players) =>
+      players.map((player) => ({
+        ...player,
+        valueScore: toNumber(player.ddScore) - toNumber(player.auctionValue),
+        budgetPercent: (toNumber(player.auctionValue) / midpointBudget) * 100,
+      }));
+
+    const categories = [
+      {
+        key: "elite",
+        title: strategyCopy.eliteTitle,
+        description: strategyCopy.eliteDescription,
+        players: withValueScores(
+          strategyPlayers
+            .filter((player) => toNumber(player.auctionValue) >= 45)
+            .sort(
+              (firstPlayer, secondPlayer) =>
+                toNumber(secondPlayer.auctionValue) -
+                toNumber(firstPlayer.auctionValue)
+            )
+        ),
+      },
+      {
+        key: "foundation",
+        title: "🎯 Foundation Pieces",
+        description: strategyCopy.foundationDescription,
+        players: withValueScores(
+          strategyPlayers
+            .filter((player) => {
+              const auctionValue = toNumber(player.auctionValue);
+              return auctionValue >= 20 && auctionValue <= 44;
+            })
+            .sort(
+              (firstPlayer, secondPlayer) =>
+                toNumber(secondPlayer.ddScore) - toNumber(firstPlayer.ddScore)
+            )
+        ),
+      },
+      {
+        key: "value",
+        title: "💰 Value Targets",
+        description: strategyCopy.valueDescription,
+        players: withValueScores(
+          strategyPlayers
+            .filter((player) => {
+              const auctionValue = toNumber(player.auctionValue);
+              return auctionValue >= 8 && auctionValue <= 19;
+            })
+            .sort(
+              (firstPlayer, secondPlayer) =>
+                toNumber(secondPlayer.ddScore) -
+                toNumber(secondPlayer.auctionValue) -
+                (toNumber(firstPlayer.ddScore) -
+                  toNumber(firstPlayer.auctionValue))
+            )
+        ),
+      },
+      {
+        key: "sleepers",
+        title: "🚀 Sleepers & Upside",
+        description: strategyCopy.sleeperDescription,
+        players: withValueScores(
+          strategyPlayers
+            .filter((player) => toNumber(player.auctionValue) < 8)
+            .sort(
+              (firstPlayer, secondPlayer) =>
+                toNumber(secondPlayer.sleeperScore) -
+                toNumber(firstPlayer.sleeperScore)
+            )
+        ),
+      },
+    ];
+    const combinedCost = strategyPlayers.reduce(
+      (total, player) => total + toNumber(player.auctionValue),
+      0
+    );
+    const averageCost =
+      strategyPlayers.length > 0 ? combinedCost / strategyPlayers.length : 0;
+    const status =
+      combinedCost < minBudget
+        ? { label: strategyCopy.underallocated, tone: "under" }
+        : combinedCost > maxBudget
+          ? { label: strategyCopy.overallocated, tone: "over" }
+          : { label: strategyCopy.balanced, tone: "balanced" };
+
+    return {
+      categories,
+      combinedCost,
+      averageCost,
+      maxBudget,
+      minBudget,
+      midpointBudget,
+      playerCount: strategyPlayers.length,
+      status,
+      text: strategyCopy,
+    };
+  }, [allocationRules, leagueBudget, lockedPosition, wishlistPlayers]);
   const targetPaginationItems = useMemo(() => {
     if (targetBoardPageCount <= 5) {
       return Array.from({ length: targetBoardPageCount }, (_, index) => index + 1);
@@ -918,6 +1093,7 @@ const Scouting = ({
         const settingsTeams = settingsDoc.exists()
           ? settingsDoc.data().LeagueTeams
           : [];
+        const settingsData = settingsDoc.exists() ? settingsDoc.data() : {};
         const normalizedTeams = Array.isArray(settingsTeams)
           ? settingsTeams
               .map((team, index) => ({
@@ -928,10 +1104,14 @@ const Scouting = ({
           : [];
 
         setLeagueTeams(normalizedTeams);
+        setLeagueBudget(toNumber(settingsData.Budget, 200));
+        setAllocationRules(normalizeAllocationRules(settingsData.AllocationRules));
       },
       (error) => {
         console.error("Error loading league teams:", error);
         setLeagueTeams([]);
+        setLeagueBudget(200);
+        setAllocationRules(defaultAllocationRules);
       }
     );
 
@@ -1723,6 +1903,119 @@ const Scouting = ({
     );
   };
 
+  const renderBudgetStrategyCard = (category) => {
+    const totalAuctionValue = category.players.reduce(
+      (total, player) => total + toNumber(player.auctionValue),
+      0
+    );
+
+    return (
+      <div
+        className="budget-strategy-card bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl"
+        key={category.key}
+      >
+        <div className="budget-strategy-card-header">
+          <div>
+            <h3>{category.title}</h3>
+            <p>{category.description}</p>
+          </div>
+          <div className="budget-strategy-card-totals">
+            <span>{category.players.length} players</span>
+            <strong>{formatCurrency(totalAuctionValue)}</strong>
+          </div>
+        </div>
+
+        {category.players.length === 0 ? (
+          <div className="players-empty-state budget-strategy-empty">
+            No Wishlist Players In This Tier Yet.
+          </div>
+        ) : (
+          <div className="budget-strategy-player-list">
+            {category.players.map((player) => (
+              <button
+                className="budget-strategy-player-row target-board-wishlist-row"
+                data-team-watermark={player.leagueTeam || undefined}
+                key={`${category.key}-${player.playerId}`}
+                onClick={() => handleOpenTargetActionModal(player)}
+                type="button"
+              >
+                <span className="target-board-wishlist-number">
+                  {player.positionRank || player.rank || "-"}
+                </span>
+                <span className="target-board-wishlist-player">
+                  <span className="target-board-wishlist-name">
+                    {player.name}
+                  </span>
+                  <span className="target-board-meta">
+                    {player.team} <span>•</span> {player.position}
+                  </span>
+                </span>
+                <span className="target-board-wishlist-value">
+                  {formatCurrency(player.auctionValue)}
+                </span>
+                <span className="target-board-wishlist-value">
+                  {formatPercent(player.budgetPercent)}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderBudgetStrategySection = () => {
+    if (!budgetStrategy) return null;
+
+    const summaryItems = [
+      {
+        label: budgetStrategy.text.budgetLabel,
+        value: `${formatCurrency(budgetStrategy.minBudget)} - ${formatCurrency(
+          budgetStrategy.maxBudget
+        )}`,
+      },
+      { label: "Wishlist Players", value: budgetStrategy.playerCount },
+      {
+        label: "Combined Wishlist Cost",
+        value: formatCurrency(budgetStrategy.combinedCost),
+      },
+      {
+        label: "Average Wishlist Cost",
+        value: formatCurrency(budgetStrategy.averageCost),
+      },
+    ];
+
+    return (
+      <section className="budget-strategy-section mt-6">
+        <div className="budget-strategy-summary p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+          <div className="budget-strategy-title-row">
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Wishlist Dashboard</p>
+              <h2>{budgetStrategy.text.title}</h2>
+            </div>
+            <span
+              className={`budget-strategy-status budget-strategy-status-${budgetStrategy.status.tone}`}
+            >
+              {budgetStrategy.status.label}
+            </span>
+          </div>
+          <div className="budget-strategy-summary-grid">
+            {summaryItems.map((item) => (
+              <div className="budget-strategy-summary-item" key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="budget-strategy-grid">
+          {budgetStrategy.categories.map(renderBudgetStrategyCard)}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div className="players-page m-2 md:m-10 mt-24">
       <div className="p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
@@ -2321,6 +2614,8 @@ const Scouting = ({
           </div>
         )}
       </div>
+
+      {renderBudgetStrategySection()}
     </div>
   );
 };
