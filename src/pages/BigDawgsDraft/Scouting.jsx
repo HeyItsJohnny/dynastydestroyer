@@ -8,6 +8,7 @@ import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
@@ -69,6 +70,7 @@ const targetSortOptions = [
 
 const TARGET_BOARD_PAGE_SIZE = 8;
 const WISHLIST_PAGE_SIZE = 5;
+const SELECTABLE_PLAYER_PAGE_SIZE = 10;
 const comboSlotCounts = {
   QB: 2,
   RB: 3,
@@ -154,6 +156,22 @@ const sortPlayersByRankThenTier = (players) =>
     return firstPlayer.fullName.localeCompare(secondPlayer.fullName);
   });
 
+const isRookiePlayer = (player) => {
+  const currentSeason = getProjectedSeasonYear();
+  const yearsExperience = toNumber(
+    player.yearsExp ?? player.YearsExperience ?? player.years_exp,
+    null
+  );
+  const rookieYear = toNumber(player.rookieYear ?? player.rookie_year, null);
+  const draftYear = toNumber(player.draftYear ?? player.draft_year, null);
+
+  return (
+    yearsExperience === 0 ||
+    rookieYear === currentSeason ||
+    draftYear === currentSeason
+  );
+};
+
 const normalizePlayer = (playerDoc) => {
   const data = playerDoc.data();
 
@@ -166,6 +184,9 @@ const normalizePlayer = (playerDoc) => {
     depthChartOrder:
       data.depthChartOrder ?? data.depth_chart_order ?? data.DepthChartOrder ?? "",
     age: data.age ?? data.Age ?? "",
+    yearsExp: data.yearsExp ?? data.years_exp ?? data.YearsExperience ?? "",
+    rookieYear: data.rookieYear ?? data.rookie_year ?? data.RookieYear ?? "",
+    draftYear: data.draftYear ?? data.draft_year ?? data.DraftYear ?? "",
   };
 };
 
@@ -649,6 +670,7 @@ const Scouting = ({
   const [targetSortBy, setTargetSortBy] = useState("ddScore");
   const [targetPage, setTargetPage] = useState(1);
   const [wishlistPage, setWishlistPage] = useState(1);
+  const [selectablePlayerPage, setSelectablePlayerPage] = useState(1);
   const [playerData, setPlayerData] = useState([]);
   const [targetBoardPlayers, setTargetBoardPlayers] = useState([]);
   const [leagueTeams, setLeagueTeams] = useState([]);
@@ -665,6 +687,7 @@ const Scouting = ({
   const [targetPlayerStatsLoading, setTargetPlayerStatsLoading] = useState(false);
   const [watchlistSavingPlayerId, setWatchlistSavingPlayerId] = useState("");
   const [teamSavingPlayerId, setTeamSavingPlayerId] = useState("");
+  const [removingTargetPlayerId, setRemovingTargetPlayerId] = useState("");
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
@@ -696,6 +719,19 @@ const Scouting = ({
       }),
     [playerData, playerSearchTerm, selectedTier]
   );
+  const selectablePlayerPageCount = Math.max(
+    1,
+    Math.ceil(filteredPlayerData.length / SELECTABLE_PLAYER_PAGE_SIZE)
+  );
+  const selectablePlayerPageItems = useMemo(() => {
+    const startIndex =
+      (selectablePlayerPage - 1) * SELECTABLE_PLAYER_PAGE_SIZE;
+
+    return filteredPlayerData.slice(
+      startIndex,
+      startIndex + SELECTABLE_PLAYER_PAGE_SIZE
+    );
+  }, [filteredPlayerData, selectablePlayerPage]);
   const filteredTargetBoardPlayers = useMemo(
     () => {
       const filteredPlayers = targetBoardPlayers.filter((player) => {
@@ -831,6 +867,16 @@ const Scouting = ({
 
     return [1, "ellipsis", wishlistPage, "ellipsis", wishlistPageCount];
   }, [wishlistPageCount, wishlistPage]);
+
+  useEffect(() => {
+    setSelectablePlayerPage(1);
+  }, [playerSearchTerm, selectedPosition, selectedTier]);
+
+  useEffect(() => {
+    setSelectablePlayerPage((currentPage) =>
+      Math.min(Math.max(currentPage, 1), selectablePlayerPageCount)
+    );
+  }, [selectablePlayerPageCount]);
 
   useEffect(() => {
     setTargetPage(1);
@@ -1013,6 +1059,22 @@ const Scouting = ({
     );
   };
 
+  const handleSelectAllPlayers = () => {
+    setSelectedPlayerIds(filteredPlayerData.map((player) => player.id));
+  };
+
+  const handleSelectAllVets = () => {
+    setSelectedPlayerIds(
+      filteredPlayerData
+        .filter((player) => !isRookiePlayer(player))
+        .map((player) => player.id)
+    );
+  };
+
+  const handleUnselectAllPlayers = () => {
+    setSelectedPlayerIds([]);
+  };
+
   const handleOpenTargetActionModal = async (player) => {
     setSelectedTargetPlayer(player);
     setIsTargetActionModalOpen(true);
@@ -1118,6 +1180,35 @@ const Scouting = ({
     }
   };
 
+  const handleRemoveTargetPlayer = async (player) => {
+    if (!currentUser?.uid || !player?.playerId) return;
+
+    setRemovingTargetPlayerId(player.playerId);
+
+    try {
+      await deleteDoc(
+        doc(
+          db,
+          "userprofile",
+          currentUser.uid,
+          "targetedPlayers",
+          player.playerId
+        )
+      );
+
+      setTargetBoardPlayers((currentPlayers) =>
+        currentPlayers.filter(
+          (targetPlayer) => targetPlayer.playerId !== player.playerId
+        )
+      );
+      handleCloseTargetActionModal();
+    } catch (error) {
+      console.error("Error removing target player:", error);
+    } finally {
+      setRemovingTargetPlayerId("");
+    }
+  };
+
   const handleSavePlayerTeam = async () => {
     if (!currentUser?.uid || !teamTargetPlayer?.playerId) return;
 
@@ -1125,7 +1216,7 @@ const Scouting = ({
       (team) => `${team.TeamNumber}` === `${selectedLeagueTeamNumber}`
     );
 
-    if (!selectedTeam) return;
+    if (selectedLeagueTeamNumber !== "" && !selectedTeam) return;
 
     const parsedPurchasePrice =
       purchasePrice === "" ? "" : Number(purchasePrice);
@@ -1133,9 +1224,9 @@ const Scouting = ({
     if (parsedPurchasePrice !== "" && Number.isNaN(parsedPurchasePrice)) return;
 
     const teamUpdate = {
-      leagueTeam: selectedTeam.TeamName,
-      leagueTeamNumber: selectedTeam.TeamNumber,
-      purchasePrice: parsedPurchasePrice,
+      leagueTeam: selectedTeam?.TeamName ?? "",
+      leagueTeamNumber: selectedTeam?.TeamNumber ?? "",
+      purchasePrice: selectedTeam ? parsedPurchasePrice : "",
       updatedAt: serverTimestamp(),
     };
 
@@ -1190,6 +1281,20 @@ const Scouting = ({
         .filter(Boolean);
 
       for (const player of selectedPlayers) {
+        const targetedPlayerRef = doc(
+          db,
+          "userprofile",
+          currentUser.uid,
+          "targetedPlayers",
+          player.id
+        );
+        const existingTargetSnap = await getDoc(targetedPlayerRef);
+
+        if (existingTargetSnap.exists()) {
+          setProcessedCount((count) => count + 1);
+          continue;
+        }
+
         const masterPlayerSnap = await getDoc(doc(db, "players", player.id));
 
         if (!masterPlayerSnap.exists()) {
@@ -1208,18 +1313,6 @@ const Scouting = ({
           console.warn("Using fallback scouting notes:", error);
         }
 
-        const targetedPlayerRef = doc(
-          db,
-          "userprofile",
-          currentUser.uid,
-          "targetedPlayers",
-          player.id
-        );
-        const existingTargetSnap = await getDoc(targetedPlayerRef);
-        const existingTargetData = existingTargetSnap.exists()
-          ? existingTargetSnap.data()
-          : {};
-
         await setDoc(
           targetedPlayerRef,
           {
@@ -1227,14 +1320,14 @@ const Scouting = ({
             systemNotes: notes.systemNotes ?? targetedPlayer.systemNotes,
             recommendationNotes:
               notes.recommendationNotes ?? targetedPlayer.recommendationNotes,
-            userNotes: existingTargetData.userNotes ?? "",
-            userTags: existingTargetData.userTags ?? [],
-            watchlist: existingTargetData.watchlist ?? false,
-            leagueTeam: existingTargetData.leagueTeam ?? "",
-            leagueTeamNumber: existingTargetData.leagueTeamNumber ?? "",
-            purchasePrice: existingTargetData.purchasePrice ?? "",
+            userNotes: "",
+            userTags: [],
+            watchlist: false,
+            leagueTeam: "",
+            leagueTeamNumber: "",
+            purchasePrice: "",
             processedAt: serverTimestamp(),
-            createdAt: existingTargetData.createdAt ?? serverTimestamp(),
+            createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           },
           { merge: true }
@@ -1266,7 +1359,7 @@ const Scouting = ({
             </tr>
           </thead>
           <tbody>
-            {filteredPlayerData.map((player) => (
+            {selectablePlayerPageItems.map((player) => (
               <tr key={player.id}>
                 <td>
                   <label className="keeper-checkbox-label">
@@ -1292,22 +1385,83 @@ const Scouting = ({
         </table>
       </div>
 
+      <div className="target-board-pagination target-board-selectable-pagination">
+        <button
+          aria-label="Previous selectable player page"
+          className="target-board-page-button"
+          disabled={selectablePlayerPage === 1}
+          onClick={() =>
+            setSelectablePlayerPage((currentPage) =>
+              Math.max(currentPage - 1, 1)
+            )
+          }
+          type="button"
+        >
+          <FiChevronLeft />
+        </button>
+        <span className="target-board-page-ellipsis">
+          Page {selectablePlayerPage} of {selectablePlayerPageCount}
+        </span>
+        <button
+          aria-label="Next selectable player page"
+          className="target-board-page-button"
+          disabled={selectablePlayerPage === selectablePlayerPageCount}
+          onClick={() =>
+            setSelectablePlayerPage((currentPage) =>
+              Math.min(currentPage + 1, selectablePlayerPageCount)
+            )
+          }
+          type="button"
+        >
+          <FiChevronRight />
+        </button>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3 mt-5">
         <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
           {selectedCount} Players Selected
         </span>
-        <button
-          type="button"
-          disabled={selectedCount === 0 || processing}
-          onClick={processSelectedPlayers}
-          className="px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl"
-          style={{
-            backgroundColor: currentColor,
-            borderRadius: "10px",
-          }}
-        >
-          {processButtonLabel}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={filteredPlayerData.length === 0 || processing}
+            onClick={handleSelectAllPlayers}
+            className="px-5 py-3 text-sm font-semibold border disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+            style={{ borderRadius: "10px" }}
+          >
+            Select All
+          </button>
+          <button
+            type="button"
+            disabled={filteredPlayerData.length === 0 || processing}
+            onClick={handleSelectAllVets}
+            className="px-5 py-3 text-sm font-semibold border disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+            style={{ borderRadius: "10px" }}
+          >
+            Select All Vets
+          </button>
+          <button
+            type="button"
+            disabled={selectedCount === 0 || processing}
+            onClick={handleUnselectAllPlayers}
+            className="px-5 py-3 text-sm font-semibold border disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600"
+            style={{ borderRadius: "10px" }}
+          >
+            Unselect All
+          </button>
+          <button
+            type="button"
+            disabled={selectedCount === 0 || processing}
+            onClick={processSelectedPlayers}
+            className="px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl"
+            style={{
+              backgroundColor: currentColor,
+              borderRadius: "10px",
+            }}
+          >
+            {processButtonLabel}
+          </button>
+        </div>
       </div>
     </>
   );
@@ -1328,7 +1482,11 @@ const Scouting = ({
           toNumber(player.ddScore) >= 90 ? "Elite" : player.ddScoreLabel;
 
         return (
-          <div className="target-board-row" key={player.playerId}>
+          <div
+            className="target-board-row"
+            data-team-watermark={player.leagueTeam || undefined}
+            key={player.playerId}
+          >
             <div className="target-board-rank">
               {player.positionRank || player.rank}
             </div>
@@ -1451,6 +1609,7 @@ const Scouting = ({
                 <button
                   aria-label={`Open actions for ${player.name}`}
                   className="target-board-wishlist-row"
+                  data-team-watermark={player.leagueTeam || undefined}
                   key={player.playerId}
                   onClick={() => handleOpenTargetActionModal(player)}
                   type="button"
@@ -1818,6 +1977,22 @@ const Scouting = ({
                 Add to Team
               </button>
             )}
+            {selectedTargetPlayer && (
+              <button
+                type="button"
+                disabled={
+                  removingTargetPlayerId === selectedTargetPlayer.playerId
+                }
+                onClick={() => handleRemoveTargetPlayer(selectedTargetPlayer)}
+                className="mb-3 w-full px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:drop-shadow-xl"
+                style={{
+                  backgroundColor: "#dc2626",
+                  borderRadius: "10px",
+                }}
+              >
+                Remove Player
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCloseTargetActionModal}
@@ -1863,6 +2038,9 @@ const Scouting = ({
                   }
                   className="bg-white dark:text-gray-200 dark:bg-secondary-dark-bg"
                 >
+                  <MenuItem value="">
+                    <em>Blank</em>
+                  </MenuItem>
                   {leagueTeams.map((team) => (
                     <MenuItem
                       key={`target-player-team-${team.TeamNumber}`}
@@ -1901,8 +2079,6 @@ const Scouting = ({
               <button
                 type="button"
                 disabled={
-                  !selectedLeagueTeamNumber ||
-                  leagueTeams.length === 0 ||
                   teamSavingPlayerId === teamTargetPlayer?.playerId
                 }
                 onClick={handleSavePlayerTeam}

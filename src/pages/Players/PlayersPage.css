@@ -342,7 +342,42 @@
   grid-template-columns: 34px 54px minmax(0, 1fr) 54px 52px;
   min-height: 84px;
   padding: 12px 14px;
+  position: relative;
   text-align: left;
+}
+
+.players-page .target-board-wishlist-row > * {
+  position: relative;
+  z-index: 1;
+}
+
+.players-page .target-board-wishlist-row[data-team-watermark] > *,
+.players-page .target-board-row[data-team-watermark] > * {
+  opacity: 0.22;
+}
+
+.players-page .target-board-wishlist-row[data-team-watermark]::after,
+.players-page .target-board-row[data-team-watermark]::after {
+  color: #fff;
+  content: attr(data-team-watermark);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  opacity: 1;
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  text-align: center;
+  text-transform: uppercase;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  z-index: 0;
+}
+
+.players-page .target-board-row[data-team-watermark]::after {
+  font-size: 24px;
 }
 
 .players-page .target-board-wishlist-row:nth-child(odd) {
@@ -417,6 +452,12 @@
   background: inherit;
   margin: 0 -24px -24px;
   padding: 16px 20px 0;
+}
+
+.players-page .target-board-selectable-pagination {
+  background: transparent;
+  border-top: 0;
+  padding: 16px 0 0;
 }
 
 .players-page .target-board-toolbar {
@@ -513,6 +554,12 @@
   border-bottom: 1px solid #e5e7eb;
   min-height: 112px;
   padding: 14px 18px;
+  position: relative;
+}
+
+.players-page .target-board-row > * {
+  position: relative;
+  z-index: 1;
 }
 
 .players-page .target-board-row:nth-child(odd) {
