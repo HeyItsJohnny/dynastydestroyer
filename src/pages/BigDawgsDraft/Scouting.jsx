@@ -70,6 +70,7 @@ const targetSortOptions = [
 
 const TARGET_BOARD_PAGE_SIZE = 8;
 const WISHLIST_PAGE_SIZE = 5;
+const BUDGET_STRATEGY_PAGE_SIZE = 7;
 const SELECTABLE_PLAYER_PAGE_SIZE = 10;
 const comboSlotCounts = {
   QB: 2,
@@ -710,6 +711,281 @@ const buildTargetedPlayer = (player, positionPlayers) => {
   };
 };
 
+const getBuildPlayerCost = (player) =>
+  hasValue(player.purchasePrice) ? toNumber(player.purchasePrice) : toNumber(player.auctionValue);
+
+const getPlayerSurplus = (player) => {
+  const maxBid = toNumber(player.maxBid || player.hardMaxBid, toNumber(player.auctionValue));
+
+  return maxBid - toNumber(player.auctionValue);
+};
+
+const getPlayerValueEfficiencyScore = (player) => {
+  const auctionValue = Math.max(toNumber(player.auctionValue), 1);
+  const valuePerDollar = (toNumber(player.ddScore) + toNumber(player.sleeperScore) * 0.6) / auctionValue;
+
+  return clampScore(45 + getPlayerSurplus(player) * 4 + valuePerDollar * 6);
+};
+
+const getStackCandidateScore = (player) =>
+  getPlayerValueEfficiencyScore(player) +
+  (player.watchlist ? 18 : 0) +
+  toNumber(player.ddScore) * 0.12 +
+  toNumber(player.sleeperScore) * 0.08;
+
+const getAllocationFitScore = (totalCost, minBudget, maxBudget) => {
+  if (totalCost >= minBudget && totalCost <= maxBudget) return 100;
+
+  const targetMidpoint = (minBudget + maxBudget) / 2;
+  const targetSpan = Math.max(maxBudget - minBudget, 1);
+  const distance = totalCost < minBudget ? minBudget - totalCost : totalCost - maxBudget;
+
+  return clampScore(100 - (distance / Math.max(targetSpan, targetMidpoint * 0.25, 1)) * 100);
+};
+
+const getBuildStatus = (totalCost, minBudget, maxBudget) => {
+  if (totalCost < minBudget) return "Below Target";
+  if (totalCost > maxBudget) return "Above Target";
+  return "On Target";
+};
+
+const getBuildType = (players, totalCost, minBudget, maxBudget) => {
+  const costs = players.map(getBuildPlayerCost);
+  const tiers = players.map((player) => toNumber(player.tier, 9));
+  const averageSleeper =
+    players.reduce((total, player) => total + toNumber(player.sleeperScore), 0) /
+    Math.max(players.length, 1);
+  const averageEfficiency =
+    players.reduce((total, player) => total + getPlayerValueEfficiencyScore(player), 0) /
+    Math.max(players.length, 1);
+  const hasElite = players.some(
+    (player) => toNumber(player.tier, 9) <= 2 || getBuildPlayerCost(player) >= 45
+  );
+  const hasCheapValue = players.some((player) => getBuildPlayerCost(player) <= 8);
+  const costSpread = Math.max(...costs) - Math.min(...costs);
+  const tierSpread = Math.max(...tiers) - Math.min(...tiers);
+  const midpoint = (minBudget + maxBudget) / 2;
+
+  if (hasElite && hasCheapValue) return "Stars + Value";
+  if (averageSleeper >= 82) return "Upside";
+  if (totalCost > maxBudget || totalCost >= midpoint + Math.max(6, (maxBudget - minBudget) * 0.25)) {
+    return "Aggressive";
+  }
+  if (totalCost < minBudget || totalCost <= midpoint - Math.max(6, (maxBudget - minBudget) * 0.25)) {
+    return "Conservative";
+  }
+  if (averageEfficiency >= 76) return "Value";
+  if (costSpread <= 18 && tierSpread <= 2) return "Balanced";
+
+  return "Balanced";
+};
+
+const buildStackExplanation = (position, players, totalCost, minBudget, maxBudget) => {
+  const ownedPlayers = players.filter((player) => hasValue(player.leagueTeam));
+  const wishlistPlayers = players.filter((player) => player.watchlist);
+  const elitePlayer = players.find(
+    (player) => toNumber(player.tier, 9) <= 2 || getBuildPlayerCost(player) >= 45
+  );
+  const valuePlayer = [...players]
+    .filter((player) => getPlayerSurplus(player) > 0)
+    .sort((firstPlayer, secondPlayer) => getPlayerSurplus(secondPlayer) - getPlayerSurplus(firstPlayer))[0];
+  const sleeperPlayer = [...players].sort(
+    (firstPlayer, secondPlayer) =>
+      toNumber(secondPlayer.sleeperScore) - toNumber(firstPlayer.sleeperScore)
+  )[0];
+  const cheapPlayer = [...players]
+    .filter((player) => getBuildPlayerCost(player) <= 8)
+    .sort(
+      (firstPlayer, secondPlayer) =>
+        toNumber(secondPlayer.ddScore) + toNumber(secondPlayer.sleeperScore) -
+        (toNumber(firstPlayer.ddScore) + toNumber(firstPlayer.sleeperScore))
+    )[0];
+  const notes = [];
+
+  if (ownedPlayers.length > 0) {
+    notes.push(`Locks in ${ownedPlayers.length} owned ${position} at known auction cost.`);
+  }
+
+  if (wishlistPlayers.length > 0) {
+    notes.push(`Includes ${wishlistPlayers.length} wishlisted target${wishlistPlayers.length === 1 ? "" : "s"} you marked as a priority.`);
+  }
+
+  if (elitePlayer) {
+    notes.push(`Creates an elite ${position} foundation with ${elitePlayer.name}.`);
+  }
+
+  if (valuePlayer) {
+    notes.push(`${valuePlayer.name} adds positive auction surplus against max bid.`);
+  }
+
+  if (sleeperPlayer && toNumber(sleeperPlayer.sleeperScore) >= 80) {
+    notes.push(`${sleeperPlayer.name} raises the upside profile with a strong Sleeper Score.`);
+  }
+
+  if (cheapPlayer) {
+    notes.push(`${cheapPlayer.name} gives cheap depth with upside.`);
+  }
+
+  notes.push(
+    totalCost >= minBudget && totalCost <= maxBudget
+      ? "Fits inside the allocation range while protecting roster balance."
+      : "Sits near the allocation target because the score profile is strong enough to consider."
+  );
+
+  return [...new Set(notes)].slice(0, 4);
+};
+
+const buildPositionStackBuilds = ({
+  allocationRules,
+  leagueTeams,
+  leagueBudget,
+  position,
+  targetBoardPlayers,
+}) => {
+  if (!["RB", "WR"].includes(position)) return [];
+
+  const slotCount = comboSlotCounts[position];
+  const allocationRule =
+    allocationRules.find((rule) => rule.position === position) ??
+    defaultAllocationRules.find((rule) => rule.position === position);
+  const minBudget = (toNumber(leagueBudget) * toNumber(allocationRule?.minPercent)) / 100;
+  const maxBudget = (toNumber(leagueBudget) * toNumber(allocationRule?.maxPercent)) / 100;
+  const positionPlayers = targetBoardPlayers.filter(
+    (player) => player.position === position
+  );
+  const myTeamNumbers = leagueTeams
+    .filter((team) => team.MyTeam)
+    .map((team) => `${team.TeamNumber}`);
+  const isMyTeamPlayer = (player) =>
+    hasValue(player.leagueTeam) &&
+    (myTeamNumbers.length === 0 ||
+      myTeamNumbers.includes(`${player.leagueTeamNumber}`));
+  const isClaimedByOtherTeam = (player) =>
+    hasValue(player.leagueTeam) && !isMyTeamPlayer(player);
+  const availablePositionPlayers = positionPlayers.filter(
+    (player) => !isClaimedByOtherTeam(player)
+  );
+  const ownedPlayers = availablePositionPlayers
+    .filter((player) => hasValue(player.leagueTeam))
+    .sort(
+      (firstPlayer, secondPlayer) =>
+        getSortableNumber(firstPlayer.positionRank || firstPlayer.rank) -
+        getSortableNumber(secondPlayer.positionRank || secondPlayer.rank)
+    );
+  if (ownedPlayers.length > slotCount) return [];
+
+  const lockedPlayers = ownedPlayers;
+  const lockedIds = new Set(lockedPlayers.map((player) => player.playerId));
+  const fillSlotCount = slotCount - lockedPlayers.length;
+
+  if (fillSlotCount < 0) return [];
+
+  const candidatePlayers = availablePositionPlayers
+    .filter((player) => {
+      const auctionValue = toNumber(player.auctionValue);
+      const hardMaxBid = toNumber(player.hardMaxBid);
+
+      return (
+        !lockedIds.has(player.playerId) &&
+        !hasValue(player.leagueTeam) &&
+        (hardMaxBid <= 0 || auctionValue <= hardMaxBid)
+      );
+    })
+    .sort(
+      (firstPlayer, secondPlayer) =>
+        getStackCandidateScore(secondPlayer) - getStackCandidateScore(firstPlayer) ||
+        toNumber(secondPlayer.ddScore) - toNumber(firstPlayer.ddScore)
+    )
+    .slice(0, 24);
+  const playerCombinations = [];
+
+  const collectCombinations = (startIndex, currentCombination) => {
+    if (currentCombination.length === fillSlotCount) {
+      playerCombinations.push(currentCombination);
+      return;
+    }
+
+    for (
+      let index = startIndex;
+      index <= candidatePlayers.length - (fillSlotCount - currentCombination.length);
+      index += 1
+    ) {
+      collectCombinations(index + 1, [...currentCombination, candidatePlayers[index]]);
+    }
+  };
+
+  if (fillSlotCount === 0) {
+    playerCombinations.push([]);
+  } else {
+    collectCombinations(0, []);
+  }
+
+  const seenBuildKeys = new Set();
+
+  return playerCombinations
+    .map((combination) => {
+      const players = [...lockedPlayers, ...combination].sort(
+        (firstPlayer, secondPlayer) =>
+          getSortableNumber(firstPlayer.positionRank || firstPlayer.rank) -
+            getSortableNumber(secondPlayer.positionRank || secondPlayer.rank) ||
+          getBuildPlayerCost(secondPlayer) - getBuildPlayerCost(firstPlayer)
+      );
+      const buildKey = players
+        .map((player) => player.playerId)
+        .sort()
+        .join("-");
+
+      if (seenBuildKeys.has(buildKey)) return null;
+      seenBuildKeys.add(buildKey);
+
+      const totalCost = players.reduce(
+        (total, player) => total + getBuildPlayerCost(player),
+        0
+      );
+      const averageEfficiency =
+        players.reduce((total, player) => total + getPlayerValueEfficiencyScore(player), 0) /
+        Math.max(players.length, 1);
+      const allocationScore = getAllocationFitScore(totalCost, minBudget, maxBudget);
+      const auctionEfficiencyScore = clampScore(averageEfficiency * 0.65 + allocationScore * 0.35);
+      const tierStrengthScore = clampScore(
+        players.reduce(
+          (total, player) => total + (100 - Math.max(toNumber(player.tier, 6) - 1, 0) * 14),
+          0
+        ) / Math.max(players.length, 1)
+      );
+      const ddScoreAverage =
+        players.reduce((total, player) => total + toNumber(player.ddScore), 0) /
+        Math.max(players.length, 1);
+      const sleeperScoreAverage =
+        players.reduce((total, player) => total + toNumber(player.sleeperScore), 0) /
+        Math.max(players.length, 1);
+      const wishlistCount = players.filter((player) => player.watchlist).length;
+      const wishlistScoreBoost = Math.min(wishlistCount * 4, 10);
+      const score = clampScore(
+        auctionEfficiencyScore * 0.35 +
+          tierStrengthScore * 0.25 +
+          ddScoreAverage * 0.25 +
+          sleeperScoreAverage * 0.15 +
+          wishlistScoreBoost
+      );
+
+      return {
+        allocationRange: `${formatCurrency(minBudget)}-${formatCurrency(maxBudget)}`,
+        buildType: getBuildType(players, totalCost, minBudget, maxBudget),
+        explanations: buildStackExplanation(position, players, totalCost, minBudget, maxBudget),
+        maxBudget,
+        minBudget,
+        players,
+        score,
+        status: getBuildStatus(totalCost, minBudget, maxBudget),
+        totalCost,
+      };
+    })
+    .filter(Boolean)
+    .sort((firstBuild, secondBuild) => secondBuild.score - firstBuild.score)
+    .slice(0, 20);
+};
+
 const Scouting = ({
   lockedPosition = "",
   pageTitle = "Scouting",
@@ -731,6 +1007,8 @@ const Scouting = ({
   const [targetSortBy, setTargetSortBy] = useState("ddScore");
   const [targetPage, setTargetPage] = useState(1);
   const [wishlistPage, setWishlistPage] = useState(1);
+  const [stackBuildPage, setStackBuildPage] = useState(1);
+  const [budgetStrategyPages, setBudgetStrategyPages] = useState({});
   const [selectablePlayerPage, setSelectablePlayerPage] = useState(1);
   const [playerData, setPlayerData] = useState([]);
   const [targetBoardPlayers, setTargetBoardPlayers] = useState([]);
@@ -900,7 +1178,7 @@ const Scouting = ({
     const maxBudget =
       (toNumber(leagueBudget) * toNumber(allocationRule?.maxPercent)) / 100;
     const midpointBudget = (minBudget + maxBudget) / 2 || 1;
-    const strategyPlayers = wishlistPlayers.filter(
+    const strategyPlayers = targetBoardPlayers.filter(
       (player) => player.position === lockedPosition
     );
     const withValueScores = (players) =>
@@ -999,7 +1277,19 @@ const Scouting = ({
       status,
       text: strategyCopy,
     };
-  }, [allocationRules, leagueBudget, lockedPosition, wishlistPlayers]);
+  }, [allocationRules, leagueBudget, lockedPosition, targetBoardPlayers]);
+  const positionStackBuilds = useMemo(
+    () =>
+      buildPositionStackBuilds({
+        allocationRules,
+        leagueTeams,
+        leagueBudget,
+        position: lockedPosition,
+        targetBoardPlayers,
+      }),
+    [allocationRules, leagueBudget, leagueTeams, lockedPosition, targetBoardPlayers]
+  );
+  const stackBuildPageCount = Math.max(1, positionStackBuilds.length);
   const targetPaginationItems = useMemo(() => {
     if (targetBoardPageCount <= 5) {
       return Array.from({ length: targetBoardPageCount }, (_, index) => index + 1);
@@ -1077,6 +1367,35 @@ const Scouting = ({
   }, [wishlistPageCount]);
 
   useEffect(() => {
+    setStackBuildPage(1);
+  }, [lockedPosition]);
+
+  useEffect(() => {
+    setStackBuildPage((currentPage) =>
+      Math.min(Math.max(currentPage, 1), stackBuildPageCount)
+    );
+  }, [stackBuildPageCount]);
+
+  useEffect(() => {
+    setBudgetStrategyPages((currentPages) => {
+      if (!budgetStrategy) return {};
+
+      return budgetStrategy.categories.reduce((nextPages, category) => {
+        const pageCount = Math.max(
+          1,
+          Math.ceil(category.players.length / BUDGET_STRATEGY_PAGE_SIZE)
+        );
+        const currentPage = currentPages[category.key] ?? 1;
+
+        return {
+          ...nextPages,
+          [category.key]: Math.min(Math.max(currentPage, 1), pageCount),
+        };
+      }, {});
+    });
+  }, [budgetStrategy]);
+
+  useEffect(() => {
     if (!currentUser?.uid) return undefined;
 
     const leagueSettingsRef = doc(
@@ -1097,6 +1416,7 @@ const Scouting = ({
         const normalizedTeams = Array.isArray(settingsTeams)
           ? settingsTeams
               .map((team, index) => ({
+                MyTeam: team.MyTeam === true,
                 TeamName: team.TeamName ?? "",
                 TeamNumber: team.TeamNumber ?? index + 1,
               }))
@@ -1646,6 +1966,41 @@ const Scouting = ({
     </>
   );
 
+  const renderWatchlistStar = (player) => {
+    const isWatchlisted = Boolean(player.watchlist);
+    const isSaving = watchlistSavingPlayerId === player.playerId;
+    const handleToggle = (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+
+      if (!isSaving) {
+        handleToggleWatchlist(player);
+      }
+    };
+
+    return (
+      <span
+        aria-label={`${isWatchlisted ? "Remove" : "Add"} ${player.name} ${
+          isWatchlisted ? "from" : "to"
+        } wishlist`}
+        aria-pressed={isWatchlisted}
+        className={`target-board-watchlist-star ${
+          isWatchlisted ? "active" : ""
+        } ${isSaving ? "saving" : ""}`}
+        onClick={handleToggle}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            handleToggle(event);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
+        {isWatchlisted ? "★" : "☆"}
+      </span>
+    );
+  };
+
   const renderTargetBoardList = () => (
     <div className="target-board-list">
       <div className="target-board-list-head">
@@ -1668,6 +2023,7 @@ const Scouting = ({
             key={player.playerId}
           >
             <div className="target-board-rank">
+              {renderWatchlistStar(player)}
               {player.positionRank || player.rank}
             </div>
             <button
@@ -1795,6 +2151,7 @@ const Scouting = ({
                   type="button"
                 >
                   <span className="target-board-wishlist-number">
+                    {renderWatchlistStar(player)}
                     {displayRank || listRank}
                   </span>
                   <img
@@ -1876,6 +2233,8 @@ const Scouting = ({
   const renderTargetedCombosCard = () => {
     const comboSlotCount = comboSlotCounts[lockedPosition] ?? 0;
     const comboTitle = lockedPosition ? `${lockedPosition} Stacks` : "Targeted Stacks";
+    const shouldRenderBuildGenerator = ["RB", "WR"].includes(lockedPosition);
+    const selectedStackBuild = positionStackBuilds[stackBuildPage - 1];
 
     return (
       <div className="target-board-combos-card p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
@@ -1888,17 +2247,114 @@ const Scouting = ({
         </p>
         <div className="target-board-action-divider" />
 
-        <div className="target-board-combos-slots">
-          {Array.from({ length: comboSlotCount }).map((_, index) => (
-            <div
-              className="target-board-combos-slot"
-              key={`targeted-combo-${lockedPosition}-${index + 1}`}
-            >
-              <span>{lockedPosition || "POS"}</span>
-              <strong>Slot {index + 1}</strong>
+        {shouldRenderBuildGenerator ? (
+          positionStackBuilds.length === 0 ? (
+            <div className="players-empty-state target-board-combos-empty">
+              Add available {lockedPosition} targets to generate optimized auction builds.
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="target-board-stack-builds">
+              {selectedStackBuild && (
+                <div
+                  className="target-board-stack-build"
+                  key={`${lockedPosition}-stack-build-${stackBuildPage}-${selectedStackBuild.score}`}
+                >
+                  <div className="target-board-stack-build-header">
+                    <div>
+                      <h3>{selectedStackBuild.buildType}</h3>
+                      <p>Score: {selectedStackBuild.score}</p>
+                    </div>
+                    <span
+                      className={`target-board-stack-status target-board-stack-status-${selectedStackBuild.status
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")}`}
+                    >
+                      {selectedStackBuild.status}
+                    </span>
+                  </div>
+
+                  <div className="target-board-stack-player-list">
+                    {selectedStackBuild.players.map((player, playerIndex) => (
+                      <div
+                        className="target-board-stack-player"
+                        key={`${stackBuildPage}-${player.playerId}`}
+                      >
+                        <span>
+                          {lockedPosition}
+                          {playerIndex + 1}
+                        </span>
+                        <strong>{player.name}</strong>
+                        <em>{formatCurrency(getBuildPlayerCost(player))}</em>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="target-board-stack-summary">
+                    <div>
+                      <span>Total Cost</span>
+                      <strong>{formatCurrency(selectedStackBuild.totalCost)}</strong>
+                    </div>
+                    <div>
+                      <span>Allocation Range</span>
+                      <strong>{selectedStackBuild.allocationRange}</strong>
+                    </div>
+                  </div>
+
+                  <div className="target-board-stack-explanation">
+                    <h4>Why This Build Works</h4>
+                    <ul>
+                      {selectedStackBuild.explanations.map((explanation) => (
+                        <li key={explanation}>{explanation}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              <div className="target-board-pagination target-board-stack-pagination">
+                <button
+                  aria-label="Previous stack build"
+                  className="target-board-page-button"
+                  disabled={stackBuildPage === 1}
+                  onClick={() =>
+                    setStackBuildPage((page) => Math.max(1, page - 1))
+                  }
+                  type="button"
+                >
+                  <FiChevronLeft />
+                </button>
+                <span className="target-board-page-ellipsis">
+                  Stack {stackBuildPage} of {positionStackBuilds.length}
+                </span>
+                <button
+                  aria-label="Next stack build"
+                  className="target-board-page-button"
+                  disabled={stackBuildPage === positionStackBuilds.length}
+                  onClick={() =>
+                    setStackBuildPage((page) =>
+                      Math.min(positionStackBuilds.length, page + 1)
+                    )
+                  }
+                  type="button"
+                >
+                  <FiChevronRight />
+                </button>
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="target-board-combos-slots">
+            {Array.from({ length: comboSlotCount }).map((_, index) => (
+              <div
+                className="target-board-combos-slot"
+                key={`targeted-combo-${lockedPosition}-${index + 1}`}
+              >
+                <span>{lockedPosition || "POS"}</span>
+                <strong>Slot {index + 1}</strong>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -1908,6 +2364,25 @@ const Scouting = ({
       (total, player) => total + toNumber(player.auctionValue),
       0
     );
+    const pageCount = Math.max(
+      1,
+      Math.ceil(category.players.length / BUDGET_STRATEGY_PAGE_SIZE)
+    );
+    const currentPage = Math.min(
+      Math.max(budgetStrategyPages[category.key] ?? 1, 1),
+      pageCount
+    );
+    const startIndex = (currentPage - 1) * BUDGET_STRATEGY_PAGE_SIZE;
+    const pagePlayers = category.players.slice(
+      startIndex,
+      startIndex + BUDGET_STRATEGY_PAGE_SIZE
+    );
+    const handleBudgetStrategyPageChange = (nextPage) => {
+      setBudgetStrategyPages((currentPages) => ({
+        ...currentPages,
+        [category.key]: Math.min(Math.max(nextPage, 1), pageCount),
+      }));
+    };
 
     return (
       <div
@@ -1927,44 +2402,73 @@ const Scouting = ({
 
         {category.players.length === 0 ? (
           <div className="players-empty-state budget-strategy-empty">
-            No Wishlist Players In This Tier Yet.
+            No Targeted Players In This Tier Yet.
           </div>
         ) : (
-          <div className="budget-strategy-player-list">
-            {category.players.map((player) => (
-              <button
-                className="budget-strategy-player-row target-board-wishlist-row"
-                data-team-watermark={player.leagueTeam || undefined}
-                key={`${category.key}-${player.playerId}`}
-                onClick={() => handleOpenTargetActionModal(player)}
-                type="button"
-              >
-                <span className="target-board-wishlist-number">
-                  {player.positionRank || player.rank || "-"}
-                </span>
-                <span className="target-board-wishlist-player">
-                  <span className="target-board-wishlist-name">
-                    {player.name}
+          <>
+            <div className="budget-strategy-player-list">
+              {pagePlayers.map((player) => (
+                <button
+                  className="budget-strategy-player-row target-board-wishlist-row"
+                  data-team-watermark={player.leagueTeam || undefined}
+                  key={`${category.key}-${player.playerId}`}
+                  onClick={() => handleOpenTargetActionModal(player)}
+                  type="button"
+                >
+                  <span className="target-board-wishlist-number">
+                    {renderWatchlistStar(player)}
+                    {player.positionRank || player.rank || "-"}
                   </span>
-                  <span className="target-board-meta">
-                    {player.team} <span>•</span> {player.position}
+                  <span className="target-board-wishlist-player">
+                    <span className="target-board-wishlist-name">
+                      {player.name}
+                    </span>
+                    <span className="target-board-meta">
+                      {player.team} <span>•</span> {player.position}
+                    </span>
                   </span>
+                  <span className="target-board-wishlist-value">
+                    {formatCurrency(player.auctionValue)}
+                  </span>
+                  <span className="target-board-wishlist-value">
+                    {formatPercent(player.budgetPercent)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {pageCount > 1 && (
+              <div className="target-board-pagination budget-strategy-pagination">
+                <button
+                  aria-label={`Previous ${category.title} page`}
+                  className="target-board-page-button"
+                  disabled={currentPage === 1}
+                  onClick={() => handleBudgetStrategyPageChange(currentPage - 1)}
+                  type="button"
+                >
+                  <FiChevronLeft />
+                </button>
+                <span className="target-board-page-ellipsis">
+                  Page {currentPage} of {pageCount}
                 </span>
-                <span className="target-board-wishlist-value">
-                  {formatCurrency(player.auctionValue)}
-                </span>
-                <span className="target-board-wishlist-value">
-                  {formatPercent(player.budgetPercent)}
-                </span>
-              </button>
-            ))}
-          </div>
+                <button
+                  aria-label={`Next ${category.title} page`}
+                  className="target-board-page-button"
+                  disabled={currentPage === pageCount}
+                  onClick={() => handleBudgetStrategyPageChange(currentPage + 1)}
+                  type="button"
+                >
+                  <FiChevronRight />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     );
   };
 
-  const renderBudgetStrategySection = () => {
+  const renderBudgetStrategySummary = () => {
     if (!budgetStrategy) return null;
 
     const summaryItems = [
@@ -1974,41 +2478,47 @@ const Scouting = ({
           budgetStrategy.maxBudget
         )}`,
       },
-      { label: "Wishlist Players", value: budgetStrategy.playerCount },
+      { label: "Targeted Players", value: budgetStrategy.playerCount },
       {
-        label: "Combined Wishlist Cost",
+        label: "Combined Targeted Cost",
         value: formatCurrency(budgetStrategy.combinedCost),
       },
       {
-        label: "Average Wishlist Cost",
+        label: "Average Targeted Cost",
         value: formatCurrency(budgetStrategy.averageCost),
       },
     ];
 
     return (
-      <section className="budget-strategy-section mt-6">
-        <div className="budget-strategy-summary p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-          <div className="budget-strategy-title-row">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Wishlist Dashboard</p>
-              <h2>{budgetStrategy.text.title}</h2>
-            </div>
-            <span
-              className={`budget-strategy-status budget-strategy-status-${budgetStrategy.status.tone}`}
-            >
-              {budgetStrategy.status.label}
-            </span>
+      <div className="budget-strategy-summary p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+        <div className="budget-strategy-title-row">
+          <div>
+            <p className="text-gray-400 text-sm mb-1">Targeted Players Dashboard</p>
+            <h2>{budgetStrategy.text.title}</h2>
           </div>
-          <div className="budget-strategy-summary-grid">
-            {summaryItems.map((item) => (
-              <div className="budget-strategy-summary-item" key={item.label}>
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
-          </div>
+          <span
+            className={`budget-strategy-status budget-strategy-status-${budgetStrategy.status.tone}`}
+          >
+            {budgetStrategy.status.label}
+          </span>
         </div>
+        <div className="budget-strategy-summary-grid">
+          {summaryItems.map((item) => (
+            <div className="budget-strategy-summary-item" key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
+  const renderBudgetStrategySection = () => {
+    if (!budgetStrategy) return null;
+
+    return (
+      <section className="budget-strategy-section mt-6">
         <div className="budget-strategy-grid">
           {budgetStrategy.categories.map(renderBudgetStrategyCard)}
         </div>
@@ -2539,55 +3049,59 @@ const Scouting = ({
       )}
 
       <div className="target-board-layout mt-6">
-        <div className="target-board-card p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-          <div className="target-board-toolbar">
-            <div className="target-board-search">
-              <FiSearch />
-              <input
-                aria-label="Search target players"
-                onChange={(event) => setTargetSearchTerm(event.target.value)}
-                placeholder={`Search ${targetPosition || lockedPosition || "targets"}...`}
-                type="search"
-                value={targetSearchTerm}
-              />
+        <div className="target-board-main-column">
+          <div className="target-board-card p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+            <div className="target-board-toolbar">
+              <div className="target-board-search">
+                <FiSearch />
+                <input
+                  aria-label="Search target players"
+                  onChange={(event) => setTargetSearchTerm(event.target.value)}
+                  placeholder={`Search ${targetPosition || lockedPosition || "targets"}...`}
+                  type="search"
+                  value={targetSearchTerm}
+                />
+              </div>
+              <span className="target-board-count">
+                {filteredTargetBoardPlayers.length}{" "}
+                {targetPosition || lockedPosition || "targets"}
+              </span>
+              <select
+                aria-label="Target board rank filter"
+                className="target-board-select"
+                onChange={handleTargetRankSelect}
+                value={targetRank}
+              >
+                {rankFilters.map((rank) => (
+                  <option key={rank.value} value={rank.value}>
+                    {rank.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Target board tier filter"
+                className="target-board-select"
+                onChange={handleTargetTierSelect}
+                value={targetTier}
+              >
+                {tierFilters.map((tier) => (
+                  <option key={tier.value} value={tier.value}>
+                    {tier.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <span className="target-board-count">
-              {filteredTargetBoardPlayers.length}{" "}
-              {targetPosition || lockedPosition || "targets"}
-            </span>
-            <select
-              aria-label="Target board rank filter"
-              className="target-board-select"
-              onChange={handleTargetRankSelect}
-              value={targetRank}
-            >
-              {rankFilters.map((rank) => (
-                <option key={rank.value} value={rank.value}>
-                  {rank.label}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Target board tier filter"
-              className="target-board-select"
-              onChange={handleTargetTierSelect}
-              value={targetTier}
-            >
-              {tierFilters.map((tier) => (
-                <option key={tier.value} value={tier.value}>
-                  {tier.label}
-                </option>
-              ))}
-            </select>
+
+            {filteredTargetBoardPlayers.length === 0 ? (
+              <div className="players-empty-state">
+                Process selected players to build your target board.
+              </div>
+            ) : (
+              renderTargetBoardList()
+            )}
           </div>
 
-          {filteredTargetBoardPlayers.length === 0 ? (
-            <div className="players-empty-state">
-              Process selected players to build your target board.
-            </div>
-          ) : (
-            renderTargetBoardList()
-          )}
+          {budgetStrategy && renderBudgetStrategySummary()}
         </div>
 
         {playerListInModal && (

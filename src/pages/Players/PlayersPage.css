@@ -246,12 +246,18 @@
   width: 100%;
 }
 
+.players-page .target-board-main-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
 .players-page .target-board-card {
   color: #1f2937;
   overflow: hidden;
   width: 100%;
 }
-
 .players-page .target-board-action-card {
   color: #1f2937;
 }
@@ -385,10 +391,40 @@
 }
 
 .players-page .target-board-wishlist-number {
+  align-items: center;
   color: #1f2937;
+  display: flex;
+  flex-direction: row;
   font-size: 22px;
   font-weight: 900;
+  gap: 7px;
+  justify-content: center;
   text-align: center;
+}
+
+.players-page .target-board-watchlist-star {
+  color: #facc15;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  outline: 0;
+  text-shadow: 0 0 0 #facc15;
+}
+
+.players-page .target-board-watchlist-star.active {
+  color: #facc15;
+}
+
+.players-page .target-board-watchlist-star.saving {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.players-page .target-board-watchlist-star:focus-visible {
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.35);
 }
 
 .players-page .target-board-wishlist-avatar {
@@ -446,6 +482,168 @@
   color: #1f2937;
   font-size: 15px;
   font-weight: 900;
+}
+
+.players-page .target-board-combos-empty {
+  min-height: 140px;
+}
+
+.players-page .target-board-stack-builds {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.players-page .target-board-stack-pagination {
+  background: inherit;
+  margin: 0;
+  padding: 2px 0 0;
+}
+
+.players-page .target-board-stack-build {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.players-page .target-board-stack-build-header {
+  align-items: flex-start;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.players-page .target-board-stack-build-header h3 {
+  color: #111827;
+  font-size: 18px;
+  font-weight: 900;
+  margin: 0 0 4px;
+}
+
+.players-page .target-board-stack-build-header p {
+  color: #1a97f5;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.players-page .target-board-stack-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.players-page .target-board-stack-status-on-target {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.players-page .target-board-stack-status-above-target {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.players-page .target-board-stack-status-below-target {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.players-page .target-board-stack-player-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.players-page .target-board-stack-player {
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 44px minmax(0, 1fr) 54px;
+  min-height: 48px;
+  padding: 10px 16px;
+}
+
+.players-page .target-board-stack-player:nth-child(odd) {
+  background: #f9fafb;
+}
+
+.players-page .target-board-stack-player span {
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.players-page .target-board-stack-player strong {
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 900;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.players-page .target-board-stack-player em {
+  color: #16a34a;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 900;
+  text-align: right;
+}
+
+.players-page .target-board-stack-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 14px 16px 0;
+}
+
+.players-page .target-board-stack-summary div {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.players-page .target-board-stack-summary span,
+.players-page .target-board-stack-explanation h4 {
+  color: #6b7280;
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  margin: 0 0 5px;
+  text-transform: uppercase;
+}
+
+.players-page .target-board-stack-summary strong {
+  color: #111827;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.players-page .target-board-stack-explanation {
+  padding: 14px 16px 16px;
+}
+
+.players-page .target-board-stack-explanation ul {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  list-style: disc;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.players-page .target-board-stack-explanation li + li {
+  margin-top: 4px;
 }
 
 .players-page .budget-strategy-section {
@@ -602,6 +800,14 @@
   border-bottom: 0;
 }
 
+.players-page .budget-strategy-pagination {
+  background: inherit;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0;
+  margin: 0;
+  padding: 14px;
+}
+
 .players-page .budget-strategy-player-name {
   color: #111827;
   font-size: 15px;
@@ -732,9 +938,14 @@
 }
 
 .players-page .target-board-rank {
+  align-items: center;
   color: #1f2937;
+  display: flex;
+  flex-direction: row;
   font-size: 20px;
   font-weight: 900;
+  gap: 7px;
+  justify-content: center;
   text-align: center;
 }
 
@@ -947,8 +1158,34 @@
   border-color: #374151;
 }
 
-.dark .players-page .target-board-combos-slot strong {
+.dark .players-page .target-board-combos-slot strong,
+.dark .players-page .target-board-stack-build-header h3,
+.dark .players-page .target-board-stack-player strong,
+.dark .players-page .target-board-stack-summary strong {
   color: #e5e7eb;
+}
+
+.dark .players-page .target-board-stack-build,
+.dark .players-page .target-board-stack-player:nth-child(odd) {
+  background: #111827;
+  border-color: #374151;
+}
+
+.dark .players-page .target-board-stack-build-header,
+.dark .players-page .target-board-stack-player {
+  border-color: #374151;
+}
+
+.dark .players-page .target-board-stack-player,
+.dark .players-page .target-board-stack-summary div {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.dark .players-page .target-board-stack-summary span,
+.dark .players-page .target-board-stack-explanation h4,
+.dark .players-page .target-board-stack-explanation ul {
+  color: #d1d5db;
 }
 
 .dark .players-page .target-board-meta {
@@ -1013,6 +1250,10 @@
 }
 
 .dark .players-page .budget-strategy-card-header {
+  border-color: #374151;
+}
+
+.dark .players-page .budget-strategy-pagination {
   border-color: #374151;
 }
 
@@ -1118,6 +1359,18 @@
 
   .players-page .budget-strategy-summary-grid,
   .players-page .budget-strategy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .players-page .target-board-stack-build-header {
+    flex-direction: column;
+  }
+
+  .players-page .target-board-stack-status {
+    white-space: normal;
+  }
+
+  .players-page .target-board-stack-summary {
     grid-template-columns: 1fr;
   }
 
