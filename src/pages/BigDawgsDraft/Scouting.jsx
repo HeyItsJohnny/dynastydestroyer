@@ -87,9 +87,23 @@ const defaultAllocationRules = [
 ];
 
 const budgetStrategyText = {
+  QB: {
+    title: "QB Budget Strategy",
+    eliteTitle: "⭐ Elite QB1s",
+    eliteDescription:
+      "Difference-making quarterbacks worth a meaningful allocation commitment.",
+    foundationDescription:
+      "Reliable starters and stable QB builds that protect weekly scoring.",
+    valueDescription:
+      "Quarterbacks expected to outperform acquisition cost.",
+    sleeperDescription:
+      "Cheap upside quarterbacks, role bets, and depth targets.",
+    underallocated: "QB Budget Underallocated",
+    balanced: "Balanced QB Strategy",
+    overallocated: "QB Budget Overallocated",
+  },
   WR: {
     title: "WR Budget Strategy",
-    budgetLabel: "Target WR Budget",
     eliteTitle: "⭐ Elite WR1s",
     eliteDescription:
       "Cornerstone WRs that can anchor a roster and consume a large portion of the WR budget.",
@@ -105,7 +119,6 @@ const budgetStrategyText = {
   },
   RB: {
     title: "RB Budget Strategy",
-    budgetLabel: "Target RB Budget",
     eliteTitle: "⭐ Elite RB1s",
     eliteDescription:
       "League-winning workhorse backs and cornerstone roster pieces.",
@@ -118,6 +131,21 @@ const budgetStrategyText = {
     underallocated: "RB Budget Underallocated",
     balanced: "Balanced RB Strategy",
     overallocated: "RB Budget Overallocated",
+  },
+  TE: {
+    title: "TE Budget Strategy",
+    eliteTitle: "⭐ Elite TE1s",
+    eliteDescription:
+      "Premium tight ends that create a weekly positional edge.",
+    foundationDescription:
+      "Reliable tight ends that stabilize the roster without breaking allocation.",
+    valueDescription:
+      "Tight ends expected to outperform acquisition cost.",
+    sleeperDescription:
+      "Cheap upside tight ends, breakout candidates, and depth targets.",
+    underallocated: "TE Budget Underallocated",
+    balanced: "Balanced TE Strategy",
+    overallocated: "TE Budget Overallocated",
   },
 };
 
@@ -1167,7 +1195,7 @@ const Scouting = ({
     return wishlistPlayers.slice(startIndex, startIndex + WISHLIST_PAGE_SIZE);
   }, [wishlistPage, wishlistPlayers]);
   const budgetStrategy = useMemo(() => {
-    if (!["RB", "WR"].includes(lockedPosition)) return null;
+    if (!["QB", "RB", "WR", "TE"].includes(lockedPosition)) return null;
 
     const strategyCopy = budgetStrategyText[lockedPosition];
     const allocationRule =
@@ -1187,6 +1215,14 @@ const Scouting = ({
         valueScore: toNumber(player.ddScore) - toNumber(player.auctionValue),
         budgetPercent: (toNumber(player.auctionValue) / midpointBudget) * 100,
       }));
+    const sortByPositionRank = (players) =>
+      players.sort(
+        (firstPlayer, secondPlayer) =>
+          getSortableNumber(firstPlayer.positionRank || firstPlayer.rank) -
+            getSortableNumber(secondPlayer.positionRank || secondPlayer.rank) ||
+          getSortableNumber(firstPlayer.rank) - getSortableNumber(secondPlayer.rank) ||
+          firstPlayer.name.localeCompare(secondPlayer.name)
+      );
 
     const categories = [
       {
@@ -1194,13 +1230,9 @@ const Scouting = ({
         title: strategyCopy.eliteTitle,
         description: strategyCopy.eliteDescription,
         players: withValueScores(
-          strategyPlayers
-            .filter((player) => toNumber(player.auctionValue) >= 45)
-            .sort(
-              (firstPlayer, secondPlayer) =>
-                toNumber(secondPlayer.auctionValue) -
-                toNumber(firstPlayer.auctionValue)
-            )
+          sortByPositionRank(
+            strategyPlayers.filter((player) => toNumber(player.auctionValue) >= 45)
+          )
         ),
       },
       {
@@ -1208,15 +1240,12 @@ const Scouting = ({
         title: "🎯 Foundation Pieces",
         description: strategyCopy.foundationDescription,
         players: withValueScores(
-          strategyPlayers
-            .filter((player) => {
+          sortByPositionRank(
+            strategyPlayers.filter((player) => {
               const auctionValue = toNumber(player.auctionValue);
               return auctionValue >= 20 && auctionValue <= 44;
             })
-            .sort(
-              (firstPlayer, secondPlayer) =>
-                toNumber(secondPlayer.ddScore) - toNumber(firstPlayer.ddScore)
-            )
+          )
         ),
       },
       {
@@ -1224,18 +1253,12 @@ const Scouting = ({
         title: "💰 Value Targets",
         description: strategyCopy.valueDescription,
         players: withValueScores(
-          strategyPlayers
-            .filter((player) => {
+          sortByPositionRank(
+            strategyPlayers.filter((player) => {
               const auctionValue = toNumber(player.auctionValue);
               return auctionValue >= 8 && auctionValue <= 19;
             })
-            .sort(
-              (firstPlayer, secondPlayer) =>
-                toNumber(secondPlayer.ddScore) -
-                toNumber(secondPlayer.auctionValue) -
-                (toNumber(firstPlayer.ddScore) -
-                  toNumber(firstPlayer.auctionValue))
-            )
+          )
         ),
       },
       {
@@ -1243,13 +1266,9 @@ const Scouting = ({
         title: "🚀 Sleepers & Upside",
         description: strategyCopy.sleeperDescription,
         players: withValueScores(
-          strategyPlayers
-            .filter((player) => toNumber(player.auctionValue) < 8)
-            .sort(
-              (firstPlayer, secondPlayer) =>
-                toNumber(secondPlayer.sleeperScore) -
-                toNumber(firstPlayer.sleeperScore)
-            )
+          sortByPositionRank(
+            strategyPlayers.filter((player) => toNumber(player.auctionValue) < 8)
+          )
         ),
       },
     ];
@@ -1276,6 +1295,8 @@ const Scouting = ({
       playerCount: strategyPlayers.length,
       status,
       text: strategyCopy,
+      wishlistCount: strategyPlayers.filter((player) => player.watchlist).length,
+      allocationRule,
     };
   }, [allocationRules, leagueBudget, lockedPosition, targetBoardPlayers]);
   const positionStackBuilds = useMemo(
@@ -2473,19 +2494,24 @@ const Scouting = ({
 
     const summaryItems = [
       {
-        label: budgetStrategy.text.budgetLabel,
+        label: `Target ${lockedPosition} Allocation`,
+        value: `${formatPercent(budgetStrategy.allocationRule?.minPercent)} - ${formatPercent(
+          budgetStrategy.allocationRule?.maxPercent
+        )}`,
+      },
+      {
+        label: `Target ${lockedPosition} Budget`,
         value: `${formatCurrency(budgetStrategy.minBudget)} - ${formatCurrency(
           budgetStrategy.maxBudget
         )}`,
       },
-      { label: "Targeted Players", value: budgetStrategy.playerCount },
       {
-        label: "Combined Targeted Cost",
-        value: formatCurrency(budgetStrategy.combinedCost),
+        label: "Targeted Players",
+        value: budgetStrategy.playerCount,
       },
       {
-        label: "Average Targeted Cost",
-        value: formatCurrency(budgetStrategy.averageCost),
+        label: "Wishlist Players",
+        value: budgetStrategy.wishlistCount,
       },
     ];
 
