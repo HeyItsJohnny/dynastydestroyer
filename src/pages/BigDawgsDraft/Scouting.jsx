@@ -23,6 +23,7 @@ import { Header } from "../../components";
 import { useAuth } from "../../contexts/AuthContext";
 import { useStateContext } from "../../contexts/ContextProvider";
 import { db } from "../../firebase/firebase";
+import { AddBigDawgDraftedPlayerToTeam } from "../../globalFunctions/firebaseAuctionDraft";
 import {
   buildFallbackScoutingNotes,
   getOpenAIScoutingNotes,
@@ -741,6 +742,25 @@ const buildTargetedPlayer = (player, positionPlayers) => {
 
 const getBuildPlayerCost = (player) =>
   hasValue(player.purchasePrice) ? toNumber(player.purchasePrice) : toNumber(player.auctionValue);
+
+const buildDraftPlayerFromTarget = (player) => ({
+  Age: player.age ?? "",
+  DatabaseID: player.playerId,
+  DraftStatus: "Drafted",
+  FullName: player.name ?? "",
+  KeepTradeCutIdentifier: `${player.name ?? player.playerId}-${player.position ?? ""}`,
+  NonSuperFlexValue: player.auctionValue ?? 0,
+  Position: player.position ?? "",
+  PositionRank: player.positionRank ?? player.rank ?? "",
+  SleeperID: player.sleeperId ?? player.playerId,
+  SuperFlexValue: player.maxBid ?? player.hardMaxBid ?? player.auctionValue ?? 0,
+  Team: player.team ?? "",
+  TotalPoints: player.projectedPoints ?? 0,
+  headshotUrl: player.headshotUrl ?? "",
+  media: {
+    headshotUrl: player.headshotUrl ?? "",
+  },
+});
 
 const getPlayerSurplus = (player) => {
   const maxBid = toNumber(player.maxBid || player.hardMaxBid, toNumber(player.auctionValue));
@@ -1754,6 +1774,26 @@ const Scouting = ({
     setTeamSavingPlayerId(teamTargetPlayer.playerId);
 
     try {
+      const previousTeamNumber = teamTargetPlayer.leagueTeamNumber;
+
+      if (
+        previousTeamNumber &&
+        selectedTeam &&
+        `${previousTeamNumber}` !== `${selectedTeam.TeamNumber}`
+      ) {
+        await deleteDoc(
+          doc(
+            db,
+            "userprofile",
+            currentUser.uid,
+            "bigdawgdraft",
+            `${previousTeamNumber}`,
+            "players",
+            teamTargetPlayer.playerId
+          )
+        );
+      }
+
       await setDoc(
         doc(
           db,
@@ -1765,6 +1805,28 @@ const Scouting = ({
         teamUpdate,
         { merge: true }
       );
+
+      if (selectedTeam) {
+        await AddBigDawgDraftedPlayerToTeam(
+          currentUser.uid,
+          `${selectedTeam.TeamNumber}`,
+          selectedTeam.TeamName,
+          buildDraftPlayerFromTarget(teamTargetPlayer),
+          parsedPurchasePrice
+        );
+      } else if (previousTeamNumber) {
+        await deleteDoc(
+          doc(
+            db,
+            "userprofile",
+            currentUser.uid,
+            "bigdawgdraft",
+            `${previousTeamNumber}`,
+            "players",
+            teamTargetPlayer.playerId
+          )
+        );
+      }
 
       setTargetBoardPlayers((currentPlayers) =>
         currentPlayers.map((targetPlayer) =>

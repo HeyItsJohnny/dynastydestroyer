@@ -1,87 +1,806 @@
-import React, { useState, useEffect } from "react";
-
-import DraftSettings from "./DraftSettings";
-import Draft from "./DraftComponent/Draft/Draft";
-import DraftTeamStatsSummary from "./DraftComponent/DraftTeamSummary/DraftTeamStatsSummary";
-import DraftTeamDetails from "./DraftComponent/DraftTeamDetails/DraftTeamDetails";
-
-//User ID
-import { useAuth } from "../../contexts/AuthContext";
-
-//UI
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FaPlus, FaUserCheck } from "react-icons/fa";
+import { FiActivity, FiCpu, FiMinus, FiPlus, FiTarget, FiTrendingUp } from "react-icons/fi";
 import {
-  Box,
-  Typography,
-  Switch,
+  Autocomplete,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
 } from "@mui/material";
+import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import { Header } from "../../components";
+import { useAuth } from "../../contexts/AuthContext";
+import { db } from "../../firebase/firebase";
+import { PLACEHOLDER_IMAGE } from "../Players/PlayerDetail/PlayerDetailHelpers";
+import {
+  AddBigDawgDraftedPlayerToTeam,
+  ClearBigDawgCurrentAuction,
+  CreateOrUpdateBigDawgCurrentAuction,
+  UpdateBigDawgCurrentAuctionBid,
+} from "../../globalFunctions/firebaseAuctionDraft";
+import { setPlayerDraftStatus } from "../../globalFunctions/firebaseFunctions";
 
+const emptyAuction = {
+  FullName: "Select a player",
+  Position: "--",
+  Team: "N/A",
+  Age: "--",
+  YearsExperience: "--",
+  CurrentBid: 0,
+  NonSuperFlexValue: 0,
+  SuperFlexValue: 0,
+  PositionRank: "--",
+};
 
+const currency = (value) => `$${Number(value || 0).toLocaleString()}`;
+
+const statValue = (value) => {
+  if (value === undefined || value === null || value === "") return "--";
+  return value;
+};
+
+const getProjectedSeasonYear = (date = new Date()) => date.getFullYear();
+
+const getFirstValue = (...values) =>
+  values.find((value) => value !== undefined && value !== null && value !== "");
+
+const normalizeAuctionPlayer = async (playerDoc) => {
+  const data = playerDoc.data();
+  const projectedStatsSnap = await getDoc(
+    doc(db, "players", playerDoc.id, "projectedStats", `${getProjectedSeasonYear()}`)
+  );
+  const projectedStats = projectedStatsSnap.exists() ? projectedStatsSnap.data() : {};
+  const auctionValue = getFirstValue(
+    projectedStats.auction_value,
+    projectedStats["Auction Value"]
+  );
+  const maxBid = getFirstValue(projectedStats.max_bid, projectedStats["Max Bid"]);
+  const hardMax = getFirstValue(
+    projectedStats.hard_max_bid,
+    projectedStats["Hard Max Bid"]
+  );
+  const rank = getFirstValue(projectedStats.rank, projectedStats.Rank);
+  const tier = getFirstValue(projectedStats.tier, projectedStats.Tier);
+
+  return {
+    id: playerDoc.id,
+    ...data,
+    Age: data.age ?? data.Age ?? "",
+    DatabaseID: playerDoc.id,
+    DepthChartOrder: data.depthChartOrder ?? data.depth_chart_order ?? data.DepthChartOrder ?? "",
+    DraftStatus: data.DraftStatus ?? "N/A",
+    FirstName: data.firstName ?? data.first_name ?? data.FirstName ?? "",
+    FullName: data.fullName ?? data.FullName ?? "",
+    KeepTradeCutIdentifier:
+      data.keepTradeCutIdentifier ??
+      data.KeepTradeCutIdentifier ??
+      `${data.fullName ?? playerDoc.id}-${data.position ?? ""}`,
+    LastName: data.lastName ?? data.last_name ?? data.LastName ?? "",
+    NonSuperFlexValue: auctionValue ?? data.NonSuperFlexValue ?? 0,
+    Position: data.position ?? data.Position ?? "",
+    PositionRank: rank ?? data.positionRank ?? data.PositionRank ?? "",
+    SearchFullName: data.searchFullName ?? data.search_full_name ?? data.fullName ?? "",
+    SleeperID: data.sleeperId ?? data.sleeper_id ?? data.SleeperID ?? playerDoc.id,
+    SuperFlexValue: maxBid ?? data.SuperFlexValue ?? auctionValue ?? 0,
+    Team: data.nflTeam ?? data.team ?? data.Team ?? "",
+    Tier: tier ?? data.Tier ?? data.tier ?? "",
+    YearsExperience: data.yearsExperience ?? data.years_exp ?? data.YearsExperience ?? "",
+    auctionValue,
+    fullName: data.fullName ?? data.FullName ?? "",
+    hardMax,
+    headshotUrl: data.headshotUrl ?? data.media?.headshotUrl ?? "",
+    media: data.media ?? {},
+    maxBid,
+    nflTeam: data.nflTeam ?? data.team ?? data.Team ?? "",
+    position: data.position ?? data.Position ?? "",
+    rank,
+    tier,
+  };
+};
+
+const CurrentAuctionCard = ({
+  currentAuction,
+  teams,
+  draftTeamId,
+  draftAmount,
+  hasCurrentPlayer,
+  onAddPlayer,
+  onClearPlayer,
+  onCurrentBidChange,
+  onDraftAmountChange,
+  onDraftPlayer,
+  onDraftTeamChange,
+}) => {
+  const valueBid = Number(currentAuction?.NonSuperFlexValue || 0);
+  const maxValue = Number(currentAuction?.SuperFlexValue || currentAuction?.NonSuperFlexValue || 0);
+  const hardMax = Math.ceil(Number(maxValue || 0) * 1.08);
+  const currentBid = Number(currentAuction.CurrentBid || 0);
+  const safeBid = Math.round(valueBid * 0.78);
+  const tier = currentAuction?.Tier ?? currentAuction?.tier ?? "--";
+  const getRangeProgress = (value, floor, ceiling) => {
+    if (ceiling <= floor) return 0;
+    return Math.max(0, Math.min((value - floor) / (ceiling - floor), 1));
+  };
+  let currentBidPercent = 2;
+
+  if (currentBid > safeBid && currentBid <= valueBid) {
+    currentBidPercent = 25 + getRangeProgress(currentBid, safeBid, valueBid) * 25;
+  } else if (currentBid > valueBid && currentBid <= maxValue) {
+    currentBidPercent = 50 + getRangeProgress(currentBid, valueBid, maxValue) * 25;
+  } else if (currentBid > maxValue && currentBid <= hardMax) {
+    currentBidPercent = 75 + getRangeProgress(currentBid, maxValue, hardMax) * 25;
+  } else if (currentBid > hardMax) {
+    currentBidPercent = 99;
+  }
+  const headshotUrl =
+    currentAuction?.headshotUrl ||
+    currentAuction?.media?.headshotUrl ||
+    (currentAuction?.SleeperID
+      ? `https://sleepercdn.com/content/nfl/players/${currentAuction.SleeperID}.jpg`
+      : "");
+
+  return (
+    <section className="w-full xl:max-w-[920px] min-h-[520px] p-6 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-sm font-bold tracking-wide">
+          Current Auction
+        </p>
+      </div>
+
+      <div className="pt-7">
+        <div className="flex flex-col lg:flex-row lg:items-start gap-7">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-6 min-w-0">
+              <div className="w-32 h-32 rounded-md bg-gray-100 dark:bg-[#151c22] border border-gray-200 dark:border-[#2b3640] overflow-hidden shrink-0">
+                <img
+                  alt={`${currentAuction.FullName} headshot`}
+                  className="w-full h-full object-cover"
+                  src={headshotUrl || PLACEHOLDER_IMAGE}
+                  onError={(event) => {
+                    event.currentTarget.src = PLACEHOLDER_IMAGE;
+                  }}
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white truncate">
+                  {currentAuction.FullName}
+                </h2>
+                <p className="text-base text-gray-600 dark:text-gray-300 mt-2">
+                  {currentAuction.Position} • {currentAuction.Team}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                  Age: {statValue(currentAuction.Age)} · Exp:{" "}
+                  {statValue(currentAuction.YearsExperience)}
+                </p>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <span className="px-3 py-1.5 rounded bg-purple-500/25 text-purple-200 text-sm font-bold">
+                    Rank {statValue(currentAuction.PositionRank)}
+                  </span>
+                  <span className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 text-sm font-bold">
+                    Tier {statValue(tier)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+              <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
+                <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Current Bid</p>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    aria-label="Decrease current bid"
+                    disabled={!hasCurrentPlayer || currentBid <= 0}
+                    onClick={() => onCurrentBidChange(currentBid - 1)}
+                    className="h-9 w-9 rounded-md border border-gray-300 dark:border-[#33404a] flex items-center justify-center text-gray-700 dark:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:drop-shadow-xl"
+                  >
+                    <FiMinus />
+                  </button>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {currency(currentBid)}
+                  </p>
+                  <button
+                    type="button"
+                    aria-label="Increase current bid"
+                    disabled={!hasCurrentPlayer}
+                    onClick={() => onCurrentBidChange(currentBid + 1)}
+                    className="h-9 w-9 rounded-md border border-gray-300 dark:border-[#33404a] flex items-center justify-center text-gray-700 dark:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:drop-shadow-xl"
+                  >
+                    <FiPlus />
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
+                <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Nominated By</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-gray-100 mt-2 truncate">
+                  {currentAuction.NominatedByTeamName || "--"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 lg:w-44 shrink-0">
+            <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
+              <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Value</p>
+              <p className="text-3xl font-bold text-green-500 mt-1">
+                {currency(valueBid)}
+              </p>
+            </div>
+            <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
+              <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Max</p>
+              <p className="text-3xl font-bold text-blue-400 mt-1">
+                {currency(maxValue)}
+              </p>
+            </div>
+            <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
+              <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Hard</p>
+              <p className="text-3xl font-bold text-red-400 mt-1">
+                {currency(hardMax)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <div className="flex justify-between text-xs uppercase text-gray-500 dark:text-gray-400 font-bold mb-2">
+            <span>Bid Meter</span>
+            <span className="text-gray-400">Current {currency(currentBid)}</span>
+          </div>
+          <div className="relative pt-5">
+            <div
+              className="absolute top-0 -translate-x-1/2"
+              style={{ left: `${currentBidPercent}%` }}
+            >
+              <div className="mx-auto h-0 w-0 border-l-[9px] border-r-[9px] border-t-[12px] border-l-transparent border-r-transparent border-t-gray-100 drop-shadow" />
+              <div className="mx-auto h-7 w-1 bg-gray-100 rounded-full" />
+            </div>
+            <div className="grid grid-cols-4 h-4 gap-1 overflow-hidden rounded-full bg-gray-200 dark:bg-[#232b32]">
+              <div className="bg-green-500 rounded-l-full" />
+              <div className="bg-blue-400" />
+              <div className="bg-amber-400" />
+              <div className="bg-red-500 rounded-r-full" />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-3 mt-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-green-500">{currency(safeBid)}</p>
+              <p className="text-xs uppercase font-bold text-green-500">Safe Bid</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-400">{currency(valueBid)}</p>
+              <p className="text-xs uppercase font-bold text-blue-400">Value Bid</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-400">{currency(maxValue)}</p>
+              <p className="text-xs uppercase font-bold text-amber-400">Max Bid</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-400">{currency(hardMax)}</p>
+              <p className="text-xs uppercase font-bold text-red-400">Hard Stop</p>
+            </div>
+          </div>
+          <div className="mt-4 border-t border-gray-200 dark:border-[#26313a]" />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">
+              {currentAuction.Position || "Player"}
+            </span>
+            <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-bold">
+              Rank {statValue(currentAuction.PositionRank)}
+            </span>
+            <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-bold">
+              Tier {statValue(tier)}
+            </span>
+            {currentBid >= hardMax && hardMax > 0 ? (
+              <span className="px-3 py-1 rounded bg-red-500/20 text-red-300 text-xs font-bold">
+                Do Not Overpay Past {currency(hardMax)}
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded bg-blue-500/20 text-blue-300 text-xs font-bold">
+                {currentBid <= safeBid
+                  ? "Safe Bid Range"
+                  : currentBid <= maxValue
+                    ? "Playable Bid Range"
+                    : "Approaching Hard Stop"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+          <FormControl fullWidth size="small">
+            <InputLabel sx={{ color: "#d1d5db" }}>Draft Team</InputLabel>
+            <Select
+              value={draftTeamId}
+              label="Draft Team"
+              onChange={(event) => onDraftTeamChange(event.target.value)}
+              sx={{
+                color: "inherit",
+                ".MuiOutlinedInput-notchedOutline": { borderColor: "#33404a" },
+                ".MuiSvgIcon-root": { color: "inherit" },
+              }}
+            >
+              {teams.map((team) => (
+                <MenuItem value={team.id} key={team.id}>
+                  {team.TeamName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            size="small"
+            label="Draft Amount"
+            type="number"
+            value={draftAmount}
+            onChange={(event) => onDraftAmountChange(event.target.value)}
+            InputLabelProps={{ style: { color: "#d1d5db" } }}
+            InputProps={{ style: { color: "inherit" } }}
+            sx={{
+              ".MuiOutlinedInput-notchedOutline": { borderColor: "#33404a" },
+            }}
+          />
+        </div>
+
+        <div className="flex gap-4 mt-7">
+          <Button
+            variant="contained"
+            startIcon={<FaUserCheck />}
+            onClick={onDraftPlayer}
+            disabled={!hasCurrentPlayer}
+            sx={{
+              flex: 1,
+              backgroundColor: "#22c55e",
+              color: "#06110a",
+              fontWeight: 800,
+              "&:hover": { backgroundColor: "#16a34a" },
+            }}
+          >
+            Draft Player
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={onClearPlayer}
+            disabled={!hasCurrentPlayer}
+            sx={{
+              flex: 1,
+              borderColor: "#f97316",
+              color: "#fdba74",
+              fontWeight: 800,
+              "&:hover": {
+                borderColor: "#fb923c",
+                backgroundColor: "rgba(249, 115, 22, 0.12)",
+              },
+            }}
+          >
+            Clear
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FaPlus />}
+            onClick={onAddPlayer}
+            sx={{
+              flex: 1,
+              borderColor: "#a855f7",
+              color: "#d8b4fe",
+              fontWeight: 800,
+              "&:hover": {
+                borderColor: "#c084fc",
+                backgroundColor: "rgba(168, 85, 247, 0.12)",
+              },
+            }}
+          >
+            Add Player
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const DynastyDestroyerAiCard = () => (
+  <section className="w-full xl:max-w-[460px] min-h-[520px] p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <div className="flex items-center gap-3 pb-5 border-b border-gray-200 dark:border-[#202a32]">
+      <span className="h-10 w-10 rounded-full border border-purple-400/40 bg-purple-500/15 text-purple-300 flex items-center justify-center">
+        <FiCpu />
+      </span>
+      <h2 className="text-2xl font-bold uppercase tracking-wide text-purple-400">
+        Strategy
+      </h2>
+      <span className="px-3 py-1 rounded-md bg-purple-500/20 text-purple-200 text-xs font-bold">
+        BETA
+      </span>
+    </div>
+
+    <div className="mt-6 rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-5">
+      <div className="flex items-center gap-2 text-green-500 uppercase text-sm font-bold tracking-wide">
+        <FiPlus />
+        <span>Current Recommendation</span>
+      </div>
+
+      <div className="mt-5 flex gap-4">
+        <div className="h-14 w-14 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center shrink-0">
+          <FiTarget size={28} />
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+            Bid aggressively to <span className="text-green-500">$63</span>.
+            <br />
+            Stop at $66 unless Team A is your only competitor.
+          </p>
+          <p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+            There are still 4 usable RB2s available, so do not hit Hard Max unless
+            you&apos;re locking a top-tier advantage.
+          </p>
+        </div>
+      </div>
+
+      <div className="my-5 border-t border-gray-200 dark:border-[#26313a]" />
+
+      <div className="flex gap-4">
+        <div className="h-12 w-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
+          <FiActivity size={24} />
+        </div>
+        <div>
+          <p className="text-purple-400 uppercase text-sm font-bold tracking-wide">
+            Nomination Strategy
+          </p>
+          <p className="mt-2 text-base text-gray-700 dark:text-gray-200 leading-relaxed">
+            Nominate expensive WRs next to drain Team A and Team B before you target
+            your next RB.
+          </p>
+        </div>
+      </div>
+
+      <div className="my-5 border-t border-gray-200 dark:border-[#26313a]" />
+
+      <div className="flex gap-4">
+        <div className="h-12 w-12 rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
+          <FiTrendingUp size={24} />
+        </div>
+        <div>
+          <p className="text-blue-400 uppercase text-sm font-bold tracking-wide">
+            Market Read
+          </p>
+          <p className="mt-2 text-base text-gray-700 dark:text-gray-200 leading-relaxed">
+            RB prices are currently 12% above expected. WR values are still stable.
+            Pivoting to WR may give better total roster value.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-6 flex items-center gap-4">
+      <p className="text-sm uppercase font-bold text-gray-600 dark:text-gray-300">
+        Confidence Level
+      </p>
+      <p className="text-green-500 font-bold">High</p>
+      <div className="flex flex-1 gap-1">
+        {[0, 1, 2, 3, 4, 5].map((item) => (
+          <span
+            className="h-4 flex-1 rounded bg-green-500"
+            key={`confidence-filled-${item}`}
+          />
+        ))}
+        <span className="h-4 flex-1 rounded bg-gray-300 dark:bg-[#303840]" />
+      </div>
+    </div>
+  </section>
+);
 
 const BigDawgsDraftCommandCenter = () => {
   const { currentUser } = useAuth();
-  const [checkedDraftSettings, setCheckedDraftSettings] = useState(false);
-  const [checkedDraft, setCheckedDraft] = useState(false);
-  const [checkedTeamStatsSummary, setCheckedTeamStatsSummary] = useState(false);
-  const [checkedTeamStatsDetail, setCheckedTeamStatsDetail] = useState(false);
+  const [currentAuction, setCurrentAuction] = useState(emptyAuction);
+  const [players, setPlayers] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState("");
+  const [playerSearchInput, setPlayerSearchInput] = useState("");
+  const [nominatingTeamId, setNominatingTeamId] = useState("");
+  const [nominatingTeamSearchInput, setNominatingTeamSearchInput] = useState("");
+  const [openingBid, setOpeningBid] = useState("");
+  const [draftTeamId, setDraftTeamId] = useState("");
+  const [draftAmount, setDraftAmount] = useState("");
+  const [draftAmountManuallyEdited, setDraftAmountManuallyEdited] = useState(false);
+  const previousCurrentAuctionKeyRef = useRef("");
 
-  const inputStyles = {
-    color: "white",
-  };
+  const selectedPlayer = useMemo(
+    () => players.find((player) => player.id === selectedPlayerId),
+    [players, selectedPlayerId]
+  );
 
-  //Handle Checkboxes
-  const handleDraftSettingsCheckboxChange = (event) => {
-    setCheckedDraftSettings(event.target.checked);
-  };
-  const handleDraftCheckboxChange = (event) => {
-    setCheckedDraft(event.target.checked);
-  };
-  const handleDraftTeamStatsSummaryCheckboxChange = (event) => {
-    setCheckedTeamStatsSummary(event.target.checked);
-  };
-  const handleDraftTeamStatsDetailCheckboxChange = (event) => {
-    setCheckedTeamStatsDetail(event.target.checked);
-  };
+  const selectedDraftTeam = useMemo(
+    () => teams.find((team) => team.id === draftTeamId),
+    [teams, draftTeamId]
+  );
+
+  const nominatingTeam = useMemo(
+    () => teams.find((team) => team.id === nominatingTeamId),
+    [teams, nominatingTeamId]
+  );
+
+  const playerSearchOptions = useMemo(() => {
+    const searchTerm = playerSearchInput.trim().toLowerCase();
+    if (!searchTerm) return [];
+
+    return players
+      .filter((player) =>
+        [
+          player.FullName,
+          player.SearchFullName,
+          player.fullName,
+          player.Position,
+          player.position,
+          player.Team,
+          player.nflTeam,
+        ]
+          .filter(Boolean)
+          .some((value) => `${value}`.toLowerCase().includes(searchTerm))
+      )
+      .slice(0, 75);
+  }, [playerSearchInput, players]);
+
+  const nominatingTeamOptions = useMemo(() => {
+    const searchTerm = nominatingTeamSearchInput.trim().toLowerCase();
+    if (!searchTerm) return [];
+
+    return teams
+      .filter((team) => `${team.TeamName || ""}`.toLowerCase().includes(searchTerm))
+      .slice(0, 25);
+  }, [nominatingTeamSearchInput, teams]);
+
+  const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
+  const currentAuctionKey = currentAuction?.DatabaseID || currentAuction?.id || "";
 
   useEffect(() => {
-    return () => {};
+    if (!currentUser) return undefined;
+
+    const currentAuctionRef = doc(
+      db,
+      "userprofile",
+      currentUser.uid,
+      "bigdawgdraft",
+      "currentauction"
+    );
+
+    return onSnapshot(currentAuctionRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setCurrentAuction({ id: snapshot.id, ...snapshot.data() });
+      } else {
+        setCurrentAuction(emptyAuction);
+      }
+    });
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (previousCurrentAuctionKeyRef.current === currentAuctionKey) return;
+
+    previousCurrentAuctionKeyRef.current = currentAuctionKey;
+
+    if (!currentAuctionKey) {
+      setDraftAmount("");
+      setDraftAmountManuallyEdited(false);
+      return;
+    }
+
+    setDraftAmount(`${Number(currentAuction.CurrentBid || 0)}`);
+    setDraftAmountManuallyEdited(false);
+  }, [currentAuction.CurrentBid, currentAuctionKey]);
+
+  useEffect(() => {
+    if (!currentAuctionKey || draftAmountManuallyEdited) return;
+
+    setDraftAmount(`${Number(currentAuction.CurrentBid || 0)}`);
+  }, [currentAuction.CurrentBid, currentAuctionKey, draftAmountManuallyEdited]);
+
+  useEffect(() => {
+    if (!currentUser) return undefined;
+
+    const leagueSettingsRef = doc(
+      db,
+      "userprofile",
+      currentUser.uid,
+      "leaguesettings",
+      "settings"
+    );
+
+    return onSnapshot(leagueSettingsRef, (settingsSnapshot) => {
+      const leagueTeams = settingsSnapshot.data()?.LeagueTeams;
+
+      setTeams(
+        Array.isArray(leagueTeams)
+          ? leagueTeams
+              .filter((team) => `${team.TeamName || ""}`.trim() !== "")
+              .map((team, index) => ({
+                id: `${team.TeamNumber || index + 1}`,
+                TeamName: team.TeamName,
+                TeamNumber: team.TeamNumber || index + 1,
+                MyTeam: team.MyTeam === true,
+              }))
+          : []
+      );
+    });
+  }, [currentUser]);
+
+  useEffect(() => {
+    const playersQuery = query(
+      collection(db, "players"),
+      where("active", "==", true)
+    );
+
+    return onSnapshot(playersQuery, (querySnapshot) => {
+      Promise.all(querySnapshot.docs.map(normalizeAuctionPlayer))
+        .then((playerList) => setPlayers(playerList))
+        .catch((error) => {
+          console.error("Error loading command center players:", error);
+          setPlayers([]);
+        });
+    });
   }, []);
+
+  const handleAddPlayer = async (event) => {
+    event.preventDefault();
+    if (!currentUser || !selectedPlayer) return;
+
+    await CreateOrUpdateBigDawgCurrentAuction(currentUser.uid, selectedPlayer, {
+      CurrentBid: openingBid,
+      NominatedByTeamId: nominatingTeamId,
+      NominatedByTeamName: nominatingTeam?.TeamName || "",
+    });
+
+    toast(`${selectedPlayer.FullName} added to Current Auction`);
+    setShowAddPlayer(false);
+    setSelectedPlayerId("");
+    setPlayerSearchInput("");
+    setNominatingTeamId("");
+    setNominatingTeamSearchInput("");
+    setOpeningBid("");
+  };
+
+  const handleDraftPlayer = async () => {
+    if (!currentUser || !hasCurrentPlayer || !selectedDraftTeam || !draftAmount) {
+      toast("Choose a team and draft amount first.");
+      return;
+    }
+
+    await AddBigDawgDraftedPlayerToTeam(
+      currentUser.uid,
+      selectedDraftTeam.id,
+      selectedDraftTeam.TeamName,
+      currentAuction,
+      draftAmount
+    );
+    await setPlayerDraftStatus(currentAuction.DatabaseID, "Drafted");
+    await ClearBigDawgCurrentAuction(currentUser.uid);
+
+    toast(`${currentAuction.FullName} drafted by ${selectedDraftTeam.TeamName}`);
+    setDraftTeamId("");
+    setDraftAmount("");
+    setDraftAmountManuallyEdited(false);
+  };
+
+  const handleClearCurrentAuction = async () => {
+    if (!currentUser || !hasCurrentPlayer) return;
+
+    await ClearBigDawgCurrentAuction(currentUser.uid);
+    setDraftTeamId("");
+    setDraftAmount("");
+    setDraftAmountManuallyEdited(false);
+    toast("Current auction cleared.");
+  };
+
+  const handleCurrentBidChange = async (nextBid) => {
+    if (!currentUser || !hasCurrentPlayer) return;
+
+    await UpdateBigDawgCurrentAuctionBid(currentUser.uid, Math.max(0, nextBid));
+  };
 
   return (
     <>
+      <ToastContainer />
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Home" title="Command Center" />
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <Typography gutterBottom>Show Draft</Typography>
-          <Switch
-            checked={checkedDraft}
-            onChange={handleDraftCheckboxChange}
-          />
-          <Typography gutterBottom>Show Draft Settings</Typography>
-          <Switch
-            checked={checkedDraftSettings}
-            onChange={handleDraftSettingsCheckboxChange}
-          />
-          <Typography gutterBottom>Show Team Stats Summary</Typography>
-          <Switch
-            checked={checkedTeamStatsSummary}
-            onChange={handleDraftTeamStatsSummaryCheckboxChange}
-          />
-          <Typography gutterBottom>Show Team Stats Detail</Typography>
-          <Switch
-            checked={checkedTeamStatsDetail}
-            onChange={handleDraftTeamStatsDetailCheckboxChange}
-          />
-        </Box>
+        <Header category="Big Dawgs" title="Command Center" />
       </div>
-      {/* Settings */}
-      {checkedDraftSettings && <DraftSettings />}
-      {/* Draft */}
-      {checkedDraft && <Draft />}
-      {/* Draft Team Stats Summary*/}
-      {checkedTeamStatsSummary && <DraftTeamStatsSummary/> }
-      {/* Draft Team Stats Detail*/}
-      {checkedTeamStatsDetail && <DraftTeamDetails/> }
+
+      <div className="m-2 md:m-10 mt-6 flex flex-col xl:flex-row items-stretch gap-6">
+        <CurrentAuctionCard
+          currentAuction={currentAuction}
+          teams={teams}
+          draftTeamId={draftTeamId}
+          draftAmount={draftAmount}
+          hasCurrentPlayer={hasCurrentPlayer}
+          onAddPlayer={() => setShowAddPlayer(true)}
+          onClearPlayer={handleClearCurrentAuction}
+          onCurrentBidChange={handleCurrentBidChange}
+          onDraftAmountChange={(nextDraftAmount) => {
+            setDraftAmountManuallyEdited(true);
+            setDraftAmount(nextDraftAmount);
+          }}
+          onDraftPlayer={handleDraftPlayer}
+          onDraftTeamChange={setDraftTeamId}
+        />
+        <DynastyDestroyerAiCard />
+      </div>
+
+      <Dialog open={showAddPlayer} onClose={() => setShowAddPlayer(false)} fullWidth maxWidth="sm">
+        <form onSubmit={handleAddPlayer}>
+          <DialogTitle>Add Player</DialogTitle>
+          <DialogContent>
+            <Autocomplete
+              fullWidth
+              options={playerSearchOptions}
+              value={selectedPlayer || null}
+              inputValue={playerSearchInput}
+              onChange={(_, player) => setSelectedPlayerId(player?.id || "")}
+              onInputChange={(_, value) => setPlayerSearchInput(value)}
+              getOptionLabel={(player) =>
+                player?.FullName || player?.fullName
+                  ? `${player.FullName || player.fullName} (${player.Position || player.position || "--"} - ${player.Team || player.nflTeam || "FA"})`
+                  : ""
+              }
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              noOptionsText={
+                playerSearchInput.trim()
+                  ? "No matching players"
+                  : "Start typing to search players"
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  required
+                  label="Player"
+                  margin="dense"
+                />
+              )}
+            />
+            <Autocomplete
+              fullWidth
+              options={nominatingTeamOptions}
+              value={nominatingTeam || null}
+              inputValue={nominatingTeamSearchInput}
+              onChange={(_, team) => setNominatingTeamId(team?.id || "")}
+              onInputChange={(_, value) => setNominatingTeamSearchInput(value)}
+              getOptionLabel={(team) => team?.TeamName || ""}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              noOptionsText={
+                nominatingTeamSearchInput.trim()
+                  ? "No matching teams"
+                  : "Start typing to search teams"
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Nominated By"
+                  margin="dense"
+                />
+              )}
+            />
+            <TextField
+              label="Opening Bid"
+              type="number"
+              fullWidth
+              margin="dense"
+              value={openingBid}
+              onChange={(event) => setOpeningBid(event.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowAddPlayer(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">
+              Add Player
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </>
   );
 };

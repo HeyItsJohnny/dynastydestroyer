@@ -12,9 +12,115 @@ import {
   addDoc,
   where,
   getDocs,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { getPlayerWeeklyPoints } from "./firebasePlayerFunctions";
+
+const buildAuctionPlayerPayload = (player) => ({
+  Age: player.Age ?? "",
+  College: player.College ?? "",
+  DepthChartOrder: player.DepthChartOrder ?? "",
+  DraftStatus: player.DraftStatus ?? "",
+  FirstName: player.FirstName ?? "",
+  FullName: player.FullName ?? "",
+  InjuryNotes: player.InjuryNotes ?? "",
+  InjuryStatus: player.InjuryStatus ?? "",
+  DatabaseID: player.DatabaseID ?? player.id ?? "",
+  KeepTradeCutIdentifier: player.KeepTradeCutIdentifier ?? "",
+  LastName: player.LastName ?? "",
+  NonSuperFlexValue: player.NonSuperFlexValue ?? 0,
+  Position: player.Position ?? "",
+  SleeperID: player.SleeperID ?? "",
+  SearchFirstName: player.SearchFirstName ?? "",
+  SearchFullName: player.SearchFullName ?? "",
+  SearchLastName: player.SearchLastName ?? "",
+  SearchRank: player.SearchRank ?? "",
+  Status: player.Status ?? "",
+  SuperFlexValue: player.SuperFlexValue ?? 0,
+  Team: player.Team ?? "",
+  YearsExperience: player.YearsExperience ?? "",
+  Fumbles: player.Fumbles ?? 0,
+  PassingYards: player.PassingYards ?? 0,
+  PassingTDs: player.PassingTDs ?? 0,
+  PassingINT: player.PassingINT ?? 0,
+  RushingYDS: player.RushingYDS ?? 0,
+  RushingTDs: player.RushingTDs ?? 0,
+  ReceivingRec: player.ReceivingRec ?? 0,
+  ReceivingYDS: player.ReceivingYDS ?? 0,
+  ReceivingTDs: player.ReceivingTDs ?? 0,
+  ReceivingTargets: player.ReceivingTargets ?? 0,
+  ReceptionPercentage: player.ReceptionPercentage ?? 0,
+  RedzoneTargets: player.RedzoneTargets ?? 0,
+  RedzoneTouches: player.RedzoneTouches ?? 0,
+  PositionRank: player.PositionRank ?? "",
+  Tier: player.Tier ?? player.tier ?? "",
+  tier: player.tier ?? player.Tier ?? "",
+  TotalPoints: player.TotalPoints ?? 0,
+  headshotUrl: player.headshotUrl ?? player.media?.headshotUrl ?? "",
+  media: {
+    ...(player.media ?? {}),
+    headshotUrl: player.headshotUrl ?? player.media?.headshotUrl ?? "",
+  },
+});
+
+export async function CreateOrUpdateBigDawgCurrentAuction(uid, player, auction = {}) {
+  try {
+    await setDoc(
+      doc(db, "userprofile", uid, "bigdawgdraft", "currentauction"),
+      {
+        ...buildAuctionPlayerPayload(player),
+        CurrentBid: Number(auction.CurrentBid || auction.currentBid || 0),
+        NominatedByTeamId: auction.NominatedByTeamId || "",
+        NominatedByTeamName: auction.NominatedByTeamName || "",
+        CreatedAt: serverTimestamp(),
+        UpdatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("There was an error adding the current auction: " + error);
+  }
+}
+
+export async function ClearBigDawgCurrentAuction(uid) {
+  try {
+    await deleteDoc(doc(db, "userprofile", uid, "bigdawgdraft", "currentauction"));
+  } catch (error) {
+    console.error("There was an error clearing the current auction: " + error);
+  }
+}
+
+export async function UpdateBigDawgCurrentAuctionBid(uid, currentBid) {
+  try {
+    await updateDoc(doc(db, "userprofile", uid, "bigdawgdraft", "currentauction"), {
+      CurrentBid: Number(currentBid || 0),
+      UpdatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("There was an error updating the current bid: " + error);
+  }
+}
+
+export async function AddBigDawgDraftedPlayerToTeam(uid, teamid, teamName, player, amount) {
+  try {
+    const playerId = player.DatabaseID || player.id || player.KeepTradeCutIdentifier;
+
+    await setDoc(
+      doc(db, "userprofile", uid, "bigdawgdraft", teamid, "players", playerId),
+      {
+        ...buildAuctionPlayerPayload(player),
+        DraftAmount: Number(amount || 0),
+        DraftedTeamId: teamid,
+        DraftedTeamName: teamName || "",
+        DraftedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("There was an error adding the drafted player: " + error);
+  }
+}
 
 //JCL USED
 export async function CreateOrUpdateCurrentDraftPlayer(uid, player) {
