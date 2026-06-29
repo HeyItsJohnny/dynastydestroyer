@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaPlus, FaUserCheck } from "react-icons/fa";
-import { FiActivity, FiCpu, FiMinus, FiPlus, FiTarget, FiTrendingUp } from "react-icons/fi";
+import {
+  FiActivity,
+  FiChevronLeft,
+  FiChevronRight,
+  FiCpu,
+  FiMinus,
+  FiPlus,
+  FiShield,
+  FiTarget,
+  FiTrendingUp,
+} from "react-icons/fi";
 import {
   Autocomplete,
   Button,
@@ -22,6 +32,7 @@ import { Header } from "../../components";
 import { useAuth } from "../../contexts/AuthContext";
 import { db } from "../../firebase/firebase";
 import { PLACEHOLDER_IMAGE } from "../Players/PlayerDetail/PlayerDetailHelpers";
+import "../Players/PlayersPage.css";
 import {
   AddBigDawgDraftedPlayerToTeam,
   ClearBigDawgCurrentAuction,
@@ -42,6 +53,8 @@ const emptyAuction = {
   PositionRank: "--",
 };
 
+const DRAFTED_PLAYERS_PAGE_SIZE = 5;
+
 const currency = (value) => `$${Number(value || 0).toLocaleString()}`;
 
 const statValue = (value) => {
@@ -53,6 +66,29 @@ const getProjectedSeasonYear = (date = new Date()) => date.getFullYear();
 
 const getFirstValue = (...values) =>
   values.find((value) => value !== undefined && value !== null && value !== "");
+
+const getPaginationItems = (pageCount, currentPage) => {
+  if (pageCount <= 5) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, "ellipsis", pageCount];
+  }
+
+  if (currentPage >= pageCount - 2) {
+    return [1, "ellipsis", pageCount - 2, pageCount - 1, pageCount];
+  }
+
+  return [1, "ellipsis", currentPage, "ellipsis", pageCount];
+};
+
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) || value === undefined || value === null || value === ""
+    ? fallback
+    : parsed;
+};
 
 const normalizeAuctionPlayer = async (playerDoc) => {
   const data = playerDoc.data();
@@ -94,7 +130,8 @@ const normalizeAuctionPlayer = async (playerDoc) => {
     SuperFlexValue: maxBid ?? data.SuperFlexValue ?? auctionValue ?? 0,
     Team: data.nflTeam ?? data.team ?? data.Team ?? "",
     Tier: tier ?? data.Tier ?? data.tier ?? "",
-    YearsExperience: data.yearsExperience ?? data.years_exp ?? data.YearsExperience ?? "",
+    YearsExperience:
+      data.yearsExp ?? data.yearsExperience ?? data.years_exp ?? data.YearsExperience ?? "",
     auctionValue,
     fullName: data.fullName ?? data.FullName ?? "",
     hardMax,
@@ -150,9 +187,9 @@ const CurrentAuctionCard = ({
       : "");
 
   return (
-    <section className="w-full xl:max-w-[920px] min-h-[520px] p-6 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <section className="w-full min-h-[520px] p-6 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
       <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
-        <p className="text-purple-500 uppercase text-sm font-bold tracking-wide">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
           Current Auction
         </p>
       </div>
@@ -176,18 +213,18 @@ const CurrentAuctionCard = ({
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white truncate">
                   {currentAuction.FullName}
                 </h2>
-                <p className="text-base text-gray-600 dark:text-gray-300 mt-2">
+                <p className="text-2xl text-gray-600 dark:text-gray-300 mt-3">
                   {currentAuction.Position} • {currentAuction.Team}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                <p className="text-xl text-gray-500 dark:text-gray-400 mt-4">
                   Age: {statValue(currentAuction.Age)} · Exp:{" "}
                   {statValue(currentAuction.YearsExperience)}
                 </p>
-                <div className="flex flex-wrap gap-3 mt-4">
-                  <span className="px-3 py-1.5 rounded bg-purple-500/25 text-purple-200 text-sm font-bold">
+                <div className="flex flex-wrap gap-3 mt-5">
+                  <span className="px-4 py-2 rounded bg-purple-500/25 text-purple-200 text-xl font-bold">
                     Rank {statValue(currentAuction.PositionRank)}
                   </span>
-                  <span className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 text-sm font-bold">
+                  <span className="px-4 py-2 rounded bg-emerald-500/20 text-emerald-200 text-xl font-bold">
                     Tier {statValue(tier)}
                   </span>
                 </div>
@@ -196,7 +233,7 @@ const CurrentAuctionCard = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
               <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
-                <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Current Bid</p>
+                <p className="text-sm uppercase text-gray-500 dark:text-gray-400 font-bold">Current Bid</p>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <button
                     type="button"
@@ -222,7 +259,7 @@ const CurrentAuctionCard = ({
                 </div>
               </div>
               <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
-                <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Nominated By</p>
+                <p className="text-sm uppercase text-gray-500 dark:text-gray-400 font-bold">Nominated By</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-gray-100 mt-2 truncate">
                   {currentAuction.NominatedByTeamName || "--"}
                 </p>
@@ -232,19 +269,19 @@ const CurrentAuctionCard = ({
 
           <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 lg:w-44 shrink-0">
             <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
-              <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Value</p>
+              <p className="text-sm uppercase text-gray-500 dark:text-gray-400 font-bold">Value</p>
               <p className="text-3xl font-bold text-green-500 mt-1">
                 {currency(valueBid)}
               </p>
             </div>
             <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
-              <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Max</p>
+              <p className="text-sm uppercase text-gray-500 dark:text-gray-400 font-bold">Max</p>
               <p className="text-3xl font-bold text-blue-400 mt-1">
                 {currency(maxValue)}
               </p>
             </div>
             <div className="rounded-md border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4">
-              <p className="text-[11px] uppercase text-gray-500 dark:text-gray-400 font-bold">Hard</p>
+              <p className="text-sm uppercase text-gray-500 dark:text-gray-400 font-bold">Hard</p>
               <p className="text-3xl font-bold text-red-400 mt-1">
                 {currency(hardMax)}
               </p>
@@ -253,7 +290,7 @@ const CurrentAuctionCard = ({
         </div>
 
         <div className="mt-8">
-          <div className="flex justify-between text-xs uppercase text-gray-500 dark:text-gray-400 font-bold mb-2">
+          <div className="flex justify-between text-base uppercase text-gray-500 dark:text-gray-400 font-bold mb-2">
             <span>Bid Meter</span>
             <span className="text-gray-400">Current {currency(currentBid)}</span>
           </div>
@@ -275,38 +312,38 @@ const CurrentAuctionCard = ({
           <div className="grid grid-cols-4 gap-3 mt-4 text-center">
             <div>
               <p className="text-2xl font-bold text-green-500">{currency(safeBid)}</p>
-              <p className="text-xs uppercase font-bold text-green-500">Safe Bid</p>
+              <p className="text-base uppercase font-bold text-green-500">Safe Bid</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-blue-400">{currency(valueBid)}</p>
-              <p className="text-xs uppercase font-bold text-blue-400">Value Bid</p>
+              <p className="text-base uppercase font-bold text-blue-400">Value Bid</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-amber-400">{currency(maxValue)}</p>
-              <p className="text-xs uppercase font-bold text-amber-400">Max Bid</p>
+              <p className="text-base uppercase font-bold text-amber-400">Max Bid</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-red-400">{currency(hardMax)}</p>
-              <p className="text-xs uppercase font-bold text-red-400">Hard Stop</p>
+              <p className="text-base uppercase font-bold text-red-400">Hard Stop</p>
             </div>
           </div>
           <div className="mt-4 border-t border-gray-200 dark:border-[#26313a]" />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <span className="px-4 py-2 rounded bg-emerald-500/20 text-emerald-300 text-base font-bold">
               {currentAuction.Position || "Player"}
             </span>
-            <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-bold">
+            <span className="px-4 py-2 rounded bg-purple-500/20 text-purple-300 text-base font-bold">
               Rank {statValue(currentAuction.PositionRank)}
             </span>
-            <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-bold">
+            <span className="px-4 py-2 rounded bg-purple-500/20 text-purple-300 text-base font-bold">
               Tier {statValue(tier)}
             </span>
             {currentBid >= hardMax && hardMax > 0 ? (
-              <span className="px-3 py-1 rounded bg-red-500/20 text-red-300 text-xs font-bold">
+              <span className="px-4 py-2 rounded bg-red-500/20 text-red-300 text-base font-bold">
                 Do Not Overpay Past {currency(hardMax)}
               </span>
             ) : (
-              <span className="px-3 py-1 rounded bg-blue-500/20 text-blue-300 text-xs font-bold">
+              <span className="px-4 py-2 rounded bg-blue-500/20 text-blue-300 text-base font-bold">
                 {currentBid <= safeBid
                   ? "Safe Bid Range"
                   : currentBid <= maxValue
@@ -408,7 +445,7 @@ const CurrentAuctionCard = ({
 };
 
 const DynastyDestroyerAiCard = () => (
-  <section className="w-full xl:max-w-[460px] min-h-[520px] p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+  <section className="w-full min-h-[520px] p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
     <div className="flex items-center gap-3 pb-5 border-b border-gray-200 dark:border-[#202a32]">
       <span className="h-10 w-10 rounded-full border border-purple-400/40 bg-purple-500/15 text-purple-300 flex items-center justify-center">
         <FiCpu />
@@ -497,9 +534,329 @@ const DynastyDestroyerAiCard = () => (
   </section>
 );
 
+const MyTeamSnapshotCard = ({ draftedPlayers, leagueSettings, myTeam }) => {
+  const [draftedPlayersPage, setDraftedPlayersPage] = useState(1);
+  const budget = toNumber(leagueSettings?.Budget, 200);
+  const filledSlots = draftedPlayers.length;
+  const totalSlots = [
+    leagueSettings?.QBPlayers,
+    leagueSettings?.RBPlayers,
+    leagueSettings?.WRPlayers,
+    leagueSettings?.TEPlayers,
+    leagueSettings?.FLEXPlayers,
+    leagueSettings?.DEFPlayers,
+    leagueSettings?.KPlayers,
+  ].reduce((total, slotCount) => total + toNumber(slotCount), 0);
+  const normalizedTotalSlots = totalSlots > 0 ? totalSlots : 16;
+  const totalSpent = draftedPlayers.reduce(
+    (total, player) => total + toNumber(player.DraftAmount),
+    0
+  );
+  const budgetLeft = Math.max(budget - totalSpent, 0);
+  const filledPercent = Math.min((filledSlots / Math.max(normalizedTotalSlots, 1)) * 100, 100);
+  const allocationRules = Array.isArray(leagueSettings?.AllocationRules)
+    ? leagueSettings.AllocationRules
+    : [];
+  const getAllocationTarget = (position, targetType, fallbackPercent) => {
+    const rule = allocationRules.find(
+      (allocationRule) => allocationRule.position?.toUpperCase() === position
+    );
+    const percentField = targetType === "min" ? "minPercent" : "maxPercent";
+    return Math.round((budget * toNumber(rule?.[percentField], fallbackPercent)) / 100);
+  };
+  const positionSpendRows = [
+    { label: "QB", positions: ["QB"], limit: getAllocationTarget("QB", "min", 5) },
+    { label: "RB", positions: ["RB"], limit: getAllocationTarget("RB", "max", 45) },
+    { label: "WR", positions: ["WR"], limit: getAllocationTarget("WR", "max", 45) },
+    { label: "TE", positions: ["TE"], limit: getAllocationTarget("TE", "min", 5) },
+    { label: "DST", positions: ["DST", "DEF"], limit: getAllocationTarget("DST", "max", 5) },
+    { label: "K", positions: ["K"], limit: getAllocationTarget("K", "max", 2) },
+  ].map((row) => {
+    const spent = draftedPlayers
+      .filter((player) => row.positions.includes(player.Position))
+      .reduce((total, player) => total + toNumber(player.DraftAmount), 0);
+
+    return {
+      ...row,
+      spent,
+      percent: Math.min((spent / Math.max(row.limit, 1)) * 100, 100),
+    };
+  });
+  const positionCounts = draftedPlayers.reduce((counts, player) => {
+    const position = player.Position || "UNK";
+    return {
+      ...counts,
+      [position]: (counts[position] || 0) + 1,
+    };
+  }, {});
+  const teamNeeds = [
+    { label: "QB", needed: Math.max(toNumber(leagueSettings?.QBPlayers, 1) - (positionCounts.QB || 0), 0) },
+    { label: "RB", needed: Math.max(toNumber(leagueSettings?.RBPlayers, 2) - (positionCounts.RB || 0), 0) },
+    { label: "WR", needed: Math.max(toNumber(leagueSettings?.WRPlayers, 2) - (positionCounts.WR || 0), 0) },
+    { label: "TE", needed: Math.max(toNumber(leagueSettings?.TEPlayers, 1) - (positionCounts.TE || 0), 0) },
+  ]
+    .filter((need) => need.needed > 0)
+    .flatMap((need) =>
+      Array.from({ length: need.needed }, (_, index) =>
+        need.needed > 1 ? `${need.label}${index + 1}` : need.label
+      )
+    )
+    .slice(0, 4);
+  const sortedDraftedPlayers = useMemo(
+    () =>
+      [...draftedPlayers].sort((firstPlayer, secondPlayer) => {
+        const firstPosition = firstPlayer.Position || "";
+        const secondPosition = secondPlayer.Position || "";
+        if (firstPosition !== secondPosition) return firstPosition.localeCompare(secondPosition);
+
+        return (firstPlayer.FullName || "").localeCompare(secondPlayer.FullName || "");
+      }),
+    [draftedPlayers]
+  );
+  const draftedPlayersPageCount = Math.max(
+    1,
+    Math.ceil(sortedDraftedPlayers.length / DRAFTED_PLAYERS_PAGE_SIZE)
+  );
+  const draftedPlayersPageItems = useMemo(() => {
+    const startIndex = (draftedPlayersPage - 1) * DRAFTED_PLAYERS_PAGE_SIZE;
+    return sortedDraftedPlayers.slice(
+      startIndex,
+      startIndex + DRAFTED_PLAYERS_PAGE_SIZE
+    );
+  }, [draftedPlayersPage, sortedDraftedPlayers]);
+  const draftedPlayersPaginationItems = useMemo(
+    () => getPaginationItems(draftedPlayersPageCount, draftedPlayersPage),
+    [draftedPlayersPageCount, draftedPlayersPage]
+  );
+
+  useEffect(() => {
+    setDraftedPlayersPage((currentPage) =>
+      Math.min(Math.max(currentPage, 1), draftedPlayersPageCount)
+    );
+  }, [draftedPlayersPageCount]);
+
+  return (
+    <section className="w-full min-h-[520px] p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          My Team Snapshot
+        </p>
+      </div>
+
+      <div className="py-6 grid grid-cols-1 md:grid-cols-[1.55fr_0.72fr_0.72fr] gap-2 border-b border-gray-200 dark:border-[#202a32]">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-16 w-16 rounded-lg border border-red-500/40 bg-red-500/10 text-red-300 flex items-center justify-center shrink-0">
+            <FiShield size={32} />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+            {myTeam?.TeamName || "My Team"}
+          </p>
+        </div>
+        <div className="md:border-l md:border-gray-200 md:dark:border-[#26313a] md:pl-3 min-w-0">
+          <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-bold">
+            Total Spent
+          </p>
+          <p className="mt-2 text-2xl font-bold text-green-500">
+            {currency(totalSpent)}
+          </p>
+        </div>
+        <div className="md:border-l md:border-gray-200 md:dark:border-[#26313a] md:pl-3 min-w-0">
+          <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-bold">
+            Budget Left
+          </p>
+          <p className="mt-2 text-2xl font-bold text-red-400">
+            {currency(budgetLeft)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-[0.7fr_2.05fr_0.75fr] gap-4">
+        <div>
+          <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-bold">
+            Slots Filled
+          </p>
+          <p className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">
+            {filledSlots} / {normalizedTotalSlots}
+          </p>
+          <div className="mt-5 h-3 rounded-full bg-gray-200 dark:bg-[#232b32] overflow-hidden">
+            <div
+              className="h-full bg-green-500 rounded-full"
+              style={{ width: `${filledPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-5">
+          <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-bold mb-4">
+            Position Spend
+          </p>
+          <div className="space-y-3">
+            {positionSpendRows.map((row) => (
+              <div className="grid grid-cols-[42px_1fr_112px] items-center gap-4" key={row.label}>
+                <span className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  {row.label}
+                </span>
+                <div className="h-2 rounded-full bg-gray-200 dark:bg-[#2a3238] overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 rounded-full"
+                    style={{ width: `${row.percent}%` }}
+                  />
+                </div>
+                <span className="text-base font-bold text-gray-600 dark:text-gray-300 text-right whitespace-nowrap">
+                  {currency(row.spent)} / {currency(row.limit)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-3">
+            <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-bold">
+              Team Needs
+            </p>
+            <div className="mt-3 space-y-1.5">
+              {(teamNeeds.length > 0 ? teamNeeds : ["Depth"]).map((need, index) => (
+                <p
+                  className={`text-base font-bold ${
+                    index < 2 ? "text-red-400" : "text-amber-400"
+                  }`}
+                  key={`${need}-${index}`}
+                >
+                  {index + 1}. {need}
+                </p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-3">
+            <p className="text-xs uppercase text-gray-500 dark:text-gray-400 font-bold">
+              Risk Level
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="text-lg font-bold text-amber-400">Balanced</p>
+              <div className="relative h-9 w-14">
+                <div className="absolute inset-x-0 bottom-0 h-10 rounded-t-full border-[8px] border-b-0 border-amber-400" />
+                <div className="absolute right-0 bottom-0 h-10 w-10 rounded-tr-full border-r-[8px] border-t-[8px] border-red-400" />
+                <div className="absolute bottom-1 left-9 h-8 w-1 origin-bottom rotate-45 rounded-full bg-amber-300" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="players-page mt-5 rounded-lg border border-gray-200 dark:border-[#26313a] bg-white dark:bg-secondary-dark-bg overflow-hidden">
+        {sortedDraftedPlayers.length === 0 ? (
+          <div className="players-empty-state target-board-wishlist-empty">
+            No drafted players yet.
+          </div>
+        ) : (
+          <>
+            <div className="target-board-wishlist-list">
+              {draftedPlayersPageItems.map((player, index) => {
+                const playerName = player.FullName || player.fullName || "Unknown Player";
+                const playerPosition = player.Position || player.position || "--";
+                const playerTeam = player.Team || player.nflTeam || "FA";
+                const playerValue = getFirstValue(
+                  player.DraftAmount,
+                  player.NonSuperFlexValue,
+                  player.auctionValue,
+                  0
+                );
+
+                return (
+                  <div
+                    className="target-board-wishlist-row"
+                    key={player.DatabaseID || player.id || `${playerName}-${index}`}
+                    style={{
+                      cursor: "default",
+                      gridTemplateColumns: "minmax(0, 1fr) 104px",
+                      minHeight: 74,
+                    }}
+                  >
+                    <span className="target-board-wishlist-player">
+                      <span
+                        className="target-board-wishlist-name"
+                        style={{ fontSize: 20 }}
+                      >
+                        {playerName}
+                      </span>
+                      <span
+                        className="target-board-meta"
+                        style={{ fontSize: 15 }}
+                      >
+                        {playerPosition} <span>•</span> {playerTeam}
+                      </span>
+                    </span>
+                    <span
+                      className="target-board-wishlist-value"
+                      style={{ fontSize: 20 }}
+                    >
+                      {currency(playerValue)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {draftedPlayersPageCount > 1 && (
+              <div className="target-board-pagination target-board-wishlist-pagination">
+                <button
+                  aria-label="Previous drafted players page"
+                  className="target-board-page-button"
+                  disabled={draftedPlayersPage === 1}
+                  onClick={() => setDraftedPlayersPage((page) => Math.max(1, page - 1))}
+                  type="button"
+                >
+                  <FiChevronLeft />
+                </button>
+                {draftedPlayersPaginationItems.map((pageItem, index) =>
+                  pageItem === "ellipsis" ? (
+                    <span
+                      className="target-board-page-button target-board-page-ellipsis"
+                      key={`drafted-ellipsis-${index}`}
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      className={`target-board-page-button ${
+                        draftedPlayersPage === pageItem ? "active" : ""
+                      }`}
+                      key={pageItem}
+                      onClick={() => setDraftedPlayersPage(pageItem)}
+                      type="button"
+                    >
+                      {pageItem}
+                    </button>
+                  )
+                )}
+                <button
+                  aria-label="Next drafted players page"
+                  className="target-board-page-button"
+                  disabled={draftedPlayersPage === draftedPlayersPageCount}
+                  onClick={() =>
+                    setDraftedPlayersPage((page) =>
+                      Math.min(draftedPlayersPageCount, page + 1)
+                    )
+                  }
+                  type="button"
+                >
+                  <FiChevronRight />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </section>
+  );
+};
+
 const BigDawgsDraftCommandCenter = () => {
   const { currentUser } = useAuth();
   const [currentAuction, setCurrentAuction] = useState(emptyAuction);
+  const [draftedPlayers, setDraftedPlayers] = useState([]);
+  const [leagueSettings, setLeagueSettings] = useState({});
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -526,6 +883,10 @@ const BigDawgsDraftCommandCenter = () => {
   const nominatingTeam = useMemo(
     () => teams.find((team) => team.id === nominatingTeamId),
     [teams, nominatingTeamId]
+  );
+  const myTeam = useMemo(
+    () => teams.find((team) => team.MyTeam) || teams[0] || null,
+    [teams]
   );
 
   const playerSearchOptions = useMemo(() => {
@@ -614,7 +975,10 @@ const BigDawgsDraftCommandCenter = () => {
     );
 
     return onSnapshot(leagueSettingsRef, (settingsSnapshot) => {
-      const leagueTeams = settingsSnapshot.data()?.LeagueTeams;
+      const settingsData = settingsSnapshot.exists() ? settingsSnapshot.data() : {};
+      const leagueTeams = settingsData?.LeagueTeams;
+
+      setLeagueSettings(settingsData || {});
 
       setTeams(
         Array.isArray(leagueTeams)
@@ -630,6 +994,38 @@ const BigDawgsDraftCommandCenter = () => {
       );
     });
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser || !myTeam?.id) {
+      setDraftedPlayers([]);
+      return undefined;
+    }
+
+    const draftedPlayersRef = collection(
+      db,
+      "userprofile",
+      currentUser.uid,
+      "bigdawgdraft",
+      `${myTeam.id}`,
+      "players"
+    );
+
+    return onSnapshot(
+      draftedPlayersRef,
+      (querySnapshot) => {
+        setDraftedPlayers(
+          querySnapshot.docs.map((playerDoc) => ({
+            id: playerDoc.id,
+            ...playerDoc.data(),
+          }))
+        );
+      },
+      (error) => {
+        console.error("Error loading my drafted players:", error);
+        setDraftedPlayers([]);
+      }
+    );
+  }, [currentUser, myTeam?.id]);
 
   useEffect(() => {
     const playersQuery = query(
@@ -711,7 +1107,7 @@ const BigDawgsDraftCommandCenter = () => {
         <Header category="Big Dawgs" title="Command Center" />
       </div>
 
-      <div className="m-2 md:m-10 mt-6 flex flex-col xl:flex-row items-stretch gap-6">
+      <div className="m-2 md:m-10 mt-6 grid grid-cols-1 xl:grid-cols-[2fr_1fr_1.45fr] items-stretch gap-6">
         <CurrentAuctionCard
           currentAuction={currentAuction}
           teams={teams}
@@ -729,6 +1125,11 @@ const BigDawgsDraftCommandCenter = () => {
           onDraftTeamChange={setDraftTeamId}
         />
         <DynastyDestroyerAiCard />
+        <MyTeamSnapshotCard
+          draftedPlayers={draftedPlayers}
+          leagueSettings={leagueSettings}
+          myTeam={myTeam}
+        />
       </div>
 
       <Dialog open={showAddPlayer} onClose={() => setShowAddPlayer(false)} fullWidth maxWidth="sm">

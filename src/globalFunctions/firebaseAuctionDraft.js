@@ -39,7 +39,8 @@ const buildAuctionPlayerPayload = (player) => ({
   Status: player.Status ?? "",
   SuperFlexValue: player.SuperFlexValue ?? 0,
   Team: player.Team ?? "",
-  YearsExperience: player.YearsExperience ?? "",
+  YearsExperience:
+    player.YearsExperience ?? player.yearsExp ?? player.yearsExperience ?? player.years_exp ?? "",
   Fumbles: player.Fumbles ?? 0,
   PassingYards: player.PassingYards ?? 0,
   PassingTDs: player.PassingTDs ?? 0,
