@@ -91,6 +91,9 @@ const toNumber = (value, fallback = 0) => {
     : parsed;
 };
 
+const hasTextValue = (value) =>
+  value !== undefined && value !== null && `${value}`.trim() !== "";
+
 const normalizeAuctionPlayer = async (playerDoc) => {
   const data = playerDoc.data();
   const projectedStatsSnap = await getDoc(
@@ -735,6 +738,135 @@ const getTeamThreatAnalysis = ({
     .sort((firstTeam, secondTeam) => secondTeam.threatScore - firstTeam.threatScore);
 };
 
+const getPositionWishlistPlayers = (currentAuction, targetedPlayers, players, teamRosters) => {
+  const currentPlayerId = currentAuction?.DatabaseID || currentAuction?.id;
+  const currentPosition = currentAuction?.Position || currentAuction?.position;
+
+  if (!currentPlayerId || !currentPosition) return [];
+
+  const masterPlayersById = new Map(
+    players.map((player) => [player.DatabaseID || player.id, player])
+  );
+  const draftedPlayerIds = new Set(
+    Object.values(teamRosters || {})
+      .flat()
+      .map((player) => player.DatabaseID || player.id)
+      .filter(Boolean)
+  );
+
+  return targetedPlayers
+    .map((targetedPlayer) => {
+      const playerId = targetedPlayer.playerId || targetedPlayer.DatabaseID || targetedPlayer.id;
+      const masterPlayer = masterPlayersById.get(playerId) || {};
+
+      return {
+        ...targetedPlayer,
+        ...masterPlayer,
+        id: playerId,
+        DatabaseID: playerId,
+        FullName:
+          masterPlayer.FullName ||
+          masterPlayer.fullName ||
+          targetedPlayer.name ||
+          targetedPlayer.FullName ||
+          targetedPlayer.fullName ||
+          "",
+        NonSuperFlexValue:
+          masterPlayer.NonSuperFlexValue ??
+          masterPlayer.auctionValue ??
+          targetedPlayer.auctionValue ??
+          targetedPlayer.NonSuperFlexValue ??
+          0,
+        Position:
+          masterPlayer.Position ||
+          masterPlayer.position ||
+          targetedPlayer.position ||
+          targetedPlayer.Position ||
+          "",
+        PositionRank:
+          masterPlayer.PositionRank ??
+          masterPlayer.rank ??
+          targetedPlayer.positionRank ??
+          targetedPlayer.rank ??
+          "",
+        SuperFlexValue:
+          masterPlayer.SuperFlexValue ??
+          masterPlayer.maxBid ??
+          targetedPlayer.maxBid ??
+          targetedPlayer.hardMaxBid ??
+          targetedPlayer.SuperFlexValue ??
+          0,
+        Team:
+          masterPlayer.Team ||
+          masterPlayer.nflTeam ||
+          targetedPlayer.team ||
+          targetedPlayer.Team ||
+          "",
+        Tier:
+          masterPlayer.Tier ??
+          masterPlayer.tier ??
+          targetedPlayer.tier ??
+          targetedPlayer.Tier ??
+          "",
+        hardMax:
+          masterPlayer.hardMax ??
+          targetedPlayer.hardMaxBid ??
+          targetedPlayer.hardMax ??
+          0,
+        maxBid:
+          masterPlayer.maxBid ??
+          targetedPlayer.maxBid ??
+          targetedPlayer.hardMaxBid ??
+          0,
+        watchlist: targetedPlayer.watchlist,
+        leagueTeam: targetedPlayer.leagueTeam,
+        leagueTeamNumber: targetedPlayer.leagueTeamNumber,
+        purchasePrice: targetedPlayer.purchasePrice,
+      };
+    })
+    .filter((player) => {
+      const playerId = player.DatabaseID || player.id;
+      const draftStatus = normalizeStatus(player.DraftStatus);
+      const status = normalizeStatus(player.Status);
+      const availability = normalizeStatus(player.availability || player.Availability);
+      const playerPosition = getPlayerPosition(player);
+
+      return (
+        Boolean(player.watchlist) &&
+        playerPosition.toUpperCase() === `${currentPosition}`.toUpperCase() &&
+        playerId !== currentPlayerId &&
+        !draftedPlayerIds.has(playerId) &&
+        !hasTextValue(player.leagueTeamNumber) &&
+        !hasTextValue(player.leagueTeam) &&
+        draftStatus !== "drafted" &&
+        draftStatus !== "unavailable" &&
+        status !== "unavailable" &&
+        status !== "inactive" &&
+        availability !== "unavailable" &&
+        player.available !== false &&
+        player.Available !== false
+      );
+    })
+    .sort(
+      (firstPlayer, secondPlayer) =>
+        toNumber(firstPlayer.PositionRank ?? firstPlayer.rank, 999) -
+          toNumber(secondPlayer.PositionRank ?? secondPlayer.rank, 999) ||
+        toNumber(secondPlayer.NonSuperFlexValue || secondPlayer.auctionValue) -
+          toNumber(firstPlayer.NonSuperFlexValue || firstPlayer.auctionValue)
+    );
+};
+
+const getPlayerMaxValue = (player) =>
+  toNumber(player?.SuperFlexValue || player?.maxBid || player?.NonSuperFlexValue || player?.auctionValue);
+
+const getPlayerHardMaxValue = (player) => {
+  const hardMax = toNumber(player?.hardMax || player?.HardMax || player?.HardMaxValue);
+
+  if (hardMax > 0) return hardMax;
+
+  return Math.ceil(getPlayerMaxValue(player) * 1.08);
+};
+
 const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
   const comparablePlayers = useMemo(
     () => getComparableAvailablePlayers(currentAuction, players),
@@ -857,8 +989,7 @@ const TeamThreatAnalysisCard = ({
           No major threats detected. Most teams either lack budget, roster need, or incentive to chase this player.
         </p>
       ) : (
-        <>
-          <div className="mt-4 max-h-[430px] overflow-y-auto pr-1">
+        <div className="mt-4 max-h-[455px] overflow-y-auto overscroll-contain pr-1">
             <table className="w-full table-fixed text-left">
               <colgroup>
                 <col className="w-[25%]" />
@@ -907,8 +1038,81 @@ const TeamThreatAnalysisCard = ({
                 ))}
               </tbody>
             </table>
+        </div>
+      )}
+    </section>
+  );
+};
+
+const PositionWishlistCard = ({ currentAuction, players, targetedPlayers, teamRosters }) => {
+  const wishlistPlayers = useMemo(
+    () => getPositionWishlistPlayers(currentAuction, targetedPlayers, players, teamRosters),
+    [currentAuction, players, targetedPlayers, teamRosters]
+  );
+  const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
+  const currentPosition = currentAuction?.Position || currentAuction?.position || "";
+
+  return (
+    <section className="w-full h-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          {currentPosition ? `${currentPosition} Wishlist` : "Position Wishlist"}
+        </p>
+      </div>
+
+      {!hasCurrentPlayer ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          Add a current auction player to see matching wishlist targets.
+        </p>
+      ) : wishlistPlayers.length === 0 ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          No available {currentPosition} wishlist players.
+        </p>
+      ) : (
+        <div className="mt-4 h-[455px] overflow-y-auto overscroll-contain pr-1">
+          <div className="divide-y divide-gray-100 dark:divide-[#202a32]">
+            {wishlistPlayers.map((player) => (
+              <div
+                className="grid grid-cols-[minmax(0,1fr)_64px_64px_64px] items-center gap-3 py-3"
+                key={player.DatabaseID || player.id}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-bold text-gray-900 dark:text-white">
+                    {player.FullName || player.fullName || "Unknown Player"}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                    Rank {statValue(player.PositionRank ?? player.rank)} · Tier{" "}
+                    {statValue(player.Tier ?? player.tier)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                    Value
+                  </p>
+                  <p className="text-lg font-bold text-green-500">
+                    {currency(player.NonSuperFlexValue || player.auctionValue)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                    Max
+                  </p>
+                  <p className="text-lg font-bold text-blue-400">
+                    {currency(getPlayerMaxValue(player))}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                    Hard
+                  </p>
+                  <p className="text-lg font-bold text-red-400">
+                    {currency(getPlayerHardMaxValue(player))}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-        </>
+        </div>
       )}
     </section>
   );
@@ -1354,6 +1558,7 @@ const BigDawgsDraftCommandCenter = () => {
   const [teamRosters, setTeamRosters] = useState({});
   const [leagueSettings, setLeagueSettings] = useState({});
   const [players, setPlayers] = useState([]);
+  const [targetedPlayers, setTargetedPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
@@ -1582,6 +1787,36 @@ const BigDawgsDraftCommandCenter = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) {
+      setTargetedPlayers([]);
+      return undefined;
+    }
+
+    const targetedPlayersRef = collection(
+      db,
+      "userprofile",
+      currentUser.uid,
+      "targetedPlayers"
+    );
+
+    return onSnapshot(
+      targetedPlayersRef,
+      (querySnapshot) => {
+        setTargetedPlayers(
+          querySnapshot.docs.map((targetedPlayerDoc) => ({
+            id: targetedPlayerDoc.id,
+            ...targetedPlayerDoc.data(),
+          }))
+        );
+      },
+      (error) => {
+        console.error("Error loading command center wishlist players:", error);
+        setTargetedPlayers([]);
+      }
+    );
+  }, [currentUser]);
+
   const handleAddPlayer = async (event) => {
     event.preventDefault();
     if (!currentUser || !selectedPlayer) return;
@@ -1672,7 +1907,7 @@ const BigDawgsDraftCommandCenter = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:w-3/4 items-stretch">
+        <div className="grid grid-cols-1 xl:grid-cols-[0.75fr_0.75fr_0.5fr] gap-6 items-stretch">
           <ComparableAvailablePlayersCard
             currentAuction={currentAuction}
             players={players}
@@ -1684,6 +1919,12 @@ const BigDawgsDraftCommandCenter = () => {
             players={players}
             teamRosters={teamRosters}
             teams={teams}
+          />
+          <PositionWishlistCard
+            currentAuction={currentAuction}
+            players={players}
+            targetedPlayers={targetedPlayers}
+            teamRosters={teamRosters}
           />
         </div>
       </div>
