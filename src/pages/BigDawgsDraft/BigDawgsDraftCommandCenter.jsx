@@ -590,6 +590,151 @@ const getComparableAvailablePlayers = (currentAuction, players) => {
   return selected.slice(0, 5);
 };
 
+const getPlayerPosition = (player) => player?.Position || player?.position || "";
+
+const getTeamBudget = (team, leagueSettings) =>
+  toNumber(team?.TeamAmount, toNumber(leagueSettings?.Budget, 200));
+
+const getStarterSlotsForPosition = (position, leagueSettings) => {
+  const slotMap = {
+    QB: leagueSettings?.QBPlayers,
+    RB: leagueSettings?.RBPlayers,
+    WR: leagueSettings?.WRPlayers,
+    TE: leagueSettings?.TEPlayers,
+    DST: leagueSettings?.DEFPlayers,
+    DEF: leagueSettings?.DEFPlayers,
+    K: leagueSettings?.KPlayers,
+  };
+
+  return Math.max(toNumber(slotMap[position], ["QB", "TE", "DST", "DEF", "K"].includes(position) ? 1 : 2), 1);
+};
+
+const getTotalRosterSlots = (leagueSettings) => {
+  const total = [
+    leagueSettings?.QBPlayers,
+    leagueSettings?.RBPlayers,
+    leagueSettings?.WRPlayers,
+    leagueSettings?.TEPlayers,
+    leagueSettings?.FLEXPlayers,
+    leagueSettings?.DEFPlayers,
+    leagueSettings?.KPlayers,
+  ].reduce((sum, slotCount) => sum + toNumber(slotCount), 0);
+
+  return total > 0 ? total : 16;
+};
+
+const getTeamNeedsForThreat = (teamPlayers, leagueSettings) => {
+  const positionCounts = teamPlayers.reduce((counts, player) => {
+    const position = getPlayerPosition(player);
+    return {
+      ...counts,
+      [position]: (counts[position] || 0) + 1,
+    };
+  }, {});
+
+  return ["QB", "RB", "WR", "TE"].flatMap((position) => {
+    const needed = Math.max(getStarterSlotsForPosition(position, leagueSettings) - (positionCounts[position] || 0), 0);
+    return Array.from({ length: needed }, (_, index) => (needed > 1 ? `${position}${index + 1}` : position));
+  });
+};
+
+const getThreatLevel = (score) => {
+  if (score >= 75) return { label: "High", color: "text-red-400", badge: "bg-red-500/15 border-red-500/40" };
+  if (score >= 50) return { label: "Medium", color: "text-amber-400", badge: "bg-amber-500/15 border-amber-500/40" };
+  if (score >= 25) return { label: "Low", color: "text-green-500", badge: "bg-green-500/15 border-green-500/40" };
+  return { label: "Very Low", color: "text-gray-400", badge: "bg-gray-500/10 border-gray-500/30" };
+};
+
+const getTeamThreatAnalysis = ({
+  currentAuction,
+  leagueSettings,
+  myTeam,
+  players,
+  teams,
+  teamRosters,
+}) => {
+  const currentPlayerId = currentAuction?.DatabaseID || currentAuction?.id;
+  const currentPosition = currentAuction?.Position || currentAuction?.position;
+  const currentValue = toNumber(currentAuction?.NonSuperFlexValue || currentAuction?.auctionValue);
+  const currentMax = toNumber(currentAuction?.SuperFlexValue || currentAuction?.maxBid, currentValue);
+  const currentTier = toNumber(currentAuction?.Tier ?? currentAuction?.tier, 99);
+
+  if (!currentPlayerId || !currentPosition || currentValue <= 0) return [];
+
+  const availableAtPosition = players.filter((player) => {
+    const draftStatus = normalizeStatus(player.DraftStatus);
+    const status = normalizeStatus(player.Status);
+    return (
+      getPlayerPosition(player) === currentPosition &&
+      toNumber(player.NonSuperFlexValue || player.auctionValue) > 0 &&
+      draftStatus !== "drafted" &&
+      draftStatus !== "unavailable" &&
+      status !== "unavailable" &&
+      status !== "inactive" &&
+      player.available !== false &&
+      player.Available !== false
+    );
+  }).length;
+  const scarcityScore = currentTier <= 2 ? 1 : Math.max(0.2, 1 - availableAtPosition / 18);
+  const totalRosterSlots = getTotalRosterSlots(leagueSettings);
+
+  return teams
+    .filter((team) => team.id !== myTeam?.id)
+    .map((team) => {
+      const roster = teamRosters[team.id] || [];
+      const totalSpent = roster.reduce((sum, player) => sum + toNumber(player.DraftAmount), 0);
+      const budgetLeft = Math.max(getTeamBudget(team, leagueSettings) - totalSpent, 0);
+      const remainingSlots = Math.max(totalRosterSlots - roster.length, 0);
+      const maxBid = Math.max(budgetLeft - Math.max(remainingSlots - 1, 0), 0);
+      const positionPlayers = roster.filter((player) => getPlayerPosition(player) === currentPosition);
+      const starterSlots = getStarterSlotsForPosition(currentPosition, leagueSettings);
+      const emptyStarterSlots = Math.max(starterSlots - positionPlayers.length, 0);
+      const positionNeedScore = emptyStarterSlots > 0 ? 1 : 0;
+      const budgetPowerScore = Math.min(Math.max(maxBid / Math.max(currentMax, currentValue, 1), budgetLeft / Math.max(currentValue * 1.25, 1)), 1);
+      const emptySlotScore = Math.min(emptyStarterSlots / Math.max(starterSlots, 1), 1);
+      const positionSpend = positionPlayers.reduce((sum, player) => sum + toNumber(player.DraftAmount), 0);
+      const averagePositionSpend = positionSpend / Math.max(positionPlayers.length, 1);
+      const spendingScore = Math.min(Math.max(averagePositionSpend / Math.max(currentValue, 1), positionSpend / Math.max(getTeamBudget(team, leagueSettings) * 0.28, 1)), 1);
+      const flexibilityScore = Math.min(remainingSlots / Math.max(totalRosterSlots, 1), 1);
+      const threatScore = Math.round(
+        positionNeedScore * 30 +
+          budgetPowerScore * 25 +
+          emptySlotScore * 15 +
+          scarcityScore * 15 +
+          spendingScore * 10 +
+          flexibilityScore * 5
+      );
+      const needs = getTeamNeedsForThreat(roster, leagueSettings);
+      const relevantNeeds = needs
+        .filter((need) => need.startsWith(currentPosition) || ["RB", "WR", "TE"].includes(need))
+        .slice(0, 2);
+      const legitimateThreat =
+        positionNeedScore > 0 ||
+        maxBid >= currentMax ||
+        maxBid >= currentValue ||
+        emptyStarterSlots > 0 ||
+        spendingScore >= 0.7 ||
+        (budgetPowerScore >= 0.65 && remainingSlots >= 3);
+      const winChance = Math.min(
+        95,
+        Math.max(3, Math.round(threatScore * 0.68 + budgetPowerScore * 18 + positionNeedScore * 9))
+      );
+
+      return {
+        budgetLeft,
+        maxBid,
+        needs: relevantNeeds.length > 0 ? relevantNeeds : needs.slice(0, 2),
+        team,
+        threatLevel: getThreatLevel(threatScore),
+        threatScore,
+        winChance,
+        legitimateThreat,
+      };
+    })
+    .filter((analysis) => analysis.legitimateThreat && analysis.threatScore >= 25)
+    .sort((firstTeam, secondTeam) => secondTeam.threatScore - firstTeam.threatScore);
+};
+
 const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
   const comparablePlayers = useMemo(
     () => getComparableAvailablePlayers(currentAuction, players),
@@ -598,7 +743,7 @@ const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
   const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
 
   return (
-    <section className="w-full xl:w-3/4 p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <section className="w-full h-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
       <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
         <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
           Comparable Available Players
@@ -668,6 +813,102 @@ const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
             </tbody>
           </table>
         </div>
+      )}
+    </section>
+  );
+};
+
+const TeamThreatAnalysisCard = ({
+  currentAuction,
+  leagueSettings,
+  myTeam,
+  players,
+  teamRosters,
+  teams,
+}) => {
+  const threats = useMemo(
+    () =>
+      getTeamThreatAnalysis({
+        currentAuction,
+        leagueSettings,
+        myTeam,
+        players,
+        teamRosters,
+        teams,
+      }),
+    [currentAuction, leagueSettings, myTeam, players, teamRosters, teams]
+  );
+  const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
+
+  return (
+    <section className="w-full h-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          Team Threat Analysis
+        </p>
+      </div>
+
+      {!hasCurrentPlayer ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          Add a current auction player to identify the most likely bidders.
+        </p>
+      ) : threats.length === 0 ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          No major threats detected. Most teams either lack budget, roster need, or incentive to chase this player.
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 max-h-[430px] overflow-y-auto pr-1">
+            <table className="w-full table-fixed text-left">
+              <colgroup>
+                <col className="w-[25%]" />
+                <col className="w-[18%]" />
+                <col className="w-[20%]" />
+                <col className="w-[22%]" />
+                <col className="w-[15%]" />
+              </colgroup>
+              <thead className="sticky top-0 z-10 bg-white dark:bg-secondary-dark-bg">
+                <tr className="border-b border-gray-200 dark:border-[#26313a] text-sm uppercase text-gray-500 dark:text-gray-400">
+                  <th className="py-2.5 pr-3 font-bold">Team</th>
+                  <th className="py-2.5 px-2 font-bold">Budget Left</th>
+                  <th className="py-2.5 px-2 font-bold">Needs</th>
+                  <th className="py-2.5 px-2 font-bold">Threat Level</th>
+                  <th className="py-2.5 pl-2 font-bold">Win Chance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {threats.map((threat) => (
+                  <tr
+                    className="border-b border-gray-100 dark:border-[#202a32] last:border-b-0"
+                    key={threat.team.id}
+                  >
+                    <td className="py-3 pr-3">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                        {threat.team.TeamName}
+                      </p>
+                    </td>
+                    <td className="py-3 px-2 text-lg font-bold text-green-500">
+                      {currency(threat.budgetLeft)}
+                    </td>
+                    <td className="py-3 px-2 text-base font-bold text-gray-700 dark:text-gray-200">
+                      {threat.needs.length > 0 ? threat.needs.join(", ") : "--"}
+                    </td>
+                    <td className="py-3 px-2">
+                      <span
+                        className={`inline-flex rounded-md border px-2.5 py-1 text-base font-bold ${threat.threatLevel.color} ${threat.threatLevel.badge}`}
+                      >
+                        {threat.threatLevel.label}
+                      </span>
+                    </td>
+                    <td className={`py-3 pl-2 text-lg font-bold ${threat.threatLevel.color}`}>
+                      {threat.winChance}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </section>
   );
@@ -963,11 +1204,36 @@ const MyTeamSnapshotCard = ({ draftedPlayers, leagueSettings, myTeam }) => {
             </p>
             <div className="mt-2 flex items-center justify-between gap-2">
               <p className="text-lg font-bold text-amber-400">Balanced</p>
-              <div className="relative h-9 w-14">
-                <div className="absolute inset-x-0 bottom-0 h-10 rounded-t-full border-[8px] border-b-0 border-amber-400" />
-                <div className="absolute right-0 bottom-0 h-10 w-10 rounded-tr-full border-r-[8px] border-t-[8px] border-red-400" />
-                <div className="absolute bottom-1 left-9 h-8 w-1 origin-bottom rotate-45 rounded-full bg-amber-300" />
-              </div>
+              <svg
+                aria-hidden="true"
+                className="h-12 w-20 shrink-0"
+                viewBox="0 0 80 48"
+              >
+                <path
+                  d="M14 42 A26 26 0 0 1 66 42"
+                  fill="none"
+                  stroke="#fbbf24"
+                  strokeLinecap="round"
+                  strokeWidth="8"
+                />
+                <path
+                  d="M55.6 18.2 A26 26 0 0 1 66 42"
+                  fill="none"
+                  stroke="#f87171"
+                  strokeLinecap="round"
+                  strokeWidth="8"
+                />
+                <line
+                  stroke="#fde047"
+                  strokeLinecap="round"
+                  strokeWidth="4"
+                  x1="40"
+                  x2="63"
+                  y1="42"
+                  y2="20"
+                />
+                <circle cx="40" cy="42" fill="#fbbf24" r="3" />
+              </svg>
             </div>
           </div>
         </div>
@@ -1085,6 +1351,7 @@ const BigDawgsDraftCommandCenter = () => {
   const { currentUser } = useAuth();
   const [currentAuction, setCurrentAuction] = useState(emptyAuction);
   const [draftedPlayers, setDraftedPlayers] = useState([]);
+  const [teamRosters, setTeamRosters] = useState({});
   const [leagueSettings, setLeagueSettings] = useState({});
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -1217,6 +1484,7 @@ const BigDawgsDraftCommandCenter = () => {
                 id: `${team.TeamNumber || index + 1}`,
                 TeamName: team.TeamName,
                 TeamNumber: team.TeamNumber || index + 1,
+                TeamAmount: team.TeamAmount,
                 MyTeam: team.MyTeam === true,
               }))
           : []
@@ -1255,6 +1523,48 @@ const BigDawgsDraftCommandCenter = () => {
       }
     );
   }, [currentUser, myTeam?.id]);
+
+  useEffect(() => {
+    if (!currentUser || teams.length === 0) {
+      setTeamRosters({});
+      return undefined;
+    }
+
+    const unsubscribers = teams.map((team) => {
+      const teamPlayersRef = collection(
+        db,
+        "userprofile",
+        currentUser.uid,
+        "bigdawgdraft",
+        `${team.id}`,
+        "players"
+      );
+
+      return onSnapshot(
+        teamPlayersRef,
+        (querySnapshot) => {
+          setTeamRosters((currentRosters) => ({
+            ...currentRosters,
+            [team.id]: querySnapshot.docs.map((playerDoc) => ({
+              id: playerDoc.id,
+              ...playerDoc.data(),
+            })),
+          }));
+        },
+        (error) => {
+          console.error(`Error loading drafted players for ${team.TeamName}:`, error);
+          setTeamRosters((currentRosters) => ({
+            ...currentRosters,
+            [team.id]: [],
+          }));
+        }
+      );
+    });
+
+    return () => {
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [currentUser, teams]);
 
   useEffect(() => {
     const playersQuery = query(
@@ -1362,13 +1672,19 @@ const BigDawgsDraftCommandCenter = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr_1.45fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:w-3/4 items-stretch">
           <ComparableAvailablePlayersCard
             currentAuction={currentAuction}
             players={players}
           />
-          <div className="hidden xl:block" />
-          <div className="hidden xl:block" />
+          <TeamThreatAnalysisCard
+            currentAuction={currentAuction}
+            leagueSettings={leagueSettings}
+            myTeam={myTeam}
+            players={players}
+            teamRosters={teamRosters}
+            teams={teams}
+          />
         </div>
       </div>
 
