@@ -56,6 +56,7 @@ const emptyAuction = {
 const DRAFTED_PLAYERS_PAGE_SIZE = 5;
 
 const currency = (value) => `$${Number(value || 0).toLocaleString()}`;
+const normalizeStatus = (value) => `${value ?? ""}`.trim().toLowerCase();
 
 const statValue = (value) => {
   if (value === undefined || value === null || value === "") return "--";
@@ -107,6 +108,13 @@ const normalizeAuctionPlayer = async (playerDoc) => {
   );
   const rank = getFirstValue(projectedStats.rank, projectedStats.Rank);
   const tier = getFirstValue(projectedStats.tier, projectedStats.Tier);
+  const projectedPoints = getFirstValue(
+    projectedStats.projected_points,
+    projectedStats.ProjectedPoints,
+    projectedStats.projectedPoints,
+    data.projectedPoints,
+    data.ProjectedPoints
+  );
 
   return {
     id: playerDoc.id,
@@ -125,6 +133,7 @@ const normalizeAuctionPlayer = async (playerDoc) => {
     NonSuperFlexValue: auctionValue ?? data.NonSuperFlexValue ?? 0,
     Position: data.position ?? data.Position ?? "",
     PositionRank: rank ?? data.positionRank ?? data.PositionRank ?? "",
+    ProjectedPoints: projectedPoints ?? 0,
     SearchFullName: data.searchFullName ?? data.search_full_name ?? data.fullName ?? "",
     SleeperID: data.sleeperId ?? data.sleeper_id ?? data.SleeperID ?? playerDoc.id,
     SuperFlexValue: maxBid ?? data.SuperFlexValue ?? auctionValue ?? 0,
@@ -133,6 +142,7 @@ const normalizeAuctionPlayer = async (playerDoc) => {
     YearsExperience:
       data.yearsExp ?? data.yearsExperience ?? data.years_exp ?? data.YearsExperience ?? "",
     auctionValue,
+    ddScore: data.ddScore ?? data.DDScore ?? 0,
     fullName: data.fullName ?? data.FullName ?? "",
     hardMax,
     headshotUrl: data.headshotUrl ?? data.media?.headshotUrl ?? "",
@@ -140,7 +150,9 @@ const normalizeAuctionPlayer = async (playerDoc) => {
     maxBid,
     nflTeam: data.nflTeam ?? data.team ?? data.Team ?? "",
     position: data.position ?? data.Position ?? "",
+    projectedPoints: projectedPoints ?? 0,
     rank,
+    sleeperScore: data.sleeperScore ?? data.SleeperScore ?? 0,
     tier,
   };
 };
@@ -440,6 +452,223 @@ const CurrentAuctionCard = ({
           </Button>
         </div>
       </div>
+    </section>
+  );
+};
+
+const buildPivotNote = (player, anchor) => {
+  const playerValue = toNumber(player.NonSuperFlexValue || player.auctionValue);
+  const anchorValue = toNumber(anchor.NonSuperFlexValue || anchor.auctionValue);
+  const playerMax = toNumber(player.SuperFlexValue || player.maxBid, playerValue);
+  const anchorMax = toNumber(anchor.SuperFlexValue || anchor.maxBid, anchorValue);
+  const playerTier = toNumber(player.Tier ?? player.tier, 99);
+  const anchorTier = toNumber(anchor.Tier ?? anchor.tier, 99);
+  const playerPoints = toNumber(player.ProjectedPoints ?? player.projectedPoints);
+  const anchorPoints = toNumber(anchor.ProjectedPoints ?? anchor.projectedPoints);
+
+  if (playerTier <= anchorTier && playerValue >= anchorValue * 0.9) {
+    return "Elite alternative if bidding exceeds Max Value.";
+  }
+
+  if (playerValue < anchorValue * 0.85 && playerPoints >= anchorPoints * 0.9) {
+    return "Slight discount with similar projection.";
+  }
+
+  if (playerMax > anchorMax && playerValue <= anchorValue) {
+    return "Higher upside for lower cost.";
+  }
+
+  if (playerValue < anchorValue * 0.7) {
+    return "Budget fallback if top tier dries up.";
+  }
+
+  return "Best value remaining.";
+};
+
+const getComparableAvailablePlayers = (currentAuction, players) => {
+  const currentPlayerId = currentAuction?.DatabaseID || currentAuction?.id;
+  const anchor =
+    players.find((player) => player.id === currentPlayerId || player.DatabaseID === currentPlayerId) ||
+    currentAuction;
+  const anchorPosition = anchor?.Position || anchor?.position;
+  const anchorValue = toNumber(anchor?.NonSuperFlexValue || anchor?.auctionValue);
+  const anchorMax = toNumber(anchor?.SuperFlexValue || anchor?.maxBid, anchorValue);
+  const anchorRank = toNumber(anchor?.PositionRank ?? anchor?.rank, 999);
+  const anchorTier = toNumber(anchor?.Tier ?? anchor?.tier, 99);
+  const anchorPoints = toNumber(anchor?.ProjectedPoints ?? anchor?.projectedPoints);
+
+  if (!currentPlayerId || !anchorPosition || anchorValue <= 0) return [];
+
+  const baseCandidates = players
+    .filter((player) => {
+      const playerId = player.DatabaseID || player.id;
+      const draftStatus = normalizeStatus(player.DraftStatus);
+      const status = normalizeStatus(player.Status);
+      const availability = normalizeStatus(player.availability || player.Availability);
+      const playerValue = toNumber(player.NonSuperFlexValue || player.auctionValue);
+
+      return (
+        (player.Position || player.position) === anchorPosition &&
+        playerId !== currentPlayerId &&
+        playerValue > 0 &&
+        draftStatus !== "drafted" &&
+        draftStatus !== "unavailable" &&
+        status !== "unavailable" &&
+        status !== "inactive" &&
+        availability !== "unavailable" &&
+        player.available !== false &&
+        player.Available !== false
+      );
+    })
+    .map((player) => {
+      const playerValue = toNumber(player.NonSuperFlexValue || player.auctionValue);
+      const playerMax = toNumber(player.SuperFlexValue || player.maxBid, playerValue);
+      const playerRank = toNumber(player.PositionRank ?? player.rank, 999);
+      const playerTier = toNumber(player.Tier ?? player.tier, 99);
+      const playerPoints = toNumber(player.ProjectedPoints ?? player.projectedPoints);
+      const valueSimilarity = Math.max(0, 1 - Math.abs(playerValue - anchorValue) / Math.max(anchorValue, 1));
+      const rankSimilarity = Math.max(0, 1 - Math.abs(playerRank - anchorRank) / 40);
+      const tierSimilarity = Math.max(0, 1 - Math.abs(playerTier - anchorTier) / 3);
+      const pointsSimilarity =
+        anchorPoints > 0 ? Math.max(0, 1 - Math.abs(playerPoints - anchorPoints) / anchorPoints) : 0.5;
+      const score =
+        tierSimilarity * 35 +
+        rankSimilarity * 20 +
+        valueSimilarity * 20 +
+        pointsSimilarity * 15 +
+        Math.min(toNumber(player.ddScore), 100) * 0.05 +
+        Math.min(toNumber(player.sleeperScore), 100) * 0.05;
+      const qualityFloor = Math.max(anchorValue * 0.35, anchorPosition === "QB" || anchorPosition === "TE" ? 1 : 5);
+      const isQualityPivot =
+        playerValue >= qualityFloor &&
+        playerRank <= Math.max(anchorRank + 35, 36) &&
+        playerTier <= Math.max(anchorTier + 3, 4);
+
+      return {
+        ...player,
+        comparisonScore: score,
+        isQualityPivot,
+        pivotNote: buildPivotNote(
+          {
+            ...player,
+            NonSuperFlexValue: playerValue,
+            SuperFlexValue: playerMax,
+            PositionRank: playerRank,
+            Tier: playerTier,
+            ProjectedPoints: playerPoints,
+          },
+          {
+            ...anchor,
+            NonSuperFlexValue: anchorValue,
+            SuperFlexValue: anchorMax,
+            PositionRank: anchorRank,
+            Tier: anchorTier,
+            ProjectedPoints: anchorPoints,
+          }
+        ),
+      };
+    })
+    .filter((player) => player.isQualityPivot)
+    .sort((firstPlayer, secondPlayer) => secondPlayer.comparisonScore - firstPlayer.comparisonScore);
+
+  const selected = [];
+  [0.2, 0.35, 0.5, 0.75, 1].some((tolerance) => {
+    baseCandidates
+      .filter((player) => {
+        const playerValue = toNumber(player.NonSuperFlexValue || player.auctionValue);
+        return Math.abs(playerValue - anchorValue) / Math.max(anchorValue, 1) <= tolerance;
+      })
+      .forEach((player) => {
+        if (selected.length < 5 && !selected.some((item) => item.id === player.id)) {
+          selected.push(player);
+        }
+      });
+
+    return selected.length >= 5 || (selected.length >= 3 && tolerance >= 0.5);
+  });
+
+  return selected.slice(0, 5);
+};
+
+const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
+  const comparablePlayers = useMemo(
+    () => getComparableAvailablePlayers(currentAuction, players),
+    [currentAuction, players]
+  );
+  const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
+
+  return (
+    <section className="w-full xl:w-3/4 p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          Comparable Available Players
+        </p>
+      </div>
+
+      {!hasCurrentPlayer ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          Add a current auction player to see realistic pivots.
+        </p>
+      ) : comparablePlayers.length === 0 ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          No legitimate comparable pivots available.
+        </p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full table-fixed text-left">
+            <colgroup>
+              <col className="w-[25%]" />
+              <col className="w-[8%]" />
+              <col className="w-[8%]" />
+              <col className="w-[11%]" />
+              <col className="w-[12%]" />
+              <col className="w-[36%]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-[#26313a] text-sm uppercase text-gray-500 dark:text-gray-400">
+                <th className="py-2.5 pr-3 font-bold">Player</th>
+                <th className="py-2.5 px-2 font-bold">Rank</th>
+                <th className="py-2.5 px-2 font-bold">Tier</th>
+                <th className="py-2.5 px-2 font-bold">Value</th>
+                <th className="py-2.5 px-2 font-bold">Max Value</th>
+                <th className="py-2.5 pl-2 font-bold">AI Pivot Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparablePlayers.map((player) => (
+                <tr
+                  className="border-b border-gray-100 dark:border-[#202a32] last:border-b-0"
+                  key={player.DatabaseID || player.id}
+                >
+                  <td className="py-3 pr-3">
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {player.FullName || player.fullName}
+                    </p>
+                    <p className="mt-1 text-base font-semibold text-gray-500 dark:text-gray-400">
+                      {player.Team || player.nflTeam || "FA"} · {player.Position || player.position}
+                    </p>
+                  </td>
+                  <td className="py-3 px-2 text-lg font-bold text-gray-800 dark:text-gray-100">
+                    {statValue(player.PositionRank ?? player.rank)}
+                  </td>
+                  <td className="py-3 px-2 text-lg font-bold text-purple-300">
+                    {statValue(player.Tier ?? player.tier)}
+                  </td>
+                  <td className="py-3 px-2 text-lg font-bold text-green-500">
+                    {currency(player.NonSuperFlexValue || player.auctionValue)}
+                  </td>
+                  <td className="py-3 px-2 text-lg font-bold text-blue-400">
+                    {currency(player.SuperFlexValue || player.maxBid || player.NonSuperFlexValue)}
+                  </td>
+                  <td className="py-3 pl-2 text-base font-semibold text-gray-600 dark:text-gray-300 whitespace-normal break-words">
+                    {player.pivotNote}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 };
@@ -1107,29 +1336,40 @@ const BigDawgsDraftCommandCenter = () => {
         <Header category="Big Dawgs" title="Command Center" />
       </div>
 
-      <div className="m-2 md:m-10 mt-6 grid grid-cols-1 xl:grid-cols-[2fr_1fr_1.45fr] items-stretch gap-6">
-        <CurrentAuctionCard
-          currentAuction={currentAuction}
-          teams={teams}
-          draftTeamId={draftTeamId}
-          draftAmount={draftAmount}
-          hasCurrentPlayer={hasCurrentPlayer}
-          onAddPlayer={() => setShowAddPlayer(true)}
-          onClearPlayer={handleClearCurrentAuction}
-          onCurrentBidChange={handleCurrentBidChange}
-          onDraftAmountChange={(nextDraftAmount) => {
-            setDraftAmountManuallyEdited(true);
-            setDraftAmount(nextDraftAmount);
-          }}
-          onDraftPlayer={handleDraftPlayer}
-          onDraftTeamChange={setDraftTeamId}
-        />
-        <DynastyDestroyerAiCard />
-        <MyTeamSnapshotCard
-          draftedPlayers={draftedPlayers}
-          leagueSettings={leagueSettings}
-          myTeam={myTeam}
-        />
+      <div className="m-2 md:m-10 mt-6 space-y-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr_1.45fr] items-stretch gap-6">
+          <CurrentAuctionCard
+            currentAuction={currentAuction}
+            teams={teams}
+            draftTeamId={draftTeamId}
+            draftAmount={draftAmount}
+            hasCurrentPlayer={hasCurrentPlayer}
+            onAddPlayer={() => setShowAddPlayer(true)}
+            onClearPlayer={handleClearCurrentAuction}
+            onCurrentBidChange={handleCurrentBidChange}
+            onDraftAmountChange={(nextDraftAmount) => {
+              setDraftAmountManuallyEdited(true);
+              setDraftAmount(nextDraftAmount);
+            }}
+            onDraftPlayer={handleDraftPlayer}
+            onDraftTeamChange={setDraftTeamId}
+          />
+          <DynastyDestroyerAiCard />
+          <MyTeamSnapshotCard
+            draftedPlayers={draftedPlayers}
+            leagueSettings={leagueSettings}
+            myTeam={myTeam}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr_1.45fr] gap-6">
+          <ComparableAvailablePlayersCard
+            currentAuction={currentAuction}
+            players={players}
+          />
+          <div className="hidden xl:block" />
+          <div className="hidden xl:block" />
+        </div>
       </div>
 
       <Dialog open={showAddPlayer} onClose={() => setShowAddPlayer(false)} fullWidth maxWidth="sm">
