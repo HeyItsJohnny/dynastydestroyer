@@ -621,6 +621,7 @@ const getTotalRosterSlots = (leagueSettings) => {
     leagueSettings?.FLEXPlayers,
     leagueSettings?.DEFPlayers,
     leagueSettings?.KPlayers,
+    leagueSettings?.BenchPlayers,
   ].reduce((sum, slotCount) => sum + toNumber(slotCount), 0);
 
   return total > 0 ? total : 16;
@@ -639,6 +640,49 @@ const getTeamNeedsForThreat = (teamPlayers, leagueSettings) => {
     const needed = Math.max(getStarterSlotsForPosition(position, leagueSettings) - (positionCounts[position] || 0), 0);
     return Array.from({ length: needed }, (_, index) => (needed > 1 ? `${position}${index + 1}` : position));
   });
+};
+
+const getDraftedPlayerAmount = (player) =>
+  toNumber(
+    getFirstValue(
+      player?.DraftAmount,
+      player?.draftAmount,
+      player?.PurchasePrice,
+      player?.purchasePrice,
+      player?.AuctionAmount,
+      player?.auctionAmount
+    )
+  );
+
+const getLeagueBudgetRows = ({ leagueSettings, teams, teamRosters }) => {
+  const totalRosterSlots = getTotalRosterSlots(leagueSettings);
+
+  return teams
+    .map((team) => {
+      const roster = teamRosters[team.id] || [];
+      const spent = roster.reduce(
+        (sum, player) => sum + getDraftedPlayerAmount(player),
+        0
+      );
+      const budget = getTeamBudget(team, leagueSettings);
+      const budgetLeft = Math.max(budget - spent, 0);
+      const topSpentPlayer = [...roster].sort(
+        (firstPlayer, secondPlayer) =>
+          getDraftedPlayerAmount(secondPlayer) - getDraftedPlayerAmount(firstPlayer)
+      )[0];
+
+      return {
+        budgetLeft,
+        needs: getTeamNeedsForThreat(roster, leagueSettings),
+        slotsFilled: roster.length,
+        spent,
+        team,
+        topSpentAmount: getDraftedPlayerAmount(topSpentPlayer),
+        topSpentPlayer,
+        totalRosterSlots,
+      };
+    })
+    .sort((firstTeam, secondTeam) => secondTeam.budgetLeft - firstTeam.budgetLeft);
 };
 
 const getThreatLevel = (score) => {
@@ -875,7 +919,7 @@ const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
   const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
 
   return (
-    <section className="w-full h-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <section className="w-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
       <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
         <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
           Comparable Available Players
@@ -973,7 +1017,7 @@ const TeamThreatAnalysisCard = ({
   const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
 
   return (
-    <section className="w-full h-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <section className="w-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
       <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
         <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
           Team Threat Analysis
@@ -1044,6 +1088,96 @@ const TeamThreatAnalysisCard = ({
   );
 };
 
+const LeagueBudgetBoardCard = ({ leagueSettings, teams, teamRosters }) => {
+  const budgetRows = useMemo(
+    () => getLeagueBudgetRows({ leagueSettings, teams, teamRosters }),
+    [leagueSettings, teams, teamRosters]
+  );
+
+  return (
+    <section className="w-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          League Budget Board
+        </p>
+      </div>
+
+      {budgetRows.length === 0 ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          Add league teams to see the budget board.
+        </p>
+      ) : (
+        <div className="mt-4 max-h-[455px] overflow-y-auto overscroll-contain pr-1">
+          <table className="w-full table-fixed text-left">
+            <colgroup>
+              <col className="w-[18%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[14%]" />
+              <col className="w-[23%]" />
+              <col className="w-[19%]" />
+            </colgroup>
+            <thead className="sticky top-0 z-10 bg-white dark:bg-secondary-dark-bg">
+              <tr className="border-b border-gray-200 dark:border-[#26313a] text-sm uppercase text-gray-500 dark:text-gray-400">
+                <th className="py-2.5 pr-3 font-bold">Team</th>
+                <th className="py-2.5 px-2 font-bold">Budget Left</th>
+                <th className="py-2.5 px-2 font-bold">Spent</th>
+                <th className="py-2.5 px-2 font-bold">Slots</th>
+                <th className="py-2.5 px-2 font-bold">Top Spent Player</th>
+                <th className="py-2.5 pl-2 font-bold">Needs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {budgetRows.map((row) => (
+                <tr
+                  className="border-b border-gray-100 dark:border-[#202a32] last:border-b-0"
+                  key={row.team.id}
+                >
+                  <td className="py-3 pr-3">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                      {row.team.TeamName}
+                    </p>
+                  </td>
+                  <td className="py-3 px-2 text-lg font-bold text-green-500">
+                    {currency(row.budgetLeft)}
+                  </td>
+                  <td className="py-3 px-2 text-lg font-bold text-blue-400">
+                    {currency(row.spent)}
+                  </td>
+                  <td className="py-3 px-2 text-base font-bold text-gray-700 dark:text-gray-200">
+                    {row.slotsFilled} / {row.totalRosterSlots}
+                  </td>
+                  <td className="py-3 px-2">
+                    {row.topSpentPlayer ? (
+                      <>
+                        <p className="text-base font-bold text-gray-900 dark:text-white truncate">
+                          {row.topSpentPlayer.FullName ||
+                            row.topSpentPlayer.fullName ||
+                            row.topSpentPlayer.name}
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-gray-500 dark:text-gray-400">
+                          {currency(row.topSpentAmount)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-base font-bold text-gray-500 dark:text-gray-400">
+                        --
+                      </p>
+                    )}
+                  </td>
+                  <td className="py-3 pl-2 text-base font-bold text-gray-700 dark:text-gray-200">
+                    {row.needs.length > 0 ? row.needs.slice(0, 3).join(", ") : "--"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+};
+
 const PositionWishlistCard = ({ currentAuction, players, targetedPlayers, teamRosters }) => {
   const wishlistPlayers = useMemo(
     () => getPositionWishlistPlayers(currentAuction, targetedPlayers, players, teamRosters),
@@ -1053,7 +1187,7 @@ const PositionWishlistCard = ({ currentAuction, players, targetedPlayers, teamRo
   const currentPosition = currentAuction?.Position || currentAuction?.position || "";
 
   return (
-    <section className="w-full h-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <section className="w-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
       <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
         <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
           {currentPosition ? `${currentPosition} Wishlist` : "Position Wishlist"}
@@ -1220,6 +1354,7 @@ const MyTeamSnapshotCard = ({ draftedPlayers, leagueSettings, myTeam }) => {
     leagueSettings?.FLEXPlayers,
     leagueSettings?.DEFPlayers,
     leagueSettings?.KPlayers,
+    leagueSettings?.BenchPlayers,
   ].reduce((total, slotCount) => total + toNumber(slotCount), 0);
   const normalizedTotalSlots = totalSlots > 0 ? totalSlots : 16;
   const totalSpent = draftedPlayers.reduce(
@@ -1907,11 +2042,18 @@ const BigDawgsDraftCommandCenter = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[0.75fr_0.75fr_0.5fr] gap-6 items-stretch">
-          <ComparableAvailablePlayersCard
-            currentAuction={currentAuction}
-            players={players}
-          />
+        <div className="grid grid-cols-1 xl:grid-cols-[0.85fr_0.7fr_0.45fr] gap-6 items-start">
+          <div className="space-y-6">
+            <ComparableAvailablePlayersCard
+              currentAuction={currentAuction}
+              players={players}
+            />
+            <LeagueBudgetBoardCard
+              leagueSettings={leagueSettings}
+              teamRosters={teamRosters}
+              teams={teams}
+            />
+          </div>
           <TeamThreatAnalysisCard
             currentAuction={currentAuction}
             leagueSettings={leagueSettings}

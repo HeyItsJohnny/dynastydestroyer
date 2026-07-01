@@ -135,6 +135,7 @@ const LeagueSettings = () => {
   const [flexPlayers, setFlexPlayers] = useState(1);
   const [defPlayers, setDefPlayers] = useState(1);
   const [kPlayers, setKPlayers] = useState(1);
+  const [benchPlayers, setBenchPlayers] = useState(8);
   const [allocationRules, setAllocationRules] = useState(defaultAllocationRules);
 
   const fetchLeagueSettings = useCallback(async () => {
@@ -156,6 +157,7 @@ const LeagueSettings = () => {
         setFlexPlayers(data.FLEXPlayers ?? 1);
         setDefPlayers(data.DEFPlayers ?? 1);
         setKPlayers(data.KPlayers ?? 1);
+        setBenchPlayers(data.BenchPlayers ?? 8);
         setAllocationRules(normalizeAllocationRules(data.AllocationRules));
       }
     } catch (error) {
@@ -180,6 +182,7 @@ const LeagueSettings = () => {
         FLEXPlayers: flexPlayers,
         DEFPlayers: defPlayers,
         KPlayers: kPlayers,
+        BenchPlayers: benchPlayers,
         AllocationRules: allocationRules,
       };
 
@@ -486,6 +489,16 @@ const LeagueSettings = () => {
               variant="standard"
               value={kPlayers}
               onChange={(e) => setKPlayers(e.target.value)}
+            />
+
+            <TextField
+              InputProps={fieldInputProps}
+              InputLabelProps={fieldLabelProps}
+              label="Bench"
+              type="number"
+              variant="standard"
+              value={benchPlayers}
+              onChange={(e) => setBenchPlayers(e.target.value)}
             />
           </div>
         </FormControl>

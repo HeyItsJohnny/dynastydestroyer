@@ -26,6 +26,7 @@ const normalizeLeagueSettings = (leagueSettings) => ({
   FLEXPlayers: leagueSettings.FLEXPlayers * 1,
   DEFPlayers: leagueSettings.DEFPlayers * 1,
   KPlayers: leagueSettings.KPlayers * 1,
+  BenchPlayers: leagueSettings.BenchPlayers * 1,
   AllocationRules: Array.isArray(leagueSettings.AllocationRules)
     ? leagueSettings.AllocationRules.map((rule) => ({
         position: rule.position ?? "",
