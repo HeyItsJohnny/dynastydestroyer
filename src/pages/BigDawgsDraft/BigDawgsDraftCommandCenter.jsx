@@ -685,6 +685,275 @@ const getLeagueBudgetRows = ({ leagueSettings, teams, teamRosters }) => {
     .sort((firstTeam, secondTeam) => secondTeam.budgetLeft - firstTeam.budgetLeft);
 };
 
+const getAvailableDraftPlayers = (players, teamRosters) => {
+  const draftedPlayerIds = new Set(
+    Object.values(teamRosters || {})
+      .flat()
+      .map((player) => player.DatabaseID || player.id)
+      .filter(Boolean)
+  );
+
+  return players.filter((player) => {
+    const playerId = player.DatabaseID || player.id;
+    const draftStatus = normalizeStatus(player.DraftStatus);
+    const status = normalizeStatus(player.Status);
+    const availability = normalizeStatus(player.availability || player.Availability);
+    const playerValue = toNumber(player.NonSuperFlexValue || player.auctionValue);
+
+    return (
+      playerId &&
+      !draftedPlayerIds.has(playerId) &&
+      playerValue > 0 &&
+      draftStatus !== "drafted" &&
+      draftStatus !== "unavailable" &&
+      status !== "unavailable" &&
+      status !== "inactive" &&
+      availability !== "unavailable" &&
+      player.available !== false &&
+      player.Available !== false
+    );
+  });
+};
+
+const getRosterPositionNeeds = (roster, leagueSettings) => {
+  const positionCounts = roster.reduce((counts, player) => {
+    const position = getPlayerPosition(player);
+    return {
+      ...counts,
+      [position]: (counts[position] || 0) + 1,
+    };
+  }, {});
+
+  return ["QB", "RB", "WR", "TE"].flatMap((position) => {
+    const needed = Math.max(
+      getStarterSlotsForPosition(position, leagueSettings) - (positionCounts[position] || 0),
+      0
+    );
+
+    return Array.from({ length: needed }, () => position);
+  });
+};
+
+const getPlayerPathScore = (player, strategy, positionIndex) => {
+  const value = toNumber(player.NonSuperFlexValue || player.auctionValue);
+  const maxValue = toNumber(player.SuperFlexValue || player.maxBid, value);
+  const tier = toNumber(player.Tier ?? player.tier, 9);
+  const ddScore = toNumber(player.ddScore, 55);
+  const sleeperScore = toNumber(player.sleeperScore, 50);
+  const valueScore = value > 0 ? Math.max(0, (maxValue - value) / value) * 18 : 0;
+  const tierScore = Math.max(0, 10 - tier) * 7;
+  const affordabilityPenalty = value > strategy.maxTargetSpend ? 30 : 0;
+  const positionBoost = strategy.priorityPositions.includes(getPlayerPosition(player))
+    ? 18 - positionIndex * 2
+    : 0;
+
+  return (
+    ddScore * strategy.ddWeight +
+    sleeperScore * strategy.sleeperWeight +
+    tierScore * strategy.tierWeight +
+    valueScore * strategy.valueWeight +
+    positionBoost -
+    affordabilityPenalty
+  );
+};
+
+const buildRosterPath = ({
+  availablePlayers,
+  budgetLeft,
+  leagueSettings,
+  roster,
+  strategy,
+}) => {
+  const requiredNeeds = getRosterPositionNeeds(roster, leagueSettings);
+  const fallbackNeeds = ["QB", "RB", "RB", "WR", "WR", "TE"];
+  const targetPositions = [
+    ...requiredNeeds,
+    ...strategy.priorityPositions,
+    ...fallbackNeeds,
+  ].filter((position, index, positions) => positions.indexOf(position) === index || requiredNeeds.includes(position));
+  const selected = [];
+  let spend = 0;
+
+  targetPositions.some((position, positionIndex) => {
+    const remainingBudget = budgetLeft - spend;
+    const samePositionTargets = availablePlayers
+      .filter(
+        (player) =>
+          getPlayerPosition(player) === position &&
+          !selected.some((target) => (target.DatabaseID || target.id) === (player.DatabaseID || player.id)) &&
+          toNumber(player.NonSuperFlexValue || player.auctionValue) <= remainingBudget
+      )
+      .sort(
+        (firstPlayer, secondPlayer) =>
+          getPlayerPathScore(secondPlayer, strategy, positionIndex) -
+          getPlayerPathScore(firstPlayer, strategy, positionIndex)
+      );
+    const nextTarget = samePositionTargets[0];
+
+    if (nextTarget) {
+      selected.push(nextTarget);
+      spend += toNumber(nextTarget.NonSuperFlexValue || nextTarget.auctionValue);
+    }
+
+    return selected.length >= strategy.targetCount;
+  });
+
+  if (selected.length < Math.min(3, strategy.targetCount) || spend > budgetLeft) return null;
+
+  const averageTier =
+    selected.reduce((sum, player) => sum + toNumber(player.Tier ?? player.tier, 5), 0) /
+    Math.max(selected.length, 1);
+  const ddAverage =
+    selected.reduce((sum, player) => sum + toNumber(player.ddScore, 55), 0) /
+    Math.max(selected.length, 1);
+  const sleeperAverage =
+    selected.reduce((sum, player) => sum + toNumber(player.sleeperScore, 50), 0) /
+    Math.max(selected.length, 1);
+  const valueEdge = selected.reduce(
+    (sum, player) =>
+      sum +
+      Math.max(
+        0,
+        toNumber(player.SuperFlexValue || player.maxBid, player.NonSuperFlexValue) -
+          toNumber(player.NonSuperFlexValue || player.auctionValue)
+      ),
+    0
+  );
+  const balanceScore = new Set(selected.map(getPlayerPosition)).size * 7;
+  const teamStrength = Math.max(
+    55,
+    Math.min(
+      99,
+      Math.round(
+        ddAverage * 0.32 +
+          sleeperAverage * 0.18 +
+          Math.max(0, 10 - averageTier) * 4.5 +
+          valueEdge * 1.4 +
+          balanceScore +
+          strategy.strengthBoost
+      )
+    )
+  );
+  const confidence = Math.max(
+    50,
+    Math.min(
+      96,
+      Math.round(
+        teamStrength * 0.62 +
+          Math.min((budgetLeft - spend) / Math.max(budgetLeft, 1), 1) * 20 +
+          selected.length * 4 -
+          strategy.riskPenalty
+      )
+    )
+  );
+  const valueRating =
+    valueEdge >= 25 || ddAverage >= 85
+      ? "A+"
+      : valueEdge >= 15 || ddAverage >= 76
+        ? "A"
+        : valueEdge >= 8 || ddAverage >= 68
+          ? "B+"
+          : "B";
+
+  return {
+    ...strategy,
+    confidence,
+    expectedSpend: spend,
+    remainingBudget: Math.max(budgetLeft - spend, 0),
+    targets: selected,
+    teamStrength,
+    valueRating,
+  };
+};
+
+const getOptimalRosterPaths = ({ draftedPlayers, leagueSettings, players, teamRosters }) => {
+  const budget = toNumber(leagueSettings?.Budget, 200);
+  const spent = draftedPlayers.reduce((sum, player) => sum + getDraftedPlayerAmount(player), 0);
+  const budgetLeft = Math.max(budget - spent, 0);
+  const availablePlayers = getAvailableDraftPlayers(players, teamRosters);
+
+  if (budgetLeft <= 0 || availablePlayers.length === 0) return [];
+
+  const strategies = [
+    {
+      name: "Hero RB",
+      accent: "text-green-400",
+      confidenceLabel: "High ceiling",
+      ddWeight: 0.28,
+      explanation:
+        "This path preserves elite positional advantage while filling the rest of the lineup with efficient value.",
+      priorityPositions: ["WR", "WR", "TE", "QB", "RB"],
+      risk: "Medium",
+      riskColor: "text-amber-300 bg-amber-500/15 border-amber-500/40",
+      riskPenalty: 8,
+      sleeperWeight: 0.12,
+      strengthBoost: 8,
+      targetCount: 5,
+      tierWeight: 1.2,
+      maxTargetSpend: budgetLeft * 0.45,
+      valueWeight: 0.85,
+    },
+    {
+      name: "Balanced",
+      accent: "text-purple-300",
+      confidenceLabel: "Most stable",
+      ddWeight: 0.24,
+      explanation:
+        "This path spreads budget across remaining starters and avoids getting trapped by one expensive bidding war.",
+      priorityPositions: ["QB", "RB", "WR", "TE", "WR"],
+      risk: "Low",
+      riskColor: "text-green-400 bg-green-500/15 border-green-500/40",
+      riskPenalty: 2,
+      sleeperWeight: 0.12,
+      strengthBoost: 5,
+      targetCount: 5,
+      tierWeight: 0.9,
+      maxTargetSpend: budgetLeft * 0.34,
+      valueWeight: 0.75,
+    },
+    {
+      name: "Value Hunting",
+      accent: "text-blue-300",
+      confidenceLabel: "Best surplus",
+      ddWeight: 0.34,
+      explanation:
+        "This path avoids inflated rooms and maximizes projected value per auction dollar from the remaining pool.",
+      priorityPositions: ["WR", "RB", "TE", "QB", "WR"],
+      risk: "Medium",
+      riskColor: "text-amber-300 bg-amber-500/15 border-amber-500/40",
+      riskPenalty: 6,
+      sleeperWeight: 0.22,
+      strengthBoost: 3,
+      targetCount: 5,
+      tierWeight: 0.7,
+      maxTargetSpend: budgetLeft * 0.24,
+      valueWeight: 1.35,
+    },
+  ];
+
+  return strategies
+    .map((strategy) =>
+      buildRosterPath({
+        availablePlayers,
+        budgetLeft,
+        leagueSettings,
+        roster: draftedPlayers,
+        strategy,
+      })
+    )
+    .filter(Boolean)
+    .sort(
+      (firstPath, secondPath) =>
+        secondPath.teamStrength * 0.5 +
+        secondPath.confidence * 0.3 +
+        secondPath.remainingBudget * 0.2 -
+        (firstPath.teamStrength * 0.5 +
+          firstPath.confidence * 0.3 +
+          firstPath.remainingBudget * 0.2)
+    )
+    .slice(0, 3);
+};
+
 const getThreatLevel = (score) => {
   if (score >= 75) return { label: "High", color: "text-red-400", badge: "bg-red-500/15 border-red-500/40" };
   if (score >= 50) return { label: "Medium", color: "text-amber-400", badge: "bg-amber-500/15 border-amber-500/40" };
@@ -1177,6 +1446,179 @@ const LeagueBudgetBoardCard = ({ leagueSettings, teams, teamRosters }) => {
     </section>
   );
 };
+
+const OptimalRosterPathsCard = ({ draftedPlayers, leagueSettings, players, teamRosters }) => {
+  const [activePathIndex, setActivePathIndex] = useState(0);
+  const rosterPaths = useMemo(
+    () =>
+      getOptimalRosterPaths({
+        draftedPlayers,
+        leagueSettings,
+        players,
+        teamRosters,
+      }),
+    [draftedPlayers, leagueSettings, players, teamRosters]
+  );
+  const activePath = rosterPaths[Math.min(activePathIndex, rosterPaths.length - 1)] || null;
+
+  useEffect(() => {
+    setActivePathIndex((currentIndex) =>
+      Math.min(currentIndex, Math.max(rosterPaths.length - 1, 0))
+    );
+  }, [rosterPaths.length]);
+
+  return (
+    <section className="w-full min-h-[360px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="flex items-center justify-between gap-4 pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          Optimal Roster Paths
+        </p>
+        {rosterPaths.length > 1 && (
+          <div className="target-board-pagination target-board-wishlist-pagination mt-0">
+            <button
+              aria-label="Previous roster path"
+              className="target-board-page-button"
+              disabled={activePathIndex === 0}
+              onClick={() => setActivePathIndex((index) => Math.max(0, index - 1))}
+              type="button"
+            >
+              <FiChevronLeft />
+            </button>
+            <span className="target-board-page-button target-board-page-ellipsis">
+              {activePathIndex + 1} / {rosterPaths.length}
+            </span>
+            <button
+              aria-label="Next roster path"
+              className="target-board-page-button"
+              disabled={activePathIndex === rosterPaths.length - 1}
+              onClick={() =>
+                setActivePathIndex((index) =>
+                  Math.min(rosterPaths.length - 1, index + 1)
+                )
+              }
+              type="button"
+            >
+              <FiChevronRight />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {!activePath ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          No viable roster paths found with the current budget and available player pool.
+        </p>
+      ) : (
+        <div className="mt-4 rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-[#26313a]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className={`text-sm uppercase font-bold ${activePath.accent}`}>
+                  Build Path {String.fromCharCode(65 + activePathIndex)}
+                </p>
+                <h3 className={`mt-1 text-2xl font-bold ${activePath.accent}`}>
+                  {activePath.name}
+                </h3>
+              </div>
+              <span className={`rounded-md border px-2 py-1 text-xs font-bold ${activePath.riskColor}`}>
+                Risk: {activePath.risk}
+              </span>
+            </div>
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
+                <span>Team Strength</span>
+                <span>{activePath.teamStrength}</span>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-gray-200 dark:bg-[#26313a] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-green-500"
+                  style={{ width: `${activePath.teamStrength}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
+                  Spend
+                </p>
+                <p className="text-xl font-bold text-green-500">
+                  {currency(activePath.expectedSpend)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
+                  Left
+                </p>
+                <p className="text-xl font-bold text-blue-400">
+                  {currency(activePath.remainingBudget)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
+                  Value
+                </p>
+                <p className="text-xl font-bold text-purple-300">
+                  {activePath.valueRating}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
+                  Confidence
+                </p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {activePath.confidence}%
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-gray-200 dark:border-[#26313a] pt-3">
+              <p className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">
+                Remaining Targets
+              </p>
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-2">
+                {activePath.targets.map((player) => (
+                  <div
+                    className="flex items-start justify-between gap-3"
+                    key={player.DatabaseID || player.id}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-bold text-gray-900 dark:text-white">
+                        {player.FullName || player.fullName}
+                      </p>
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                        {getPlayerPosition(player)} · Tier {statValue(player.Tier ?? player.tier)}
+                      </p>
+                    </div>
+                    <p className="text-base font-bold text-green-500 shrink-0">
+                      {currency(player.NonSuperFlexValue || player.auctionValue)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p className="mt-3 border-t border-gray-200 dark:border-[#26313a] pt-3 text-sm font-semibold leading-relaxed text-gray-600 dark:text-gray-300">
+              {activePath.explanation}
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
+
+const CommandCenterPlaceholderCard = () => (
+  <section className="w-full min-h-[360px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+    <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+      <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+        Coming Soon
+      </p>
+    </div>
+  </section>
+);
 
 const PositionWishlistCard = ({ currentAuction, players, targetedPlayers, teamRosters }) => {
   const wishlistPlayers = useMemo(
@@ -2043,17 +2485,10 @@ const BigDawgsDraftCommandCenter = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[0.85fr_0.7fr_0.45fr] gap-6 items-start">
-          <div className="space-y-6">
-            <ComparableAvailablePlayersCard
-              currentAuction={currentAuction}
-              players={players}
-            />
-            <LeagueBudgetBoardCard
-              leagueSettings={leagueSettings}
-              teamRosters={teamRosters}
-              teams={teams}
-            />
-          </div>
+          <ComparableAvailablePlayersCard
+            currentAuction={currentAuction}
+            players={players}
+          />
           <TeamThreatAnalysisCard
             currentAuction={currentAuction}
             leagueSettings={leagueSettings}
@@ -2068,6 +2503,21 @@ const BigDawgsDraftCommandCenter = () => {
             targetedPlayers={targetedPlayers}
             teamRosters={teamRosters}
           />
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[0.5fr_1fr_0.5fr] gap-6 items-start">
+          <OptimalRosterPathsCard
+            draftedPlayers={draftedPlayers}
+            leagueSettings={leagueSettings}
+            players={players}
+            teamRosters={teamRosters}
+          />
+          <LeagueBudgetBoardCard
+            leagueSettings={leagueSettings}
+            teamRosters={teamRosters}
+            teams={teams}
+          />
+          <CommandCenterPlaceholderCard />
         </div>
       </div>
 
