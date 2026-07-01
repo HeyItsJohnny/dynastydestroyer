@@ -40,6 +40,7 @@ import {
   UpdateBigDawgCurrentAuctionBid,
 } from "../../globalFunctions/firebaseAuctionDraft";
 import { setPlayerDraftStatus } from "../../globalFunctions/firebaseFunctions";
+import { getOpenAIDraftCommandCenterInsights } from "../../services/openAIKeeperService";
 
 const emptyAuction = {
   FullName: "Select a player",
@@ -954,6 +955,292 @@ const getOptimalRosterPaths = ({ draftedPlayers, leagueSettings, players, teamRo
     .slice(0, 3);
 };
 
+const summarizePlayerForAI = (player) => ({
+  name: player?.FullName || player?.fullName || player?.name || "",
+  position: getPlayerPosition(player),
+  tier: player?.Tier ?? player?.tier ?? "",
+  rank: player?.PositionRank ?? player?.rank ?? "",
+  projectedPoints: player?.ProjectedPoints ?? player?.projectedPoints ?? "",
+  auctionValue: toNumber(player?.NonSuperFlexValue || player?.auctionValue),
+  maxValue: getPlayerMaxValue(player),
+  hardMaxValue: getPlayerHardMaxValue(player),
+  currentBid: toNumber(player?.CurrentBid),
+});
+
+const getAllocationTargetsSummary = (leagueSettings) =>
+  (Array.isArray(leagueSettings?.AllocationRules) ? leagueSettings.AllocationRules : []).map(
+    (rule) => ({
+      position: rule.position,
+      minPercent: rule.minPercent,
+      maxPercent: rule.maxPercent,
+    })
+  );
+
+const buildCommandCenterAiPayload = ({
+  currentAuction,
+  draftedPlayers,
+  leagueSettings,
+  myTeam,
+  players,
+  teamRosters,
+  teams,
+}) => {
+  const comparablePlayers = getComparableAvailablePlayers(currentAuction, players).map(summarizePlayerForAI);
+  const availablePlayers = getAvailableDraftPlayers(players, teamRosters);
+  const budget = toNumber(leagueSettings?.Budget, 200);
+  const totalSpent = draftedPlayers.reduce((sum, player) => sum + getDraftedPlayerAmount(player), 0);
+  const budgetLeft = Math.max(budget - totalSpent, 0);
+
+  return {
+    currentAuctionPlayer: summarizePlayerForAI(currentAuction),
+    comparableAvailablePlayers: comparablePlayers,
+    myRoster: draftedPlayers.map(summarizePlayerForAI),
+    myBudget: {
+      budget,
+      budgetLeft,
+      totalSpent,
+      remainingRosterSpots: Math.max(getTotalRosterSlots(leagueSettings) - draftedPlayers.length, 0),
+      team: myTeam?.TeamName || "",
+    },
+    allocationTargets: getAllocationTargetsSummary(leagueSettings),
+    currentTeamNeeds: getTeamNeedsForThreat(draftedPlayers, leagueSettings),
+    remainingAvailablePlayers: availablePlayers.slice(0, 80).map(summarizePlayerForAI),
+    remainingElitePlayers: availablePlayers
+      .filter((player) => toNumber(player.Tier ?? player.tier, 99) <= 2)
+      .slice(0, 30)
+      .map(summarizePlayerForAI),
+    leagueBudgetBoard: getLeagueBudgetRows({ leagueSettings, teams, teamRosters }).map((row) => ({
+      team: row.team.TeamName,
+      budgetLeft: row.budgetLeft,
+      spent: row.spent,
+      slotsFilled: row.slotsFilled,
+      needs: row.needs,
+    })),
+    teamThreats: getTeamThreatAnalysis({
+      currentAuction,
+      leagueSettings,
+      myTeam,
+      players,
+      teamRosters,
+      teams,
+    }).map((threat) => ({
+      team: threat.team.TeamName,
+      budgetLeft: threat.budgetLeft,
+      needs: threat.needs,
+      threatLevel: threat.threatLevel.label,
+      winChance: threat.winChance,
+    })),
+    draftHistory: Object.values(teamRosters || {})
+      .flat()
+      .map((player) => ({
+        name: player.FullName || player.fullName || player.name,
+        position: getPlayerPosition(player),
+        amount: getDraftedPlayerAmount(player),
+        value: toNumber(player.NonSuperFlexValue || player.auctionValue),
+      })),
+  };
+};
+
+const buildFallbackCommandCenterInsights = (payload) => {
+  const player = payload.currentAuctionPlayer;
+  const currentBid = toNumber(player.currentBid);
+  const maxValue = toNumber(player.maxValue || player.auctionValue);
+  const hardMax = toNumber(player.hardMaxValue, Math.ceil(maxValue * 1.08));
+  const budgetLeft = toNumber(payload.myBudget?.budgetLeft);
+  const comparableCount = payload.comparableAvailablePlayers?.length || 0;
+  const eliteAtPosition = (payload.remainingElitePlayers || []).filter(
+    (item) => item.position === player.position
+  ).length;
+  const recommendation =
+    !player.name || player.position === "--"
+      ? "Wait"
+      : currentBid > hardMax || budgetLeft < currentBid
+        ? "Pass"
+        : currentBid >= maxValue
+          ? "Wait"
+          : "Bid";
+  const recommendedMax = Math.min(
+    hardMax || maxValue || 0,
+    Math.max(0, budgetLeft - Math.max(toNumber(payload.myBudget?.remainingRosterSpots) - 1, 0))
+  );
+  const needs = payload.currentTeamNeeds || [];
+  const needsPosition = needs.some((need) => `${need}`.startsWith(player.position));
+  const confidence = Math.max(
+    58,
+    Math.min(94, Math.round((needsPosition ? 82 : 68) + (eliteAtPosition <= 3 ? 7 : 0) - (currentBid >= maxValue ? 8 : 0)))
+  );
+  const valuePositions = ["WR", "RB", "TE", "QB"].map((position) => {
+    const positionPlayers = (payload.remainingAvailablePlayers || []).filter((item) => item.position === position);
+    const avgValue =
+      positionPlayers.reduce((sum, item) => sum + toNumber(item.auctionValue), 0) /
+      Math.max(positionPlayers.length, 1);
+    return { position, avgValue, count: positionPlayers.length };
+  });
+  const bestValuePosition = [...valuePositions].sort((a, b) => b.count - a.count || b.avgValue - a.avgValue)[0];
+  const spendyTeams = [...(payload.leagueBudgetBoard || [])].slice(0, 2).map((team) => team.team).filter(Boolean);
+
+  return {
+    currentAuctionDecision: {
+      recommendation,
+      maximumBid: recommendedMax,
+      confidence,
+      reason: player.name
+        ? `${player.name} is a ${player.position}${player.rank ? player.rank : ""} option near ${currency(player.auctionValue)} value. ${comparableCount > 0 ? `${comparableCount} viable pivots remain, so keep the bid disciplined.` : "Comparable pivots are thin, so scarcity supports a stronger bid."}`
+        : "Add a current auction player to unlock a live bid recommendation.",
+    },
+    draftStrategy: {
+      title: bestValuePosition?.position ? `Prioritize ${bestValuePosition.position} Value` : "Stay Flexible",
+      recommendations: [
+        `Preserve at least ${currency(Math.max(10, Math.round(budgetLeft * 0.12)))} for late value.`,
+        needs.length > 0 ? `Fill ${needs.slice(0, 2).join(" and ")} before chasing depth.` : "Use budget on upside instead of redundant depth.",
+        "Avoid spending past hard max unless it completes a premium starter slot.",
+      ],
+    },
+    marketIntelligence: {
+      observations: [
+        spendyTeams.length > 0
+          ? `${spendyTeams.join(" and ")} still have the most budget pressure in the room.`
+          : "League budgets are clustered, so nominations should target roster needs.",
+        `${eliteAtPosition} elite ${player.position || "premium"} options remain in the available pool.`,
+        "Nominate expensive players at positions your biggest threats still need to drain budgets.",
+      ],
+    },
+  };
+};
+
+const formatInsightTimestamp = (date) =>
+  date
+    ? date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : "--";
+
+const simpleHash = (value) => {
+  const serialized = JSON.stringify(value ?? "");
+  let hash = 0;
+
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash = (hash << 5) - hash + serialized.charCodeAt(index);
+    hash |= 0;
+  }
+
+  return `${Math.abs(hash)}`;
+};
+
+const getBidThresholdBucket = (currentAuction, recommendedMax) => {
+  const currentBid = toNumber(currentAuction?.CurrentBid);
+  const auctionValue = toNumber(currentAuction?.NonSuperFlexValue || currentAuction?.auctionValue);
+  const maxValue = getPlayerMaxValue(currentAuction);
+  const hardMaxValue = getPlayerHardMaxValue(currentAuction);
+  const recommendedThreshold = Math.round(toNumber(recommendedMax) * 0.9);
+
+  if (hardMaxValue > 0 && currentBid >= hardMaxValue) return "hard-max-crossed";
+  if (maxValue > 0 && currentBid >= maxValue) return "max-crossed";
+  if (recommendedThreshold > 0 && currentBid >= recommendedThreshold) return "recommended-90-crossed";
+  if (auctionValue > 0 && currentBid >= auctionValue) return "value-crossed";
+  return "below-value";
+};
+
+const buildCommandCenterAiCacheKey = ({
+  currentAuction,
+  draftRoomId,
+  draftedPlayers,
+  leagueSettings,
+  players,
+  recommendedMax,
+  teamRosters,
+  teams,
+}) => {
+  const currentPlayerId = currentAuction?.DatabaseID || currentAuction?.id || "none";
+  const teamBudgetHash = simpleHash(
+    getLeagueBudgetRows({ leagueSettings, teams, teamRosters }).map((row) => ({
+      id: row.team.id,
+      budgetLeft: row.budgetLeft,
+      needs: row.needs,
+      slotsFilled: row.slotsFilled,
+      spent: row.spent,
+    }))
+  );
+  const myRosterHash = simpleHash(
+    draftedPlayers.map((player) => ({
+      id: player.DatabaseID || player.id,
+      amount: getDraftedPlayerAmount(player),
+    }))
+  );
+  const availablePlayerPoolHash = simpleHash(
+    getAvailableDraftPlayers(players, teamRosters).map((player) => ({
+      id: player.DatabaseID || player.id,
+      value: toNumber(player.NonSuperFlexValue || player.auctionValue),
+      tier: player.Tier ?? player.tier,
+    }))
+  );
+  const bidThresholdBucket = getBidThresholdBucket(currentAuction, recommendedMax);
+
+  return [
+    draftRoomId || "default-room",
+    currentPlayerId,
+    myRosterHash,
+    teamBudgetHash,
+    availablePlayerPoolHash,
+    bidThresholdBucket,
+  ].join("|");
+};
+
+const getLocalInstantDecision = ({ currentAuction, budgetLeft, recommendedMax }) => {
+  const hasPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
+  const currentBid = toNumber(currentAuction?.CurrentBid);
+  const auctionValue = toNumber(currentAuction?.NonSuperFlexValue || currentAuction?.auctionValue);
+  const maxValue = getPlayerMaxValue(currentAuction);
+  const hardMaxValue = getPlayerHardMaxValue(currentAuction);
+  const leftIfWin = Math.max(budgetLeft - currentBid, 0);
+  const recommendedMaxValue = toNumber(recommendedMax, maxValue || auctionValue);
+  let status = "Wait";
+  let color = "text-gray-300";
+  let recommendation = "Wait";
+  let note = "Add a player to get live bid guidance.";
+
+  if (hasPlayer) {
+    if (currentBid > budgetLeft || (hardMaxValue > 0 && currentBid >= hardMaxValue)) {
+      status = "Hard Stop";
+      color = "text-red-400";
+      recommendation = "Pass";
+      note = "Stop bidding. The current price has reached the hard stop or exceeds your available budget.";
+    } else if (currentBid >= recommendedMaxValue && recommendedMaxValue > 0) {
+      status = "Pass";
+      color = "text-red-400";
+      recommendation = "Pass";
+      note = "The bid has reached your recommended max. Let the room take the risk from here.";
+    } else if (maxValue > 0 && currentBid >= maxValue) {
+      status = "Danger Zone";
+      color = "text-red-300";
+      recommendation = "Wait";
+      note = "The bid is past max value. Only continue if this fills a premium roster need.";
+    } else if (auctionValue > 0 && currentBid >= auctionValue) {
+      status = "Approaching Max";
+      color = "text-amber-300";
+      recommendation = "Wait";
+      note = "The bid is no longer a clear discount. Stay disciplined and watch the next threshold.";
+    } else if (auctionValue > 0 && currentBid >= auctionValue * 0.78) {
+      status = "Still Safe";
+      color = "text-green-400";
+      recommendation = "Bid";
+      note = "The current bid is still inside a playable range with room before value.";
+    } else {
+      status = "Value Bid";
+      color = "text-green-500";
+      recommendation = "Bid";
+      note = "The current price is below auction value and still offers budget flexibility.";
+    }
+  }
+
+  return {
+    color,
+    currentBid,
+    leftIfWin,
+    note,
+    recommendation,
+    status,
+  };
+};
+
 const getThreatLevel = (score) => {
   if (score >= 75) return { label: "High", color: "text-red-400", badge: "bg-red-500/15 border-red-500/40" };
   if (score >= 50) return { label: "Medium", color: "text-amber-400", badge: "bg-amber-500/15 border-amber-500/40" };
@@ -1694,95 +1981,360 @@ const PositionWishlistCard = ({ currentAuction, players, targetedPlayers, teamRo
   );
 };
 
-const DynastyDestroyerAiCard = () => (
-  <section className="w-full min-h-[520px] p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-    <div className="flex items-center gap-3 pb-5 border-b border-gray-200 dark:border-[#202a32]">
-      <span className="h-10 w-10 rounded-full border border-purple-400/40 bg-purple-500/15 text-purple-300 flex items-center justify-center">
-        <FiCpu />
-      </span>
-      <h2 className="text-2xl font-bold uppercase tracking-wide text-purple-400">
-        Strategy
-      </h2>
-      <span className="px-3 py-1 rounded-md bg-purple-500/20 text-purple-200 text-xs font-bold">
-        BETA
-      </span>
-    </div>
+const DynastyDestroyerAiCard = ({
+  currentAuction,
+  draftedPlayers,
+  draftRoomId,
+  leagueSettings,
+  myTeam,
+  players,
+  teamRosters,
+  teams,
+}) => {
+  const payload = useMemo(
+    () =>
+      buildCommandCenterAiPayload({
+        currentAuction,
+        draftedPlayers,
+        leagueSettings,
+        myTeam,
+        players,
+        teamRosters,
+        teams,
+      }),
+    [currentAuction, draftedPlayers, leagueSettings, myTeam, players, teamRosters, teams]
+  );
+  const fallbackInsights = useMemo(
+    () => buildFallbackCommandCenterInsights(payload),
+    [payload]
+  );
+  const aiCacheKey = useMemo(
+    () =>
+      buildCommandCenterAiCacheKey({
+        currentAuction,
+        draftRoomId,
+        draftedPlayers,
+        leagueSettings,
+        players,
+        recommendedMax: fallbackInsights.currentAuctionDecision?.maximumBid,
+        teamRosters,
+        teams,
+      }),
+    [
+      currentAuction,
+      draftRoomId,
+      draftedPlayers,
+      fallbackInsights.currentAuctionDecision?.maximumBid,
+      leagueSettings,
+      players,
+      teamRosters,
+      teams,
+    ]
+  );
+  const [insights, setInsights] = useState(fallbackInsights);
+  const [lastUpdated, setLastUpdated] = useState({
+    currentAuctionDecision: new Date(),
+    draftStrategy: new Date(),
+    marketIntelligence: new Date(),
+  });
+  const [loadingSections, setLoadingSections] = useState({
+    currentAuctionDecision: false,
+    draftStrategy: false,
+    marketIntelligence: false,
+  });
+  const [liveUnavailable, setLiveUnavailable] = useState(false);
+  const aiCacheRef = useRef(new Map());
+  const cooldownTimerRef = useRef(null);
+  const lastAiRequestAtRef = useRef(0);
+  const latestQueuedRequestRef = useRef(null);
+  const mountedRef = useRef(true);
+  const payloadRef = useRef(payload);
+  const fallbackInsightsRef = useRef(fallbackInsights);
 
-    <div className="mt-6 rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-5">
-      <div className="flex items-center gap-2 text-green-500 uppercase text-sm font-bold tracking-wide">
-        <FiPlus />
-        <span>Current Recommendation</span>
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    payloadRef.current = payload;
+    fallbackInsightsRef.current = fallbackInsights;
+    setInsights((currentInsights) => currentInsights || fallbackInsights);
+  }, [fallbackInsights, payload]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      const executeRequest = (requestKey) => {
+        if (!mountedRef.current) return;
+
+        const cached = aiCacheRef.current.get(requestKey);
+
+        if (cached) {
+          setInsights(cached.insights);
+          setLastUpdated(cached.lastUpdated);
+          setLiveUnavailable(false);
+          setLoadingSections({
+            currentAuctionDecision: false,
+            draftStrategy: false,
+            marketIntelligence: false,
+          });
+          return;
+        }
+
+        const now = Date.now();
+        const cooldownRemaining = Math.max(0, 9000 - (now - lastAiRequestAtRef.current));
+
+        if (cooldownRemaining > 0) {
+          latestQueuedRequestRef.current = requestKey;
+          setLoadingSections({
+            currentAuctionDecision: true,
+            draftStrategy: true,
+            marketIntelligence: true,
+          });
+
+          if (!cooldownTimerRef.current) {
+            cooldownTimerRef.current = setTimeout(() => {
+              cooldownTimerRef.current = null;
+              const latestRequestKey = latestQueuedRequestRef.current;
+              latestQueuedRequestRef.current = null;
+
+              if (latestRequestKey) {
+                executeRequest(latestRequestKey);
+              }
+            }, cooldownRemaining);
+          }
+
+          return;
+        }
+
+        const startedAt = new Date();
+        lastAiRequestAtRef.current = now;
+        setLoadingSections({
+          currentAuctionDecision: true,
+          draftStrategy: true,
+          marketIntelligence: true,
+        });
+
+        getOpenAIDraftCommandCenterInsights(payloadRef.current)
+          .then((nextInsights) => {
+            if (!mountedRef.current) return;
+
+            const normalizedInsights = {
+              currentAuctionDecision:
+                nextInsights.currentAuctionDecision ||
+                fallbackInsightsRef.current.currentAuctionDecision,
+              draftStrategy:
+                nextInsights.draftStrategy || fallbackInsightsRef.current.draftStrategy,
+              marketIntelligence:
+                nextInsights.marketIntelligence ||
+                fallbackInsightsRef.current.marketIntelligence,
+            };
+            const nextLastUpdated = {
+              currentAuctionDecision: startedAt,
+              draftStrategy: startedAt,
+              marketIntelligence: startedAt,
+            };
+
+            aiCacheRef.current.set(requestKey, {
+              insights: normalizedInsights,
+              lastUpdated: nextLastUpdated,
+            });
+            setInsights(normalizedInsights);
+            setLastUpdated(nextLastUpdated);
+            setLiveUnavailable(false);
+          })
+          .catch((error) => {
+            if (!mountedRef.current) return;
+            console.warn("Live command center AI unavailable:", error);
+            setInsights((currentInsights) => currentInsights || fallbackInsightsRef.current);
+            setLiveUnavailable(true);
+          })
+          .finally(() => {
+            if (!mountedRef.current) return;
+            setLoadingSections({
+              currentAuctionDecision: false,
+              draftStrategy: false,
+              marketIntelligence: false,
+            });
+          });
+      };
+
+      executeRequest(aiCacheKey);
+    }, 3000);
+
+    return () => {
+      clearTimeout(debounceTimer);
+    };
+  }, [aiCacheKey]);
+
+  const aiDecision = insights.currentAuctionDecision || fallbackInsights.currentAuctionDecision;
+  const strategy = insights.draftStrategy || fallbackInsights.draftStrategy;
+  const market = insights.marketIntelligence || fallbackInsights.marketIntelligence;
+  const localDecision = useMemo(
+    () =>
+      getLocalInstantDecision({
+        budgetLeft: payload.myBudget?.budgetLeft,
+        currentAuction,
+        recommendedMax: aiDecision.maximumBid,
+      }),
+    [aiDecision.maximumBid, currentAuction, payload.myBudget?.budgetLeft]
+  );
+
+  const insightSections = [
+    {
+      id: "currentAuctionDecision",
+      icon: <FiTarget size={22} />,
+      color: "text-green-500",
+      iconClass: "bg-green-500/20 text-green-400",
+      title: "Current Auction Decision",
+      body: (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                Live Status
+              </p>
+              <p className={`text-lg font-bold ${localDecision.color}`}>
+                {localDecision.status}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                AI Max
+              </p>
+              <p className="text-lg font-bold text-blue-400">
+                {currency(aiDecision.maximumBid)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                Left If Win
+              </p>
+              <p className="text-lg font-bold text-green-500">
+                {currency(localDecision.leftIfWin)}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                Recommendation
+              </p>
+              <p className="text-base font-bold text-gray-900 dark:text-white">
+                {localDecision.recommendation}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                AI Confidence
+              </p>
+              <p className="text-base font-bold text-green-500">
+                {aiDecision.confidence}%
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm font-semibold leading-relaxed text-gray-600 dark:text-gray-300">
+            {localDecision.note}
+          </p>
+          <p className="mt-2 text-xs font-semibold leading-relaxed text-gray-500 dark:text-gray-400">
+            AI read: {aiDecision.reason}
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "draftStrategy",
+      icon: <FiActivity size={22} />,
+      color: "text-purple-400",
+      iconClass: "bg-purple-500/20 text-purple-300",
+      title: "Draft Strategy",
+      body: (
+        <>
+          <p className="text-lg font-bold text-gray-900 dark:text-white">
+            {strategy.title}
+          </p>
+          <ul className="mt-2 space-y-2 text-sm font-semibold leading-relaxed text-gray-600 dark:text-gray-300">
+            {(strategy.recommendations || []).slice(0, 3).map((recommendation) => (
+              <li key={recommendation}>• {recommendation}</li>
+            ))}
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: "marketIntelligence",
+      icon: <FiTrendingUp size={22} />,
+      color: "text-blue-400",
+      iconClass: "bg-blue-500/20 text-blue-300",
+      title: "Market Intelligence",
+      body: (
+        <ul className="space-y-2 text-sm font-semibold leading-relaxed text-gray-600 dark:text-gray-300">
+          {(market.observations || []).slice(0, 4).map((observation) => (
+            <li key={observation}>• {observation}</li>
+          ))}
+        </ul>
+      ),
+    },
+  ];
+
+  return (
+    <section className="w-full min-h-[520px] p-6 md:p-8 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="flex items-center gap-3 pb-5 border-b border-gray-200 dark:border-[#202a32]">
+        <span className="h-10 w-10 rounded-full border border-purple-400/40 bg-purple-500/15 text-purple-300 flex items-center justify-center">
+          <FiCpu />
+        </span>
+        <h2 className="text-2xl font-bold uppercase tracking-wide text-purple-400">
+          Strategy
+        </h2>
+        <span className="px-3 py-1 rounded-md bg-purple-500/20 text-purple-200 text-xs font-bold">
+          BETA
+        </span>
       </div>
 
-      <div className="mt-5 flex gap-4">
-        <div className="h-14 w-14 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center shrink-0">
-          <FiTarget size={28} />
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-            Bid aggressively to <span className="text-green-500">$63</span>.
-            <br />
-            Stop at $66 unless Team A is your only competitor.
-          </p>
-          <p className="mt-4 text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-            There are still 4 usable RB2s available, so do not hit Hard Max unless
-            you&apos;re locking a top-tier advantage.
-          </p>
-        </div>
-      </div>
+      {liveUnavailable && (
+        <p className="mt-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300">
+          Live AI temporarily paused. Using local draft logic.
+        </p>
+      )}
 
-      <div className="my-5 border-t border-gray-200 dark:border-[#26313a]" />
-
-      <div className="flex gap-4">
-        <div className="h-12 w-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
-          <FiActivity size={24} />
-        </div>
-        <div>
-          <p className="text-purple-400 uppercase text-sm font-bold tracking-wide">
-            Nomination Strategy
-          </p>
-          <p className="mt-2 text-base text-gray-700 dark:text-gray-200 leading-relaxed">
-            Nominate expensive WRs next to drain Team A and Team B before you target
-            your next RB.
-          </p>
-        </div>
-      </div>
-
-      <div className="my-5 border-t border-gray-200 dark:border-[#26313a]" />
-
-      <div className="flex gap-4">
-        <div className="h-12 w-12 rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">
-          <FiTrendingUp size={24} />
-        </div>
-        <div>
-          <p className="text-blue-400 uppercase text-sm font-bold tracking-wide">
-            Market Read
-          </p>
-          <p className="mt-2 text-base text-gray-700 dark:text-gray-200 leading-relaxed">
-            RB prices are currently 12% above expected. WR values are still stable.
-            Pivoting to WR may give better total roster value.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-6 flex items-center gap-4">
-      <p className="text-sm uppercase font-bold text-gray-600 dark:text-gray-300">
-        Confidence Level
-      </p>
-      <p className="text-green-500 font-bold">High</p>
-      <div className="flex flex-1 gap-1">
-        {[0, 1, 2, 3, 4, 5].map((item) => (
-          <span
-            className="h-4 flex-1 rounded bg-green-500"
-            key={`confidence-filled-${item}`}
-          />
+      <div className="mt-5 space-y-4">
+        {insightSections.map((section) => (
+          <div
+            className="rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-4"
+            key={section.id}
+          >
+            <div className="flex items-start gap-3">
+              <span className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${section.iconClass}`}>
+                {section.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className={`uppercase text-sm font-bold tracking-wide ${section.color}`}>
+                    {section.title}
+                  </p>
+                  <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                    {loadingSections[section.id]
+                      ? "Updating..."
+                      : `Updated ${formatInsightTimestamp(lastUpdated[section.id])}`}
+                  </p>
+                </div>
+                <div className={loadingSections[section.id] ? "mt-3 opacity-60" : "mt-3"}>
+                  {section.body}
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
-        <span className="h-4 flex-1 rounded bg-gray-300 dark:bg-[#303840]" />
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const MyTeamSnapshotCard = ({ draftedPlayers, leagueSettings, myTeam }) => {
   const [draftedPlayersPage, setDraftedPlayersPage] = useState(1);
@@ -2476,7 +3028,16 @@ const BigDawgsDraftCommandCenter = () => {
             onDraftPlayer={handleDraftPlayer}
             onDraftTeamChange={setDraftTeamId}
           />
-          <DynastyDestroyerAiCard />
+          <DynastyDestroyerAiCard
+            currentAuction={currentAuction}
+            draftedPlayers={draftedPlayers}
+            draftRoomId={currentUser?.uid}
+            leagueSettings={leagueSettings}
+            myTeam={myTeam}
+            players={players}
+            teamRosters={teamRosters}
+            teams={teams}
+          />
           <MyTeamSnapshotCard
             draftedPlayers={draftedPlayers}
             leagueSettings={leagueSettings}

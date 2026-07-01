@@ -174,3 +174,50 @@ export const getOpenAIScoutingNotes = async (targetedPlayer) => {
 
   return JSON.parse(content);
 };
+
+export const getOpenAIDraftCommandCenterInsights = async (payload) => {
+  if (!OPENAI_API_KEY) {
+    throw new Error("Missing REACT_APP_OPENAI_API_KEY");
+  }
+
+  const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a concise dynasty fantasy football auction draft advisor. Do not act as a chatbot. Return only actionable draft command center insights based on provided data. Never recommend drafted players, impossible spending, or exceeding budget.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            instructions:
+              'Return JSON exactly like {"currentAuctionDecision":{"recommendation":"Bid|Pass|Wait","maximumBid":64,"confidence":92,"reason":"1-3 concise sentences"},"draftStrategy":{"title":"short strategy title","recommendations":["action","action","action"]},"marketIntelligence":{"observations":["observation","observation","observation"]}}. Keep every string concise and actionable.',
+            payload,
+          }),
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `OpenAI request failed with ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+
+  if (!content) {
+    throw new Error("OpenAI response did not include content");
+  }
+
+  return JSON.parse(content);
+};
