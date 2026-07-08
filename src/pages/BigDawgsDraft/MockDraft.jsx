@@ -37,10 +37,9 @@ import {
   AddBigDawgDraftedPlayerToTeam,
   ClearBigDawgCurrentAuction,
   CreateOrUpdateBigDawgCurrentAuction,
-  ResetBigDawgDraftData,
+  ResetMockDraftData,
   UpdateBigDawgCurrentAuctionBid,
 } from "../../globalFunctions/firebaseAuctionDraft";
-import { setPlayerDraftStatus } from "../../globalFunctions/firebaseFunctions";
 import { getOpenAIDraftCommandCenterInsights } from "../../services/openAIKeeperService";
 
 const emptyAuction = {
@@ -56,6 +55,7 @@ const emptyAuction = {
 };
 
 const DRAFTED_PLAYERS_PAGE_SIZE = 5;
+const MOCK_DRAFT_COLLECTION = "mockdraft";
 
 const currency = (value) => `$${Number(value || 0).toLocaleString()}`;
 const normalizeStatus = (value) => `${value ?? ""}`.trim().toLowerCase();
@@ -3057,7 +3057,7 @@ const MyTeamSnapshotCard = ({ draftedPlayers, leagueSettings, myTeam }) => {
   );
 };
 
-const BigDawgsDraftCommandCenter = () => {
+const MockDraft = () => {
   const { currentUser } = useAuth();
   const [currentAuction, setCurrentAuction] = useState(emptyAuction);
   const [draftedPlayers, setDraftedPlayers] = useState([]);
@@ -3137,7 +3137,7 @@ const BigDawgsDraftCommandCenter = () => {
       db,
       "userprofile",
       currentUser.uid,
-      "bigdawgdraft",
+      MOCK_DRAFT_COLLECTION,
       "currentauction"
     );
 
@@ -3214,7 +3214,7 @@ const BigDawgsDraftCommandCenter = () => {
       db,
       "userprofile",
       currentUser.uid,
-      "bigdawgdraft",
+      MOCK_DRAFT_COLLECTION,
       `${myTeam.id}`,
       "players"
     );
@@ -3247,7 +3247,7 @@ const BigDawgsDraftCommandCenter = () => {
         db,
         "userprofile",
         currentUser.uid,
-        "bigdawgdraft",
+        MOCK_DRAFT_COLLECTION,
         `${team.id}`,
         "players"
       );
@@ -3328,11 +3328,16 @@ const BigDawgsDraftCommandCenter = () => {
     event.preventDefault();
     if (!currentUser || !selectedPlayer) return;
 
-    await CreateOrUpdateBigDawgCurrentAuction(currentUser.uid, selectedPlayer, {
-      CurrentBid: openingBid,
-      NominatedByTeamId: nominatingTeamId,
-      NominatedByTeamName: nominatingTeam?.TeamName || "",
-    });
+    await CreateOrUpdateBigDawgCurrentAuction(
+      currentUser.uid,
+      selectedPlayer,
+      {
+        CurrentBid: openingBid,
+        NominatedByTeamId: nominatingTeamId,
+        NominatedByTeamName: nominatingTeam?.TeamName || "",
+      },
+      MOCK_DRAFT_COLLECTION
+    );
 
     toast(`${selectedPlayer.FullName} added to Current Auction`);
     setShowAddPlayer(false);
@@ -3354,10 +3359,10 @@ const BigDawgsDraftCommandCenter = () => {
       selectedDraftTeam.id,
       selectedDraftTeam.TeamName,
       currentAuction,
-      draftAmount
+      draftAmount,
+      MOCK_DRAFT_COLLECTION
     );
-    await setPlayerDraftStatus(currentAuction.DatabaseID, "Drafted");
-    await ClearBigDawgCurrentAuction(currentUser.uid);
+    await ClearBigDawgCurrentAuction(currentUser.uid, MOCK_DRAFT_COLLECTION);
 
     toast(`${currentAuction.FullName} drafted by ${selectedDraftTeam.TeamName}`);
     setDraftTeamId("");
@@ -3368,7 +3373,7 @@ const BigDawgsDraftCommandCenter = () => {
   const handleClearCurrentAuction = async () => {
     if (!currentUser || !hasCurrentPlayer) return;
 
-    await ClearBigDawgCurrentAuction(currentUser.uid);
+    await ClearBigDawgCurrentAuction(currentUser.uid, MOCK_DRAFT_COLLECTION);
     setDraftTeamId("");
     setDraftAmount("");
     setDraftAmountManuallyEdited(false);
@@ -3378,27 +3383,31 @@ const BigDawgsDraftCommandCenter = () => {
   const handleCurrentBidChange = async (nextBid) => {
     if (!currentUser || !hasCurrentPlayer) return;
 
-    await UpdateBigDawgCurrentAuctionBid(currentUser.uid, Math.max(0, nextBid));
+    await UpdateBigDawgCurrentAuctionBid(
+      currentUser.uid,
+      Math.max(0, nextBid),
+      MOCK_DRAFT_COLLECTION
+    );
   };
 
   const handleResetDraft = async () => {
     if (!currentUser || resettingDraft) return;
 
     const confirmed = window.confirm(
-      "Reset the Big Dawgs draft? This clears current auction, team drafted players, targeted player draft values, and drafted player statuses."
+      "Reset the Mock Draft? This clears current auction, mock team drafted players, and mock draft values on targeted players."
     );
     if (!confirmed) return;
 
     setResettingDraft(true);
     try {
-      await ResetBigDawgDraftData(currentUser.uid, teams);
+      await ResetMockDraftData(currentUser.uid, teams);
       setDraftTeamId("");
       setDraftAmount("");
       setDraftAmountManuallyEdited(false);
-      toast("Big Dawgs draft reset.");
+      toast("Mock Draft reset.");
     } catch (error) {
-      console.error("Error resetting Big Dawgs draft:", error);
-      toast("Unable to reset Big Dawgs draft.");
+      console.error("Error resetting Mock Draft:", error);
+      toast("Unable to reset Mock Draft.");
     } finally {
       setResettingDraft(false);
     }
@@ -3408,7 +3417,7 @@ const BigDawgsDraftCommandCenter = () => {
     <>
       <ToastContainer />
       <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Big Dawgs" title="Command Center" />
+        <Header category="Big Dawgs" title="Mock Draft" />
       </div>
 
       <div className="m-2 md:m-10 mt-6 space-y-6">
@@ -3429,7 +3438,7 @@ const BigDawgsDraftCommandCenter = () => {
             onDraftPlayer={handleDraftPlayer}
             onDraftTeamChange={setDraftTeamId}
             onResetDraft={handleResetDraft}
-            resetButtonLabel="Reset Draft"
+            resetButtonLabel="Reset Mock"
             resettingDraft={resettingDraft}
           />
           <DynastyDestroyerAiCard
@@ -3568,4 +3577,4 @@ const BigDawgsDraftCommandCenter = () => {
   );
 };
 
-export default BigDawgsDraftCommandCenter;
+export default MockDraft;

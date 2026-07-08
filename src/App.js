@@ -141,6 +141,14 @@ function App() {
             }
           />
           <Route
+            path="/bigdawgsdraft/mockdraft"
+            element={
+              <PrivateRoute>
+                <HomeTemplate page="MOCKDRAFT" />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/bigdawgsdraft/reviewteam"
             element={
               <PrivateRoute>

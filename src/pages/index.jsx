@@ -1,5 +1,6 @@
 export { default as Home } from './Home/Home';
 export { default as BigDawgsDraftCommandCenter } from './BigDawgsDraft/BigDawgsDraftCommandCenter';
+export { default as MockDraft } from './BigDawgsDraft/MockDraft';
 export { default as ReviewTeamPage } from './BigDawgsDraft/ReviewTeamPage';
 export { default as Scouting } from './BigDawgsDraft/Scouting';
 export { default as ScoutingQBs } from './BigDawgsDraft/ScoutingQBs';

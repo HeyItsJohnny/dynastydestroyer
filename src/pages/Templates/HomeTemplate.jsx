@@ -10,6 +10,7 @@ import {
 import {
   Home,
   BigDawgsDraftCommandCenter,
+  MockDraft,
   ReviewTeamPage,
   ScoutingQBs,
   ScoutingRBs,
@@ -41,6 +42,8 @@ const HomeTemplate = ({ page }) => {
         return <Home />;
       case "BIGDAWGSDRAFTCOMMANDCENTER":
         return <BigDawgsDraftCommandCenter />;
+      case "MOCKDRAFT":
+        return <MockDraft />;
       case "REVIEWTEAM":
         return <ReviewTeamPage />;
       case "SCOUTINGQBS":

@@ -8,11 +8,12 @@ import {
   query,
   onSnapshot,
   deleteDoc,
+  deleteField,
   updateDoc,
-  addDoc,
   where,
   getDocs,
   serverTimestamp,
+  writeBatch,
 } from "firebase/firestore";
 
 import { getPlayerWeeklyPoints } from "./firebasePlayerFunctions";
@@ -65,10 +66,15 @@ const buildAuctionPlayerPayload = (player) => ({
   },
 });
 
-export async function CreateOrUpdateBigDawgCurrentAuction(uid, player, auction = {}) {
+export async function CreateOrUpdateBigDawgCurrentAuction(
+  uid,
+  player,
+  auction = {},
+  draftCollection = "bigdawgdraft"
+) {
   try {
     await setDoc(
-      doc(db, "userprofile", uid, "bigdawgdraft", "currentauction"),
+      doc(db, "userprofile", uid, draftCollection, "currentauction"),
       {
         ...buildAuctionPlayerPayload(player),
         CurrentBid: Number(auction.CurrentBid || auction.currentBid || 0),
@@ -84,17 +90,21 @@ export async function CreateOrUpdateBigDawgCurrentAuction(uid, player, auction =
   }
 }
 
-export async function ClearBigDawgCurrentAuction(uid) {
+export async function ClearBigDawgCurrentAuction(uid, draftCollection = "bigdawgdraft") {
   try {
-    await deleteDoc(doc(db, "userprofile", uid, "bigdawgdraft", "currentauction"));
+    await deleteDoc(doc(db, "userprofile", uid, draftCollection, "currentauction"));
   } catch (error) {
     console.error("There was an error clearing the current auction: " + error);
   }
 }
 
-export async function UpdateBigDawgCurrentAuctionBid(uid, currentBid) {
+export async function UpdateBigDawgCurrentAuctionBid(
+  uid,
+  currentBid,
+  draftCollection = "bigdawgdraft"
+) {
   try {
-    await updateDoc(doc(db, "userprofile", uid, "bigdawgdraft", "currentauction"), {
+    await updateDoc(doc(db, "userprofile", uid, draftCollection, "currentauction"), {
       CurrentBid: Number(currentBid || 0),
       UpdatedAt: serverTimestamp(),
     });
@@ -103,12 +113,19 @@ export async function UpdateBigDawgCurrentAuctionBid(uid, currentBid) {
   }
 }
 
-export async function AddBigDawgDraftedPlayerToTeam(uid, teamid, teamName, player, amount) {
+export async function AddBigDawgDraftedPlayerToTeam(
+  uid,
+  teamid,
+  teamName,
+  player,
+  amount,
+  draftCollection = "bigdawgdraft"
+) {
   try {
     const playerId = player.DatabaseID || player.id || player.KeepTradeCutIdentifier;
 
     await setDoc(
-      doc(db, "userprofile", uid, "bigdawgdraft", teamid, "players", playerId),
+      doc(db, "userprofile", uid, draftCollection, teamid, "players", playerId),
       {
         ...buildAuctionPlayerPayload(player),
         DraftAmount: Number(amount || 0),
@@ -118,8 +135,161 @@ export async function AddBigDawgDraftedPlayerToTeam(uid, teamid, teamName, playe
       },
       { merge: true }
     );
+
+    const targetedPlayerRef = doc(db, "userprofile", uid, "targetedPlayers", playerId);
+    const targetedPlayerSnap = await getDoc(targetedPlayerRef);
+
+    if (targetedPlayerSnap.exists()) {
+      if (draftCollection === "mockdraft") {
+        await setDoc(
+          targetedPlayerRef,
+          {
+            mockdraft: teamName || "",
+            mockDraft: teamName || "",
+            mockDraftTeam: teamName || "",
+            mockDraftTeamId: teamid,
+            mockDraftTeamNumber: teamid,
+            mockDraftAmount: Number(amount || 0),
+            mockPurchasePrice: Number(amount || 0),
+            mockDraftedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } else {
+        await setDoc(
+          targetedPlayerRef,
+          {
+            leagueTeam: teamName || "",
+            leagueTeamNumber: teamid,
+            purchasePrice: Number(amount || 0),
+            draftedTeamId: teamid,
+            draftedTeamName: teamName || "",
+            draftedAmount: Number(amount || 0),
+            draftedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+    }
   } catch (error) {
     console.error("There was an error adding the drafted player: " + error);
+  }
+}
+
+const chunkItems = (items, size) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, index * size + size)
+  );
+
+export async function ResetBigDawgDraftData(uid, teams = []) {
+  try {
+    const draftCollection = "bigdawgdraft";
+    const teamIds = teams.map((team) => `${team.id || team.TeamNumber}`).filter(Boolean);
+    const draftedPlayerIds = new Set();
+
+    await ClearBigDawgCurrentAuction(uid, draftCollection);
+
+    for (const teamId of teamIds) {
+      const playersSnapshot = await getDocs(
+        collection(db, "userprofile", uid, draftCollection, teamId, "players")
+      );
+
+      for (const playerDoc of playersSnapshot.docs) {
+        const playerData = playerDoc.data();
+        const playerId = playerData.DatabaseID || playerDoc.id;
+        if (playerId) draftedPlayerIds.add(playerId);
+        await deleteDoc(playerDoc.ref);
+      }
+    }
+
+    const targetedPlayersSnapshot = await getDocs(
+      collection(db, "userprofile", uid, "targetedPlayers")
+    );
+    for (const docsChunk of chunkItems(targetedPlayersSnapshot.docs, 450)) {
+      const batch = writeBatch(db);
+      docsChunk.forEach((targetedPlayerDoc) => {
+        batch.update(targetedPlayerDoc.ref, {
+          leagueTeam: "",
+          leagueTeamNumber: "",
+          purchasePrice: "",
+          draftedTeamId: deleteField(),
+          draftedTeamName: deleteField(),
+          draftedAmount: deleteField(),
+          draftedAt: deleteField(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+      await batch.commit();
+    }
+
+    const draftedPlayersSnapshot = await getDocs(
+      query(collection(db, "players"), where("DraftStatus", "==", "Drafted"))
+    );
+    draftedPlayersSnapshot.docs.forEach((playerDoc) => draftedPlayerIds.add(playerDoc.id));
+
+    if (draftedPlayerIds.size > 0) {
+      for (const playerIdsChunk of chunkItems([...draftedPlayerIds], 450)) {
+        const batch = writeBatch(db);
+        playerIdsChunk.forEach((playerId) => {
+          batch.set(
+            doc(db, "players", playerId),
+            {
+              DraftStatus: "N/A",
+            },
+            { merge: true }
+          );
+        });
+        await batch.commit();
+      }
+    }
+  } catch (error) {
+    console.error("There was an error resetting the Big Dawgs draft: " + error);
+    throw error;
+  }
+}
+
+export async function ResetMockDraftData(uid, teams = []) {
+  try {
+    const draftCollection = "mockdraft";
+    const teamIds = teams.map((team) => `${team.id || team.TeamNumber}`).filter(Boolean);
+
+    await ClearBigDawgCurrentAuction(uid, draftCollection);
+
+    for (const teamId of teamIds) {
+      const playersSnapshot = await getDocs(
+        collection(db, "userprofile", uid, draftCollection, teamId, "players")
+      );
+
+      for (const playerDoc of playersSnapshot.docs) {
+        await deleteDoc(playerDoc.ref);
+      }
+    }
+
+    const targetedPlayersSnapshot = await getDocs(
+      collection(db, "userprofile", uid, "targetedPlayers")
+    );
+    for (const docsChunk of chunkItems(targetedPlayersSnapshot.docs, 450)) {
+      const batch = writeBatch(db);
+      docsChunk.forEach((targetedPlayerDoc) => {
+        batch.update(targetedPlayerDoc.ref, {
+          mockdraft: "",
+          mockDraft: "",
+          mockDraftTeam: "",
+          mockDraftTeamId: "",
+          mockDraftTeamNumber: "",
+          mockDraftAmount: "",
+          mockPurchasePrice: "",
+          mockDraftedAt: deleteField(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+      await batch.commit();
+    }
+  } catch (error) {
+    console.error("There was an error resetting the mock draft: " + error);
+    throw error;
   }
 }
 
