@@ -28,7 +28,9 @@ import {
   collection,
   doc,
   getDoc,
+  limit,
   onSnapshot,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -66,6 +68,7 @@ const emptyAuction = {
 const DRAFTED_PLAYERS_PAGE_SIZE = 5;
 const MOCK_DRAFT_COLLECTION = "mockdraft";
 const EXTENSION_SYNC_DOC_ID = "extensionsync";
+const EXTENSION_EVENT_RECENT_MS = 5 * 60 * 1000;
 
 const defaultExtensionSyncSettings = {
   syncEnabled: false,
@@ -77,6 +80,11 @@ const defaultExtensionSyncSettings = {
   currentDetectedPlayer: "",
   lastSoldPlayer: "",
   reviewQueueCount: 0,
+};
+
+const defaultExtensionEventState = {
+  latestEvent: null,
+  loaded: false,
 };
 
 const currency = (value) => `$${Number(value || 0).toLocaleString()}`;
@@ -107,14 +115,34 @@ const formatSyncTimestamp = (value) => {
   });
 };
 
-const getSyncDisplayStatus = (syncSettings) => {
+const getSyncDisplayStatus = (syncSettings, latestExtensionEvent, currentTime = Date.now()) => {
   const rawStatus = normalizeStatus(syncSettings.extensionStatus);
 
   if (!syncSettings.syncEnabled || syncSettings.syncMode === "manual") {
     return {
-      label: "Chrome Extension Paused",
+      label: "Sync Paused",
       color: "text-amber-400",
       badge: "bg-amber-500/15 border-amber-500/40",
+    };
+  }
+
+  if (!latestExtensionEvent) {
+    return {
+      label: "Waiting for Draft Room",
+      color: "text-blue-400",
+      badge: "bg-blue-500/15 border-blue-500/40",
+    };
+  }
+
+  const latestReceivedAt = getTimestampDate(latestExtensionEvent.receivedAt);
+  const latestEventIsRecent =
+    latestReceivedAt && currentTime - latestReceivedAt.getTime() <= EXTENSION_EVENT_RECENT_MS;
+
+  if (latestExtensionEvent.type === "extension_ping" && latestEventIsRecent) {
+    return {
+      label: "Live Extension Connected",
+      color: "text-green-400",
+      badge: "bg-green-500/15 border-green-500/40",
     };
   }
 
@@ -126,25 +154,11 @@ const getSyncDisplayStatus = (syncSettings) => {
     };
   }
 
-  if (rawStatus === "connected" || rawStatus === "active" || rawStatus === "online") {
-    return {
-      label: "Chrome Extension Connected",
-      color: "text-green-400",
-      badge: "bg-green-500/15 border-green-500/40",
-    };
-  }
-
   return {
-    label: "Chrome Extension Waiting",
+    label: "Waiting for Draft Room",
     color: "text-blue-400",
     badge: "bg-blue-500/15 border-blue-500/40",
   };
-};
-
-const getSyncPlayerName = (value) => {
-  if (!value) return "--";
-  if (typeof value === "string") return value || "--";
-  return value.FullName || value.fullName || value.name || value.playerName || "--";
 };
 
 const createConnectionToken = () =>
@@ -249,23 +263,14 @@ const normalizeAuctionPlayer = async (playerDoc) => {
 
 const MockDraftHeaderCard = ({
   connectionToken,
+  latestExtensionEvent,
   onSyncEnabledChange,
   onSyncModeChange,
   syncSettings,
   syncStatus,
 }) => {
-  const currentDetectedPlayer = getSyncPlayerName(
-    syncSettings.currentDetectedPlayer ||
-      syncSettings.currentDetectedPlayerName ||
-      syncSettings.detectedPlayer ||
-      syncSettings.detectedPlayerName
-  );
-  const lastSoldPlayer = getSyncPlayerName(
-    syncSettings.lastSoldPlayer ||
-      syncSettings.lastSoldPlayerName ||
-      syncSettings.soldPlayer ||
-      syncSettings.soldPlayerName
-  );
+  const latestEventType = latestExtensionEvent?.type || "--";
+  const latestReceivedAt = latestExtensionEvent?.receivedAt || null;
 
   return (
     <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
@@ -347,22 +352,14 @@ const MockDraftHeaderCard = ({
 
           <div className="mt-2 flex flex-wrap items-center gap-x-72 gap-y-[4.5rem] text-sm font-bold">
             <span className="text-gray-500 dark:text-gray-400">
-              Last Event:{" "}
-              <span className="text-gray-900 dark:text-white">
-                {formatSyncTimestamp(syncSettings.extensionLastEventAt)}
-              </span>
+              Last Type: <span className="text-gray-900 dark:text-white">{latestEventType}</span>
             </span>
             <span className="text-gray-500 dark:text-gray-400">
-              Detected: <span className="text-blue-400">{currentDetectedPlayer}</span>
+              Received:{" "}
+              <span className="text-blue-400">{formatSyncTimestamp(latestReceivedAt)}</span>
             </span>
             <span className="text-gray-500 dark:text-gray-400">
-              Sold: <span className="text-green-500">{lastSoldPlayer}</span>
-            </span>
-            <span className="text-gray-500 dark:text-gray-400">
-              Queue:{" "}
-              <span className="text-purple-300">
-                {toNumber(syncSettings.reviewQueueCount).toLocaleString()}
-              </span>
+              Status: <span className={syncStatus.color}>{syncStatus.label}</span>
             </span>
           </div>
         </div>
@@ -3286,6 +3283,8 @@ const MockDraft = () => {
   const [draftAmountManuallyEdited, setDraftAmountManuallyEdited] = useState(false);
   const [resettingDraft, setResettingDraft] = useState(false);
   const [syncSettings, setSyncSettings] = useState(defaultExtensionSyncSettings);
+  const [extensionEventState, setExtensionEventState] = useState(defaultExtensionEventState);
+  const [extensionStatusNow, setExtensionStatusNow] = useState(() => Date.now());
   const previousCurrentAuctionKeyRef = useRef("");
 
   const selectedPlayer = useMemo(
@@ -3339,9 +3338,10 @@ const MockDraft = () => {
 
   const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
   const currentAuctionKey = currentAuction?.DatabaseID || currentAuction?.id || "";
+  const mockDraftId = syncSettings.connectionToken || "";
   const syncStatus = useMemo(
-    () => getSyncDisplayStatus(syncSettings),
-    [syncSettings]
+    () => getSyncDisplayStatus(syncSettings, extensionEventState.latestEvent, extensionStatusNow),
+    [extensionEventState.latestEvent, extensionStatusNow, syncSettings]
   );
   const syncSettingsRef = useMemo(() => {
     if (!currentUser) return null;
@@ -3413,6 +3413,51 @@ const MockDraft = () => {
       }
     );
   }, [syncSettingsRef]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setExtensionStatusNow(Date.now());
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (!mockDraftId) {
+      setExtensionEventState(defaultExtensionEventState);
+      return undefined;
+    }
+
+    const latestExtensionEventQuery = query(
+      collection(db, "mockDrafts", mockDraftId, "extensionEvents"),
+      orderBy("receivedAt", "desc"),
+      limit(1)
+    );
+
+    return onSnapshot(
+      latestExtensionEventQuery,
+      (snapshot) => {
+        const latestEventDoc = snapshot.docs[0];
+
+        setExtensionEventState({
+          latestEvent: latestEventDoc
+            ? {
+                id: latestEventDoc.id,
+                ...latestEventDoc.data(),
+              }
+            : null,
+          loaded: true,
+        });
+      },
+      (error) => {
+        console.error("Error loading mock draft extension events:", error);
+        setExtensionEventState({
+          latestEvent: null,
+          loaded: true,
+        });
+      }
+    );
+  }, [mockDraftId]);
 
   useEffect(() => {
     if (previousCurrentAuctionKeyRef.current === currentAuctionKey) return;
@@ -3720,6 +3765,7 @@ const MockDraft = () => {
       <ToastContainer />
       <MockDraftHeaderCard
         connectionToken={syncSettings.connectionToken}
+        latestExtensionEvent={extensionEventState.latestEvent}
         onSyncEnabledChange={handleSyncEnabledChange}
         onSyncModeChange={handleSyncModeChange}
         syncSettings={syncSettings}
