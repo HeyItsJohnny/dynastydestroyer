@@ -24,7 +24,16 @@ import {
   Select,
   TextField,
 } from "@mui/material";
-import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -56,6 +65,19 @@ const emptyAuction = {
 
 const DRAFTED_PLAYERS_PAGE_SIZE = 5;
 const MOCK_DRAFT_COLLECTION = "mockdraft";
+const EXTENSION_SYNC_DOC_ID = "extensionsync";
+
+const defaultExtensionSyncSettings = {
+  syncEnabled: false,
+  syncMode: "manual",
+  extensionLastEventAt: null,
+  extensionStatus: "waiting",
+  extensionApiKey: "",
+  connectionToken: "",
+  currentDetectedPlayer: "",
+  lastSoldPlayer: "",
+  reviewQueueCount: 0,
+};
 
 const currency = (value) => `$${Number(value || 0).toLocaleString()}`;
 const normalizeStatus = (value) => `${value ?? ""}`.trim().toLowerCase();
@@ -64,6 +86,69 @@ const statValue = (value) => {
   if (value === undefined || value === null || value === "") return "--";
   return value;
 };
+
+const getTimestampDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") return value.toDate();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatSyncTimestamp = (value) => {
+  const date = getTimestampDate(value);
+  if (!date) return "--";
+
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const getSyncDisplayStatus = (syncSettings) => {
+  const rawStatus = normalizeStatus(syncSettings.extensionStatus);
+
+  if (!syncSettings.syncEnabled || syncSettings.syncMode === "manual") {
+    return {
+      label: "Chrome Extension Paused",
+      color: "text-amber-400",
+      badge: "bg-amber-500/15 border-amber-500/40",
+    };
+  }
+
+  if (rawStatus === "error" || rawStatus === "failed") {
+    return {
+      label: "Chrome Extension Error",
+      color: "text-red-400",
+      badge: "bg-red-500/15 border-red-500/40",
+    };
+  }
+
+  if (rawStatus === "connected" || rawStatus === "active" || rawStatus === "online") {
+    return {
+      label: "Chrome Extension Connected",
+      color: "text-green-400",
+      badge: "bg-green-500/15 border-green-500/40",
+    };
+  }
+
+  return {
+    label: "Chrome Extension Waiting",
+    color: "text-blue-400",
+    badge: "bg-blue-500/15 border-blue-500/40",
+  };
+};
+
+const getSyncPlayerName = (value) => {
+  if (!value) return "--";
+  if (typeof value === "string") return value || "--";
+  return value.FullName || value.fullName || value.name || value.playerName || "--";
+};
+
+const createConnectionToken = () =>
+  `mock_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 
 const getProjectedSeasonYear = (date = new Date()) => date.getFullYear();
 
@@ -160,6 +245,130 @@ const normalizeAuctionPlayer = async (playerDoc) => {
     sleeperScore: data.sleeperScore ?? data.SleeperScore ?? 0,
     tier,
   };
+};
+
+const MockDraftHeaderCard = ({
+  connectionToken,
+  onSyncEnabledChange,
+  onSyncModeChange,
+  syncSettings,
+  syncStatus,
+}) => {
+  const currentDetectedPlayer = getSyncPlayerName(
+    syncSettings.currentDetectedPlayer ||
+      syncSettings.currentDetectedPlayerName ||
+      syncSettings.detectedPlayer ||
+      syncSettings.detectedPlayerName
+  );
+  const lastSoldPlayer = getSyncPlayerName(
+    syncSettings.lastSoldPlayer ||
+      syncSettings.lastSoldPlayerName ||
+      syncSettings.soldPlayer ||
+      syncSettings.soldPlayerName
+  );
+
+  return (
+    <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+        <Header category="Big Dawgs" title="Mock Draft" />
+
+        <div className="rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] px-4 py-3 w-full xl:max-w-[1440px] min-h-[112px] flex flex-col justify-center">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(150px,0.8fr)_minmax(132px,0.8fr)_minmax(220px,1.35fr)_auto] items-center gap-2">
+            <div className="min-w-0">
+              <p className="text-sm uppercase font-bold text-gray-500 dark:text-gray-400">
+                Extension Sync
+              </p>
+              <p className={`mt-0.5 truncate text-lg font-bold ${syncStatus.color}`}>
+                {syncStatus.label}
+              </p>
+            </div>
+            <FormControl size="small" fullWidth>
+              <InputLabel
+                id="mock-sync-mode-label"
+                sx={{
+                  color: "#e5e7eb",
+                  fontSize: "1rem",
+                  "&.Mui-focused": { color: "#ffffff" },
+                }}
+              >
+                Mode
+              </InputLabel>
+              <Select
+                labelId="mock-sync-mode-label"
+                label="Mode"
+                value={syncSettings.syncMode || "manual"}
+                onChange={(event) => onSyncModeChange(event.target.value)}
+                sx={{
+                  color: "#ffffff",
+                  fontSize: "1rem",
+                  ".MuiSelect-icon": { color: "#ffffff" },
+                  ".MuiInputLabel-root": { fontSize: "1rem" },
+                  ".MuiOutlinedInput-notchedOutline": { borderColor: "#4b5563" },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#9ca3af" },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#ffffff" },
+                }}
+              >
+                <MenuItem value="manual">Manual</MenuItem>
+                <MenuItem value="chrome_extension">Chrome Extension</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="Connection Token"
+              margin="none"
+              size="small"
+              value={connectionToken || ""}
+              InputProps={{ readOnly: true }}
+              InputLabelProps={{
+                sx: {
+                  color: "#e5e7eb",
+                  fontSize: "1rem",
+                  "&.Mui-focused": { color: "#ffffff" },
+                },
+              }}
+              sx={{
+                input: { color: "#ffffff", fontSize: "1rem" },
+                label: { fontSize: "1rem" },
+                ".MuiOutlinedInput-notchedOutline": { borderColor: "#4b5563" },
+                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#9ca3af" },
+                ".Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#ffffff" },
+              }}
+            />
+            <label className="inline-flex items-center gap-2 text-base font-bold text-gray-700 dark:text-gray-200">
+              <input
+                checked={Boolean(syncSettings.syncEnabled)}
+                className="h-4 w-4 accent-red-600"
+                onChange={(event) => onSyncEnabledChange(event.target.checked)}
+                type="checkbox"
+              />
+              Sync
+            </label>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-72 gap-y-[4.5rem] text-sm font-bold">
+            <span className="text-gray-500 dark:text-gray-400">
+              Last Event:{" "}
+              <span className="text-gray-900 dark:text-white">
+                {formatSyncTimestamp(syncSettings.extensionLastEventAt)}
+              </span>
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Detected: <span className="text-blue-400">{currentDetectedPlayer}</span>
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Sold: <span className="text-green-500">{lastSoldPlayer}</span>
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Queue:{" "}
+              <span className="text-purple-300">
+                {toNumber(syncSettings.reviewQueueCount).toLocaleString()}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const CurrentAuctionCard = ({
@@ -3076,6 +3285,7 @@ const MockDraft = () => {
   const [draftAmount, setDraftAmount] = useState("");
   const [draftAmountManuallyEdited, setDraftAmountManuallyEdited] = useState(false);
   const [resettingDraft, setResettingDraft] = useState(false);
+  const [syncSettings, setSyncSettings] = useState(defaultExtensionSyncSettings);
   const previousCurrentAuctionKeyRef = useRef("");
 
   const selectedPlayer = useMemo(
@@ -3129,6 +3339,21 @@ const MockDraft = () => {
 
   const hasCurrentPlayer = Boolean(currentAuction?.DatabaseID || currentAuction?.id);
   const currentAuctionKey = currentAuction?.DatabaseID || currentAuction?.id || "";
+  const syncStatus = useMemo(
+    () => getSyncDisplayStatus(syncSettings),
+    [syncSettings]
+  );
+  const syncSettingsRef = useMemo(() => {
+    if (!currentUser) return null;
+
+    return doc(
+      db,
+      "userprofile",
+      currentUser.uid,
+      MOCK_DRAFT_COLLECTION,
+      EXTENSION_SYNC_DOC_ID
+    );
+  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser) return undefined;
@@ -3149,6 +3374,45 @@ const MockDraft = () => {
       }
     });
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!syncSettingsRef) {
+      setSyncSettings(defaultExtensionSyncSettings);
+      return undefined;
+    }
+
+    return onSnapshot(
+      syncSettingsRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setSyncSettings({
+            ...defaultExtensionSyncSettings,
+            ...snapshot.data(),
+          });
+          return;
+        }
+
+        const nextSettings = {
+          ...defaultExtensionSyncSettings,
+          connectionToken: createConnectionToken(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        setDoc(syncSettingsRef, nextSettings, { merge: true }).catch((error) => {
+          console.error("Error creating mock draft sync settings:", error);
+        });
+        setSyncSettings(nextSettings);
+      },
+      (error) => {
+        console.error("Error loading mock draft sync settings:", error);
+        setSyncSettings({
+          ...defaultExtensionSyncSettings,
+          extensionStatus: "error",
+        });
+      }
+    );
+  }, [syncSettingsRef]);
 
   useEffect(() => {
     if (previousCurrentAuctionKeyRef.current === currentAuctionKey) return;
@@ -3390,6 +3654,44 @@ const MockDraft = () => {
     );
   };
 
+  const updateSyncSettings = async (updates) => {
+    if (!syncSettingsRef) return;
+
+    const nextUpdates = {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    };
+
+    setSyncSettings((currentSettings) => ({
+      ...currentSettings,
+      ...updates,
+    }));
+
+    try {
+      await setDoc(syncSettingsRef, nextUpdates, { merge: true });
+    } catch (error) {
+      console.error("Error updating mock draft sync settings:", error);
+      toast("Unable to update mock draft sync settings.");
+    }
+  };
+
+  const handleSyncEnabledChange = async (syncEnabled) => {
+    await updateSyncSettings({
+      syncEnabled,
+      extensionStatus: syncEnabled ? "waiting" : "paused",
+      syncMode: syncEnabled ? "chrome_extension" : "manual",
+    });
+  };
+
+  const handleSyncModeChange = async (syncMode) => {
+    await updateSyncSettings({
+      syncMode,
+      syncEnabled: syncMode === "chrome_extension" ? syncSettings.syncEnabled : false,
+      extensionStatus:
+        syncMode === "chrome_extension" && syncSettings.syncEnabled ? "waiting" : "paused",
+    });
+  };
+
   const handleResetDraft = async () => {
     if (!currentUser || resettingDraft) return;
 
@@ -3416,9 +3718,13 @@ const MockDraft = () => {
   return (
     <>
       <ToastContainer />
-      <div className="m-2 md:m-10 mt-24 p-2 md:p-10 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-        <Header category="Big Dawgs" title="Mock Draft" />
-      </div>
+      <MockDraftHeaderCard
+        connectionToken={syncSettings.connectionToken}
+        onSyncEnabledChange={handleSyncEnabledChange}
+        onSyncModeChange={handleSyncModeChange}
+        syncSettings={syncSettings}
+        syncStatus={syncStatus}
+      />
 
       <div className="m-2 md:m-10 mt-6 space-y-6">
         <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr_1.45fr] items-stretch gap-6">
