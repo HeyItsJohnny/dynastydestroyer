@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Dynasty Destroyer Yahoo Sync",
+  "version": "0.1.0",
+  "description": "Read-only Yahoo Fantasy Football observer for Dynasty Destroyer local sync.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://football.fantasysports.yahoo.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://football.fantasysports.yahoo.com/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Dynasty Destroyer Sync",
+    "default_popup": "popup.html"
+  }
+}
