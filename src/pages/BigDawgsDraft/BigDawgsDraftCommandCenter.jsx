@@ -686,6 +686,20 @@ const getLeagueBudgetRows = ({ leagueSettings, teams, teamRosters }) => {
     .sort((firstTeam, secondTeam) => secondTeam.budgetLeft - firstTeam.budgetLeft);
 };
 
+const getTeamShortName = (team) => {
+  const name = `${team?.TeamName || ""}`.trim();
+  if (!name) return `Team ${team?.TeamNumber || team?.id || ""}`.trim();
+
+  const words = name.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 8);
+
+  return words
+    .slice(0, 3)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+};
+
 const getAvailableDraftPlayers = (players, teamRosters) => {
   const draftedPlayerIds = new Set(
     Object.values(teamRosters || {})
@@ -1467,6 +1481,241 @@ const getPlayerHardMaxValue = (player) => {
   return Math.ceil(getPlayerMaxValue(player) * 1.08);
 };
 
+const getTargetedPlayerIds = (targetedPlayers) =>
+  new Set(
+    (targetedPlayers || [])
+      .filter((player) => player.watchlist || player.priority || player.isTarget)
+      .map((player) => player.playerId || player.DatabaseID || player.id)
+      .filter(Boolean)
+  );
+
+const getPositionMarketContext = ({ players, teamRosters }) => {
+  const draftHistory = Object.values(teamRosters || {}).flat();
+  const positionContext = ["QB", "RB", "WR", "TE"].reduce(
+    (context, position) => ({
+      ...context,
+      [position]: {
+        draftedCount: 0,
+        inflation: 0,
+        remainingCount: 0,
+        topTierCount: 0,
+      },
+    }),
+    {}
+  );
+
+  draftHistory.forEach((player) => {
+    const position = getPlayerPosition(player);
+    if (!positionContext[position]) return;
+
+    const amount = getDraftedPlayerAmount(player);
+    const value = toNumber(player.NonSuperFlexValue || player.auctionValue);
+    positionContext[position].draftedCount += 1;
+    positionContext[position].inflation += value > 0 ? (amount - value) / value : 0;
+  });
+
+  getAvailableDraftPlayers(players, teamRosters).forEach((player) => {
+    const position = getPlayerPosition(player);
+    if (!positionContext[position]) return;
+
+    positionContext[position].remainingCount += 1;
+    if (toNumber(player.Tier ?? player.tier, 99) <= 2) {
+      positionContext[position].topTierCount += 1;
+    }
+  });
+
+  return Object.entries(positionContext).reduce((context, [position, data]) => ({
+    ...context,
+    [position]: {
+      ...data,
+      averageInflation:
+        data.draftedCount > 0 ? data.inflation / Math.max(data.draftedCount, 1) : 0,
+      scarcityScore:
+        data.topTierCount <= 2
+          ? 1
+          : Math.max(0.15, 1 - data.remainingCount / Math.max(data.remainingCount + data.draftedCount, 1)),
+    },
+  }), {});
+};
+
+const getNominationType = ({
+  biddingWarScore,
+  isMyTarget,
+  marketInflationScore,
+  myNeedsPosition,
+  playerValue,
+  scarcityScore,
+  teamNeedScore,
+}) => {
+  if (!isMyTarget && teamNeedScore >= 0.72 && biddingWarScore >= 0.55) return "Force Need";
+  if (!isMyTarget && playerValue >= 25 && biddingWarScore >= 0.45) return "Drain Wallets";
+  if (!isMyTarget && scarcityScore >= 0.76 && teamNeedScore >= 0.45) return "Scarcity Pressure";
+  if (!isMyTarget && myNeedsPosition && teamNeedScore >= 0.35) return "Smoke Screen";
+  if (marketInflationScore >= 0.55) return "Market Test";
+  return "Value Target";
+};
+
+const getNominationReason = ({ interestedTeams, position, type }) => {
+  const teamText =
+    interestedTeams.length >= 2
+      ? `${interestedTeams.slice(0, 2).join(" and ")} both`
+      : interestedTeams.length === 1
+        ? `${interestedTeams[0]}`
+        : "The room";
+
+  if (type === "Force Need") {
+    return `${teamText} need ${position} and can still bid.`;
+  }
+  if (type === "Drain Wallets") {
+    return `${teamText} can spend; make them pay for ${position}.`;
+  }
+  if (type === "Smoke Screen") {
+    return `Good ${position} decoy while preserving your targets.`;
+  }
+  if (type === "Market Test") {
+    return `Tests whether ${position} prices are cooling.`;
+  }
+  if (type === "Scarcity Pressure") {
+    return `${position} tier is thinning; pressure needy teams.`;
+  }
+
+  return "Safe to win if bidding stays below value.";
+};
+
+const getNominationCandidates = ({
+  draftedPlayers,
+  leagueSettings,
+  myTeam,
+  players,
+  targetedPlayers,
+  teamRosters,
+  teams,
+}) => {
+  const availablePlayers = getAvailableDraftPlayers(players, teamRosters);
+  const budget = toNumber(leagueSettings?.Budget, 200);
+  const totalRosterSlots = getTotalRosterSlots(leagueSettings);
+  const myRoster = draftedPlayers || [];
+  const mySpent = myRoster.reduce((sum, player) => sum + getDraftedPlayerAmount(player), 0);
+  const myBudgetLeft = Math.max(budget - mySpent, 0);
+  const myRemainingSlots = Math.max(totalRosterSlots - myRoster.length, 0);
+  const myMaxBid = Math.max(myBudgetLeft - Math.max(myRemainingSlots - 1, 0), 0);
+  const myNeeds = getRosterPositionNeeds(myRoster, leagueSettings);
+  const myNeedPositions = new Set(myNeeds);
+  const targetedPlayerIds = getTargetedPlayerIds(targetedPlayers);
+  const marketContext = getPositionMarketContext({ players, teamRosters });
+  const teamRows = getLeagueBudgetRows({ leagueSettings, teams, teamRosters }).filter(
+    (row) => row.team.id !== myTeam?.id
+  );
+
+  return availablePlayers
+    .map((player) => {
+      const playerId = player.DatabaseID || player.id;
+      const position = getPlayerPosition(player);
+      const value = toNumber(player.NonSuperFlexValue || player.auctionValue);
+      const maxValue = getPlayerMaxValue(player);
+      const tier = toNumber(player.Tier ?? player.tier, 99);
+      const rank = toNumber(player.PositionRank ?? player.rank, 999);
+      const context = marketContext[position] || {};
+      const interestedRows = teamRows
+        .map((row) => {
+          const relevantNeeds = row.needs.filter((need) => need.startsWith(position));
+          const remainingSlots = Math.max(totalRosterSlots - row.slotsFilled, 0);
+          const teamMaxBid = Math.max(row.budgetLeft - Math.max(remainingSlots - 1, 0), 0);
+          const needScore = Math.min(relevantNeeds.length / Math.max(getStarterSlotsForPosition(position, leagueSettings), 1), 1);
+          const budgetScore = Math.min(teamMaxBid / Math.max(maxValue || value, 1), 1);
+          const interestScore = needScore * 0.68 + budgetScore * 0.32;
+
+          return {
+            ...row,
+            interestScore,
+            relevantNeeds,
+            teamMaxBid,
+          };
+        })
+        .filter((row) => row.relevantNeeds.length > 0 && row.teamMaxBid >= Math.max(value * 0.55, 1))
+        .sort((firstRow, secondRow) => secondRow.interestScore - firstRow.interestScore);
+      const interestedTeams = interestedRows.slice(0, 3).map((row) => getTeamShortName(row.team));
+      const teamNeedScore = Math.min(
+        interestedRows.reduce((sum, row) => sum + row.interestScore, 0) / 2.2,
+        1
+      );
+      const budgetPowerScore = Math.min(
+        interestedRows.reduce((sum, row) => sum + Math.min(row.teamMaxBid / Math.max(value, 1), 1), 0) / 2.5,
+        1
+      );
+      const biddingWarScore = Math.min(interestedRows.length / 3, 1) * 0.65 + budgetPowerScore * 0.35;
+      const scarcityScore = Math.max(
+        context.scarcityScore || 0,
+        tier <= 2 ? 0.9 : tier <= 4 ? 0.58 : 0.28
+      );
+      const isMyTarget = targetedPlayerIds.has(playerId);
+      const notMyTopTargetScore = isMyTarget ? 0.15 : 1;
+      const marketInflationScore = Math.max(0, Math.min((context.averageInflation || 0) + 0.25, 1));
+      const myNeedsPosition = myNeedPositions.has(position);
+      const strategicFitScore =
+        myNeedsPosition && !isMyTarget
+          ? 0.72
+          : myNeedsPosition
+            ? 0.45
+            : 0.85;
+      const type = getNominationType({
+        biddingWarScore,
+        isMyTarget,
+        marketInflationScore,
+        myNeedsPosition,
+        playerValue: value,
+        scarcityScore,
+        teamNeedScore,
+      });
+      const nominationScore = Math.round(
+        teamNeedScore * 25 +
+          budgetPowerScore * 20 +
+          biddingWarScore * 15 +
+          scarcityScore * 15 +
+          notMyTopTargetScore * 10 +
+          marketInflationScore * 10 +
+          strategicFitScore * 5
+      );
+      const canAfford = value <= myMaxBid || maxValue <= myMaxBid;
+      const isStrategicUnaffordableType = ["Drain Wallets", "Smoke Screen", "Force Need"].includes(type);
+      const isRelevantPlayer =
+        value >= 5 ||
+        tier <= 5 ||
+        rank <= 36 ||
+        (["QB", "TE"].includes(position) && rank <= 18) ||
+        nominationScore >= 68;
+
+      return {
+        player,
+        position,
+        value,
+        tier,
+        type,
+        interestedTeams,
+        reason: getNominationReason({ interestedTeams, position, type }),
+        score: nominationScore,
+        canAfford,
+        isRelevantPlayer,
+        isStrategicUnaffordableType,
+        teamNeedScore,
+      };
+    })
+    .filter(
+      (candidate) =>
+        candidate.position &&
+        candidate.interestedTeams.length > 0 &&
+        candidate.teamNeedScore >= 0.2 &&
+        candidate.isRelevantPlayer &&
+        (candidate.canAfford || candidate.isStrategicUnaffordableType)
+    )
+    .sort(
+      (firstCandidate, secondCandidate) =>
+        secondCandidate.score - firstCandidate.score ||
+        secondCandidate.value - firstCandidate.value
+    )
+    .slice(0, 5);
+};
+
 const ComparableAvailablePlayersCard = ({ currentAuction, players }) => {
   const comparablePlayers = useMemo(
     () => getComparableAvailablePlayers(currentAuction, players),
@@ -1897,15 +2146,131 @@ const OptimalRosterPathsCard = ({ draftedPlayers, leagueSettings, players, teamR
   );
 };
 
-const CommandCenterPlaceholderCard = () => (
-  <section className="w-full min-h-[360px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
-    <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
-      <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
-        Coming Soon
-      </p>
-    </div>
-  </section>
-);
+const NominationOptimizerCard = ({
+  draftedPlayers,
+  leagueSettings,
+  myTeam,
+  players,
+  targetedPlayers,
+  teamRosters,
+  teams,
+}) => {
+  const nominationCandidates = useMemo(
+    () =>
+      getNominationCandidates({
+        draftedPlayers,
+        leagueSettings,
+        myTeam,
+        players,
+        targetedPlayers,
+        teamRosters,
+        teams,
+      }),
+    [draftedPlayers, leagueSettings, myTeam, players, targetedPlayers, teamRosters, teams]
+  );
+  const bestNomination = nominationCandidates[0];
+
+  return (
+    <section className="w-full min-h-[520px] p-5 md:p-6 bg-white dark:text-gray-200 dark:bg-secondary-dark-bg rounded-3xl">
+      <div className="pb-4 border-b border-gray-200 dark:border-[#202a32]">
+        <p className="text-purple-500 uppercase text-xl font-bold tracking-wide">
+          Nomination Optimizer
+        </p>
+      </div>
+
+      {nominationCandidates.length === 0 ? (
+        <p className="mt-5 text-base font-semibold text-gray-500 dark:text-gray-400">
+          No strong nomination angles yet. Add teams, budgets, and available player data to unlock recommendations.
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 max-h-[382px] overflow-y-auto overscroll-contain pr-1">
+            <table className="w-full table-fixed text-left">
+              <colgroup>
+                <col className="w-[23%]" />
+                <col className="w-[8%]" />
+                <col className="w-[12%]" />
+                <col className="w-[9%]" />
+                <col className="w-[16%]" />
+                <col className="w-[14%]" />
+                <col className="w-[18%]" />
+              </colgroup>
+              <thead className="sticky top-0 z-10 bg-white dark:bg-secondary-dark-bg">
+                <tr className="border-b border-gray-200 dark:border-[#26313a] text-[10px] uppercase text-gray-500 dark:text-gray-400">
+                  <th className="py-2 pr-2 font-bold">Player</th>
+                  <th className="py-2 px-1 font-bold">Pos</th>
+                  <th className="py-2 px-1 font-bold">Value</th>
+                  <th className="py-2 px-1 font-bold">Tier</th>
+                  <th className="py-2 px-1 font-bold">Type</th>
+                  <th className="py-2 px-1 font-bold">Teams</th>
+                  <th className="py-2 pl-1 font-bold">Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nominationCandidates.map((candidate) => {
+                  const playerName =
+                    candidate.player.FullName ||
+                    candidate.player.fullName ||
+                    candidate.player.name ||
+                    "Unknown";
+
+                  return (
+                    <tr
+                      className="border-b border-gray-100 dark:border-[#202a32] last:border-b-0 align-top"
+                      key={candidate.player.DatabaseID || candidate.player.id}
+                    >
+                      <td className="py-2.5 pr-2">
+                        <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
+                          {playerName}
+                        </p>
+                        <p className="mt-0.5 text-[11px] font-bold text-purple-300">
+                          {candidate.score}/100
+                        </p>
+                      </td>
+                      <td className="py-2.5 px-1 text-sm font-bold text-gray-700 dark:text-gray-200">
+                        {candidate.position}
+                      </td>
+                      <td className="py-2.5 px-1 text-sm font-bold text-green-500">
+                        {currency(candidate.value)}
+                      </td>
+                      <td className="py-2.5 px-1 text-sm font-bold text-purple-300">
+                        {statValue(candidate.tier)}
+                      </td>
+                      <td className="py-2.5 px-1">
+                        <span className="inline-flex rounded-md border border-purple-400/30 bg-purple-500/15 px-1.5 py-1 text-[10px] font-bold leading-tight text-purple-200">
+                          {candidate.type}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-1 text-xs font-bold text-gray-700 dark:text-gray-200">
+                        {candidate.interestedTeams.join(", ")}
+                      </td>
+                      <td className="py-2.5 pl-1 text-[11px] font-semibold leading-snug text-gray-600 dark:text-gray-300">
+                        {candidate.reason}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-gray-200 dark:border-[#26313a] bg-gray-50 dark:bg-[#13191e] p-3">
+            <p className="text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
+              AI Summary
+            </p>
+            <p className="mt-1 text-sm font-bold leading-relaxed text-gray-900 dark:text-white">
+              Best nomination:{" "}
+              {bestNomination.player.FullName ||
+                bestNomination.player.fullName ||
+                bestNomination.player.name}
+              . {bestNomination.reason}
+            </p>
+          </div>
+        </>
+      )}
+    </section>
+  );
+};
 
 const PositionWishlistCard = ({ currentAuction, players, targetedPlayers, teamRosters }) => {
   const wishlistPlayers = useMemo(
@@ -3078,7 +3443,15 @@ const BigDawgsDraftCommandCenter = () => {
             teamRosters={teamRosters}
             teams={teams}
           />
-          <CommandCenterPlaceholderCard />
+          <NominationOptimizerCard
+            draftedPlayers={draftedPlayers}
+            leagueSettings={leagueSettings}
+            myTeam={myTeam}
+            players={players}
+            targetedPlayers={targetedPlayers}
+            teamRosters={teamRosters}
+            teams={teams}
+          />
         </div>
       </div>
 
